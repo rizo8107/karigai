@@ -43,21 +43,19 @@ export interface RazorpaySuccessResponse {
 
 export interface RazorpayPaymentResponse {
   success: boolean;
-  payment?: Record<string, unknown>;
+  payment?: any;
   error?: string;
 }
 
-// Use Netlify functions for server-side operations
-const SERVER_URL = '/.netlify/functions';
+// Get the server URL from environment or use default
+// Use a relative URL instead of trying to construct an absolute one
+const SERVER_URL = '/api/razorpay';
 
-// Netlify function for order creation
-const ORDER_ENDPOINT = `${SERVER_URL}/create-order`;
+// New CRM Supabase endpoint for order creation
+const CRM_ORDER_ENDPOINT = import.meta.env.VITE_CRM_ORDER_ENDPOINT || 'https://crm-supabase.7za6uc.easypanel.host/functions/v1/create-order';
 
-// Netlify function for payment verification
-const VERIFY_ENDPOINT = `${SERVER_URL}/verify-payment`;
-
-// Netlify function for payment capture
-const CAPTURE_ENDPOINT = `${SERVER_URL}/capture-payment`;
+// New CRM Supabase endpoint for payment verification
+const CRM_VERIFY_ENDPOINT = import.meta.env.VITE_CRM_VERIFY_ENDPOINT || 'https://crm-supabase.7za6uc.easypanel.host/functions/v1/verify-payment';
 
 // Get Razorpay Key ID from environment
 export function getRazorpayKeyId(): string {
@@ -84,7 +82,7 @@ export async function createRazorpayOrder(
   notes?: Record<string, string>
 ): Promise<RazorpayOrder> {
   try {
-    console.log(`Creating order with endpoint: ${ORDER_ENDPOINT}`);
+    console.log(`Creating order with CRM endpoint: ${CRM_ORDER_ENDPOINT}`);
     
     // CORRECT FLOW:
     // 1. Client receives amount in rupees (e.g., 1.00)
@@ -107,7 +105,7 @@ export async function createRazorpayOrder(
     console.log('Sending payload to CRM endpoint:', payload);
     
     // Use fetch with the CRM Supabase endpoint
-    const response = await fetch(ORDER_ENDPOINT, {
+    const response = await fetch(CRM_ORDER_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -179,7 +177,7 @@ export function openRazorpayCheckout(options: RazorpayOptions): Promise<Razorpay
         },
       });
 
-      razorpay.on('payment.failed', function (response: { error: { description: string } }) {
+      razorpay.on('payment.failed', function (response: any) {
         console.error('Payment failed:', response.error);
         reject(new Error(response.error.description || 'Payment failed'));
       });
@@ -205,9 +203,9 @@ export async function verifyRazorpayPayment(
   signature: string
 ): Promise<RazorpayPaymentResponse> {
   try {
-    console.log(`Verifying payment with endpoint: ${VERIFY_ENDPOINT}`);
+    console.log(`Verifying payment with CRM endpoint: ${CRM_VERIFY_ENDPOINT}`);
     
-    const response = await fetch(VERIFY_ENDPOINT, {
+    const response = await fetch(CRM_VERIFY_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -260,7 +258,7 @@ export async function captureRazorpayPayment(
   amount?: number
 ): Promise<RazorpayPaymentResponse> {
   try {
-    const response = await fetch(CAPTURE_ENDPOINT, {
+    const response = await fetch(`${SERVER_URL}/capture-payment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -295,7 +293,7 @@ export async function captureRazorpayPayment(
 export async function refundRazorpayPayment(
   paymentId: string,
   amount?: number
-): Promise<Record<string, unknown>> {
+): Promise<any> {
   try {
     const response = await fetch(`${SERVER_URL}/refund-payment`, {
       method: 'POST',
