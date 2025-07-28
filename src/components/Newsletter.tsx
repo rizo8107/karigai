@@ -23,9 +23,9 @@ const Newsletter = () => {
     <section className="py-16 bg-konipai-beige border-b border-gray-200">
       <div className="konipai-container">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Join Our Community</h2>
+          <h2 className="text-3xl font-bold mb-4">Join Our Soap Family</h2>
           <p className="text-lg mb-6">
-            Subscribe to our newsletter for exclusive offers, new product launches, and sustainable living tips.
+            Subscribe to our newsletter for exclusive offers, new soap launches, and natural skincare tips.
           </p>
           
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">

@@ -13,8 +13,8 @@ export function Logo({ className, variant = 'default' }: LogoProps) {
 
   // Optimized logo URLs
   const logoUrl = variant === 'light' 
-    ? 'https://backend-pocketbase.7za6uc.easypanel.host/api/files/pbc_3420988878/1kys736pdde433n/logowhite_osw0jj5ixs.svg?thumb=0x0'
-    : 'https://backend-pocketbase.7za6uc.easypanel.host/api/files/pbc_3420988878/m8l91o34i2i54z0/logo_lbgs7rzev4.svg?thumb=0x0';
+    ? `${import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090'}/api/files/pbc_3420988878/1kys736pdde433n/logowhite_osw0jj5ixs.svg?thumb=0x0`
+    : `${import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090'}/api/files/pbc_3420988878/m8l91o34i2i54z0/logo_lbgs7rzev4.svg?thumb=0x0`;
 
   // Preload the logo
   useEffect(() => {

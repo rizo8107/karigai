@@ -122,7 +122,7 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<CouponData | null>(null);
-  const [suggestedCoupons, setSuggestedCoupons] = useState<any[]>([]);
+  const [suggestedCoupons, setSuggestedCoupons] = useState<CouponData[]>([]);
   const [suggestedCouponsLoading, setSuggestedCouponsLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string | null }>({});
 
@@ -632,7 +632,7 @@ const removeCoupon = () => {
             imageUrls = product.product.images.map((img: string) => {
               // Use the exact PocketBase URL format provided
               // The product ID should only be included once in the URL
-              return `https://backend-pocketbase.7za6uc.easypanel.host/api/files/pbc_4092854851/${img}`;
+              return `${import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090'}/api/files/pbc_4092854851/${img}`;
             });
           }
           
@@ -922,7 +922,7 @@ const removeCoupon = () => {
         });
       }
     }
-  }, [user, formData, showLoginOptions]);
+  }, [user, formData, showLoginOptions, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1722,7 +1722,7 @@ const removeCoupon = () => {
                     {item.product.images && item.product.images.length > 0 && (
                       <div className="w-16 h-16 rounded overflow-hidden mr-3 flex-shrink-0 bg-white border">
                         <img 
-                          src={`https://backend-pocketbase.7za6uc.easypanel.host/api/files/pbc_4092854851/${item.product.images[0]}`}
+                          src={`${import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090'}/api/files/pbc_4092854851/${item.product.images[0]}`}
                           alt={item.product.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {

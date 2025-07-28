@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="128" fill="#219898" />
+  
+  <!-- Soap Bar -->
+  <rect x="112" y="156" width="288" height="200" rx="40" fill="#FFFFFF" />
+  
+  <!-- Soap Texture Lines -->
+  <path d="M160 196C220 176 280 196 340 176" stroke="#219898" stroke-width="12" stroke-linecap="round" />
+  <path d="M160 236C220 216 280 236 340 216" stroke="#219898" stroke-width="12" stroke-linecap="round" />
+  <path d="M160 276C220 256 280 276 340 256" stroke="#219898" stroke-width="12" stroke-linecap="round" />
+  <path d="M160 316C220 296 280 316 340 296" stroke="#219898" stroke-width="12" stroke-linecap="round" />
+  
+  <!-- Bubbles -->
+  <circle cx="380" cy="140" r="20" fill="#FFFFFF" opacity="0.8" />
+  <circle cx="420" cy="180" r="15" fill="#FFFFFF" opacity="0.6" />
+  <circle cx="390" cy="210" r="10" fill="#FFFFFF" opacity="0.7" />
+</svg>

@@ -81,7 +81,7 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
     const envLogo = import.meta.env.VITE_SITE_LOGO;
     
     // Default hardcoded logo URL as fallback
-    const defaultLogo = 'https://backend-pocketbase.7za6uc.easypanel.host/api/files/pbc_3420988878/m8l91o34i2i54z0/logo_lbgs7rzev4.svg?thumb=0x0';
+    const defaultLogo = `${import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090'}/api/files/pbc_3420988878/m8l91o34i2i54z0/logo_lbgs7rzev4.svg?thumb=0x0`;
     
     setLogoUrl(envLogo || defaultLogo);
   }, []);

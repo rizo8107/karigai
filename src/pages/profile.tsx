@@ -103,7 +103,7 @@ export default function ProfilePage() {
                 <Avatar className="h-20 w-20">
                   {user?.avatar ? (
                     <AvatarImage 
-                      src={`${import.meta.env.VITE_POCKETBASE_URL || 'https://backend-pocketbase.7za6uc.easypanel.host'}/api/files/users/${user.id}/${user.avatar}`} 
+                      src={`${import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090'}/api/files/users/${user.id}/${user.avatar}`} 
                       alt={user.name || 'User avatar'}
                     />
                   ) : (

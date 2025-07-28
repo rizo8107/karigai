@@ -4,27 +4,27 @@ import { Badge } from '@/components/ui/badge';
 const testimonials = [
   {
     id: 1,
-    name: 'Emily T.',
-    location: 'New York, NY',
-    text: 'I use my Konipai tote every day for work. It\'s spacious enough for my laptop and essentials, and I love how the canvas has worn in beautifully over time.',
+    name: 'Priya M.',
+    location: 'Chennai, TN',
+    text: "I use Karigai's lavender soap daily and my skin has never felt better. It's gentle, moisturizing, and the natural fragrance is so calming after a long day.",
     rating: 5,
-    product: 'Classic Canvas Tote'
+    product: 'Lavender Dream Soap'
   },
   {
     id: 2,
-    name: 'Michael R.',
-    location: 'Portland, OR',
-    text: 'The quality of these totes is outstanding. I bought one for farmers market shopping and it\'s held up perfectly even when loaded with heavy produce.',
+    name: 'Raj S.',
+    location: 'Bangalore, KA',
+    text: "The quality of these handmade soaps is outstanding. My skin used to be very dry but after switching to Karigai's natural soaps, the difference is remarkable.",
     rating: 5,
-    product: 'Market Canvas Tote'
+    product: 'Honey Oatmeal Soap'
   },
   {
     id: 3,
-    name: 'Sarah L.',
-    location: 'Austin, TX',
-    text: 'I appreciate the sustainable materials and ethical manufacturing. Plus, I get compliments on my mint tote everywhere I go!',
-    rating: 4,
-    product: 'Classic Canvas Tote'
+    name: 'Anjali K.',
+    location: 'Mumbai, MH',
+    text: "I appreciate the natural ingredients and ethical manufacturing. The turmeric soap has helped clear my skin, and I've received so many compliments!",
+    rating: 5,
+    product: 'Turmeric Glow Soap'
   }
 ];
 

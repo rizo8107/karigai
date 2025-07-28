@@ -3,7 +3,7 @@ import PocketBase, { RecordModel } from 'pocketbase';
 console.log('Initializing PocketBase client with URL:', import.meta.env.VITE_POCKETBASE_URL);
 
 // Initialize PocketBase instance
-export const pocketbase = new PocketBase(import.meta.env.VITE_POCKETBASE_URL || 'https://backend-pocketbase.7za6uc.easypanel.host');
+export const pocketbase = new PocketBase(import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090');
 
 // Export collection names as constants
 export enum Collections {

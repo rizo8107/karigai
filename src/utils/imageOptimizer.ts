@@ -44,8 +44,15 @@ export function getPocketBaseImageUrl(
   collection: string,
   size: ImageSize = "medium",
   format: ImageFormat = "avif",
-  baseUrl: string = 'https://backend-pocketbase.7za6uc.easypanel.host'
+  baseUrl?: string
 ): string {
+  // Use the environment variable or fallback to a default
+  const pbBaseUrl = baseUrl || import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090';
+  
+  // Skip processing if URL is already a full URL (starts with http or data:)
+  if (url.startsWith('http') || url.startsWith('data:')) {
+    return url;
+  }
   // Create a cache key that includes size and format
   const cacheKey = `${url}-${size}-${format}`;
   
@@ -62,7 +69,7 @@ export function getPocketBaseImageUrl(
     }
 
     // Build base URL
-    let fullUrl = `${baseUrl.replace(/\/$/, '')}/api/files/${collection}/${recordId}/${filename}`;
+    let fullUrl = `${pbBaseUrl.replace(/\/$/, '')}/api/files/${collection}/${recordId}/${filename}`;
     
     // Add optimization parameters if not original format
     if (format !== "original") {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import '@/styles/home.css';
 import { ArrowRight, ShieldCheck, Truck, Leaf, Heart, Package, ShoppingBag, PlusCircle } from 'lucide-react';
 import Hero from '@/components/Hero';
 import ProductGrid from '@/components/ProductGrid';
@@ -41,8 +42,22 @@ const Index = () => {
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [heroContent, setHeroContent] = useState<any>(null);
-  const [featuresContent, setFeaturesContent] = useState<any>(null);
+  interface BuilderContent {
+    data?: {
+      title?: string;
+      subtitle?: string;
+      image?: string;
+      buttonText?: string;
+      buttonLink?: string;
+      [key: string]: string | number | boolean | null | undefined;
+    };
+    id?: string;
+    name?: string;
+    [key: string]: string | number | boolean | null | undefined | Record<string, unknown> | unknown;
+  }
+  
+  const [heroContent, setHeroContent] = useState<BuilderContent | null>(null);
+  const [featuresContent, setFeaturesContent] = useState<BuilderContent | null>(null);
   
   // Simple refs without animation dependency
   const heroRef = useRef<HTMLDivElement>(null);
@@ -135,10 +150,10 @@ const Index = () => {
       <section className="py-16 bg-white">
         <div className="konipai-container">
           <div className="flex flex-wrap justify-center gap-4 mb-12">
-            <CategoryBadge title="All Bags" onClick={() => handleCategoryClick('All')} />
-            <CategoryBadge title="Tote Bags" onClick={() => handleCategoryClick('Tote Bags')} />
-            <CategoryBadge title="Travel Bags" onClick={() => handleCategoryClick('Travel Bags')} />
-            <CategoryBadge title="Shopping Bags" onClick={() => handleCategoryClick('Shopping Bags')} />
+            <CategoryBadge title="All Soaps" onClick={() => handleCategoryClick('All')} />
+            <CategoryBadge title="Natural Soaps" onClick={() => handleCategoryClick('Natural Soaps')} />
+            <CategoryBadge title="Herbal Soaps" onClick={() => handleCategoryClick('Herbal Soaps')} />
+            <CategoryBadge title="Moisturizing" onClick={() => handleCategoryClick('Moisturizing')} />
             <CategoryBadge title="Eco Friendly" onClick={() => handleCategoryClick('Eco Friendly')} />
           </div>
         </div>
@@ -146,7 +161,7 @@ const Index = () => {
 
       {/* Featured Product */}
       {featuredProducts && featuredProducts.length > 0 && (
-        <section className="py-12 bg-gray-50">
+        <section className="py-12 hero-section-bg">
           <div className="konipai-container">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
               <div className="rounded-2xl overflow-hidden h-[500px] relative group">
@@ -218,18 +233,13 @@ const Index = () => {
       {/* New Arrivals Section */}
       <section 
         ref={newArrivalsRef} 
-        className="py-24 bg-white animate-fade-in"
-        style={{ 
-          animationDelay: '0.2s',
-          minHeight: '600px',
-          willChange: 'opacity'
-        }}
+        className="py-24 bg-white animate-fade-in new-arrivals-section"
       >
         <div className="konipai-container">
           <div className="text-center max-w-3xl mx-auto mb-12">
             <h2 className="text-4xl font-bold mb-4">New Arrivals</h2>
             <p className="text-gray-600">
-              Discover our latest collection of stylish and sustainable tote bags, designed for the modern minimalist.
+              Discover our latest collection of handcrafted natural soaps, made with care for your skin and the environment.
             </p>
           </div>
           <div className="relative">
@@ -255,37 +265,32 @@ const Index = () => {
       {/* Features Section */}
       <section 
         ref={featuresRef}
-        className="py-20 bg-[#219898]/5 animate-fade-in"
-        style={{ 
-          animationDelay: '0.3s',
-          minHeight: '500px',
-          willChange: 'opacity'
-        }}
+        className="py-20 bg-[#219898]/5 animate-fade-in features-section"
       >
         <div className="konipai-container">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <Badge className="mb-4 py-1.5 px-3 bg-white text-[#219898] hover:bg-white/80">What Makes Us Different</Badge>
             <h2 className="text-4xl font-bold mb-4">Crafted with Care</h2>
             <p className="text-gray-600">
-              At Konipai, we believe in creating bags that are not only beautiful but also responsible. Every detail matters.
+              At Karigai, we believe in creating soaps that are not only beautiful but also nourishing for your skin. Every ingredient matters.
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <FeatureItem 
               icon={Leaf}
-              title="Sustainable Materials"
-              description="Made from 100% organic cotton and eco-friendly materials, our bags are kind to the planet."
+              title="Natural Ingredients"
+              description="Made from 100% natural oils, butters, and botanical extracts, our soaps are gentle on your skin and kind to the planet."
             />
             <FeatureItem 
               icon={ShieldCheck}
-              title="Quality Craftsmanship"
-              description="Each bag is meticulously handcrafted by skilled artisans, ensuring premium quality and attention to detail."
+              title="Handcrafted Excellence"
+              description="Each soap is meticulously handmade in small batches, ensuring premium quality and attention to detail."
             />
             <FeatureItem 
               icon={Truck}
-              title="Carbon-Neutral Shipping"
-              description="We offset the carbon footprint of every delivery to minimize environmental impact."
+              title="Eco-Friendly Packaging"
+              description="We use minimal, biodegradable packaging to reduce waste and environmental impact."
             />
           </div>
         </div>
@@ -294,18 +299,13 @@ const Index = () => {
       {/* Bestsellers Section */}
       <section 
         ref={bestsellersRef}
-        className="py-24 bg-white animate-fade-in"
-        style={{ 
-          animationDelay: '0.4s',
-          minHeight: '600px',
-          willChange: 'opacity'
-        }}
+        className="py-24 bg-white animate-fade-in bestsellers-section"
       >
         <div className="konipai-container">
           <div className="text-center max-w-3xl mx-auto mb-12">
             <h2 className="text-4xl font-bold mb-4">Bestsellers</h2>
             <p className="text-gray-600">
-              Our most popular bags selected by our customers.
+              Our most popular handmade soaps selected by our customers.
             </p>
           </div>
           <div className="relative">
