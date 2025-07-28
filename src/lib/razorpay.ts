@@ -45,9 +45,9 @@ export interface CreateOrderResponse {
 }
 
 // WebHook configuration for n8n
-const N8N_WEBHOOK_URL = "https://backend-n8n.7za6uc.easypanel.host/webhook/e09ff5b4-57f4-4549-91ea-18f9cee355c7";
-const N8N_AUTH_USERNAME = "nirmal@lifedemy.in";
-const N8N_AUTH_PASSWORD = "Life@123";
+const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || "https://backend-n8n.7za6uc.easypanel.host/webhook/e09ff5b4-57f4-4549-91ea-18f9cee355c7";
+const N8N_AUTH_USERNAME = import.meta.env.VITE_N8N_AUTH_USERNAME || "";
+const N8N_AUTH_PASSWORD = import.meta.env.VITE_N8N_AUTH_PASSWORD || "";
 
 // Load the Razorpay script dynamically
 export const loadRazorpayScript = (): Promise<boolean> => {
@@ -219,7 +219,7 @@ export const openRazorpayCheckout = (options: RazorpayOptions): void => {
     });
     
     // Open the modal
-    razorpay.on('payment.failed', function(response: { error: { description: string } }) {
+    razorpay.on("payment.failed", function(response: { error: { description: string; }; }) {
       console.error('Payment failed:', response.error);
       alert(`Payment failed: ${response.error.description}`);
     });
@@ -346,12 +346,12 @@ const sendOrderToWebhook = async (orderId: string, user: Record<string, unknown>
         totalFormatted: formatCurrency(order.total || 0)
       },
       emailTemplateData: {
-        siteName: "Konipai",
-        siteUrl: import.meta.env.VITE_SITE_URL || "https://konipai.in",
-        logoUrl: `${import.meta.env.VITE_SITE_URL || "https://konipai.in"}/assets/logo.png`,
+        siteName: "Karigai",
+        siteUrl: import.meta.env.VITE_SITE_URL || "https://karigai.com",
+        logoUrl: `${import.meta.env.VITE_SITE_URL || "https://karigai.com"}/assets/logo.png`,
         year: new Date().getFullYear(),
-        viewOrderUrl: `${import.meta.env.VITE_SITE_URL || "https://konipai.in"}/orders/${order.id}`,
-        supportEmail: "contact@konipai.in",
+        viewOrderUrl: `${import.meta.env.VITE_SITE_URL || "https://karigai.com"}/orders/${order.id}`,
+        supportEmail: "contact@karigai.com",
         supportPhone: "+91 9363020252"
       }
     };
@@ -553,6 +553,7 @@ export async function verifyPayment(
       
       // Use the direct webhook approach
       const webhookResult = await testDirectWebhook({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         eventType: "payment.success",
         notificationType: "order_payment_success",
         orderId: orderId,
@@ -655,6 +656,7 @@ declare global {
   interface Window {
     Razorpay: new (options: RazorpayOptions) => {
       open: () => void;
+      on: (event: string, callback: (response: any) => void) => void;
     };
   }
 }
