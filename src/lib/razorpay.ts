@@ -184,7 +184,7 @@ export const openRazorpayCheckout = (options: RazorpayOptions): void => {
       key: options.key || getRazorpayKeyId(),
       amount: options.amount, // Amount in paise
       currency: options.currency || 'INR',
-      name: options.name || 'Konipai',
+      name: options.name || 'Karigai',
       description: options.description || 'Payment',
       image: options.image,
       order_id: options.order_id,
