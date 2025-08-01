@@ -43,9 +43,12 @@ export interface RazorpaySuccessResponse {
 
 export interface RazorpayPaymentResponse {
   success: boolean;
-  payment?: any;
+  payment?: Record<string, unknown>;
   error?: string;
 }
+
+// Define a type for Razorpay response handlers
+export type RazorpayResponseHandler = (response: RazorpaySuccessResponse) => void;
 
 // Get the server URL from environment or use default
 // Use a relative URL instead of trying to construct an absolute one
@@ -59,7 +62,15 @@ const CRM_VERIFY_ENDPOINT = import.meta.env.VITE_CRM_VERIFY_ENDPOINT || 'https:/
 
 // Get Razorpay Key ID from environment
 export function getRazorpayKeyId(): string {
-  return import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_1DP5mmOlF5G5ag';
+  const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
+  console.log('Using Razorpay Key ID:', keyId ? keyId.substring(0, 8) + '...' : 'NOT FOUND');
+  
+  if (!keyId) {
+    console.error('VITE_RAZORPAY_KEY_ID not found in environment variables');
+    throw new Error('Razorpay key not configured. Please check your environment variables.');
+  }
+  
+  return keyId;
 }
 
 // Get Razorpay Key Secret from environment (for server-side operations)
@@ -134,11 +145,49 @@ export async function createRazorpayOrder(
 }
 
 /**
- * Load the Razorpay checkout script
+ * Load the Razorpay script
  * @returns Promise that resolves when the script is loaded
  */
 export async function loadRazorpayScript(): Promise<boolean> {
-  return loadScript('https://checkout.razorpay.com/v1/checkout.js', 'razorpay-checkout');
+  return new Promise((resolve, reject) => {
+    try {
+      // Check if already loaded
+      if (typeof window !== 'undefined' && 'Razorpay' in window) {
+        console.log('Razorpay already available');
+        resolve(true);
+        return;
+      }
+      
+      console.log('Loading Razorpay script...');
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.id = 'razorpay-checkout';
+      script.async = true;
+      script.crossOrigin = 'anonymous';
+      
+      const timeoutId = setTimeout(() => {
+        console.error('Razorpay script loading timed out');
+        reject(new Error('Razorpay script loading timed out'));
+      }, 10000);
+      
+      script.onload = () => {
+        console.log('Razorpay script loaded successfully');
+        clearTimeout(timeoutId);
+        resolve(true);
+      };
+      
+      script.onerror = (error) => {
+        console.error('Error loading Razorpay script:', error);
+        clearTimeout(timeoutId);
+        reject(new Error('Failed to load Razorpay script'));
+      };
+      
+      document.body.appendChild(script);
+    } catch (error) {
+      console.error('Exception during script load:', error);
+      reject(error);
+    }
+  });
 }
 
 /**
@@ -149,9 +198,23 @@ export async function loadRazorpayScript(): Promise<boolean> {
 export function openRazorpayCheckout(options: RazorpayOptions): Promise<RazorpaySuccessResponse> {
   return new Promise((resolve, reject) => {
     try {
+      // Check if Razorpay is available in the window
+      if (typeof window === 'undefined' || !('Razorpay' in window)) {
+        console.error('Razorpay is not loaded. Make sure to call loadRazorpayScript() first');
+        reject(new Error('Razorpay SDK not loaded. Please try again or contact support.'));
+        return;
+      }
+
       // Ensure key is set
       if (!options.key) {
         options.key = getRazorpayKeyId();
+        
+        // Double-check that we have the key
+        if (!options.key) {
+          console.error('Razorpay key is missing. Check VITE_RAZORPAY_KEY_ID environment variable');
+          reject(new Error('Payment configuration error. Please contact support.'));
+          return;
+        }
       }
       
       console.log('Opening Razorpay checkout with options:', {
@@ -162,30 +225,80 @@ export function openRazorpayCheckout(options: RazorpayOptions): Promise<Razorpay
       // Store the original handler to call it later
       const originalHandler = options.handler;
       
-      const razorpay = new (window as any).Razorpay({
-        ...options,
-        handler: function (response: RazorpaySuccessResponse) {
-          console.log('Payment successful, response:', response);
-          
-          // Call the original handler if it exists
-          if (typeof originalHandler === 'function') {
-            originalHandler(response);
-          }
-          
-          // Resolve the promise
-          resolve(response);
-        },
-      });
+      // Create checkout object with enhanced error handling
+      let razorpay;
+      try {
+        // Define a type for the Razorpay constructor
+        interface RazorpayStatic {
+          (options: Record<string, unknown>): {
+            on: (event: string, callback: (response: unknown) => void) => void;
+            open: () => void;
+          };
+        }
+        
+        // Use a properly typed assertion
+        const RazorpayConstructor = (window as unknown as { Razorpay: RazorpayStatic }).Razorpay;
+        if (!RazorpayConstructor) {
+          throw new Error('Razorpay constructor not found');
+        }
+        
+        // Create properly typed options object for Razorpay
+        const handlerOptions = {
+          ...options,
+          handler: function (response: RazorpaySuccessResponse) {
+            console.log('Payment successful, response:', response);
+            
+            // Call the original handler if it exists
+            if (typeof originalHandler === 'function') {
+              originalHandler(response);
+            }
+            
+            // Resolve the promise
+            resolve(response);
+          },
+        };
+        
+        razorpay = new RazorpayConstructor(handlerOptions);
+      } catch (initError) {
+        console.error('Failed to initialize Razorpay:', initError);
+        reject(new Error('Payment initialization failed. Please try again.'));
+        return;
+      }
 
-      razorpay.on('payment.failed', function (response: any) {
+      // Register all event handlers
+      // Type for Razorpay error response
+      interface RazorpayErrorResponse {
+        error: {
+          code: string;
+          description: string;
+          source: string;
+          step: string;
+          reason: string;
+        };
+      }
+      
+      razorpay.on('payment.failed', function (response: RazorpayErrorResponse) {
         console.error('Payment failed:', response.error);
-        reject(new Error(response.error.description || 'Payment failed'));
+        reject(new Error(response.error?.description || 'Payment failed'));
       });
-
-      razorpay.open();
+      
+      // Additional error handlers
+      razorpay.on('modal.closed', function() {
+        console.log('Razorpay modal closed by user');
+        reject(new Error('Payment cancelled by user'));
+      });
+      
+      // Open the checkout
+      try {
+        razorpay.open();
+        console.log('Razorpay checkout opened successfully');
+      } catch (openError) {
+        console.error('Failed to open Razorpay checkout:', openError);
+        reject(new Error('Failed to open payment page. Please try again.'));
+      }
     } catch (error) {
-      console.error('Error opening Razorpay checkout:', error);
-      reject(error);
+      console.error('Error in Razorpay checkout process:', error);
+      reject(error instanceof Error ? error : new Error('An unknown error occurred'));
     }
   });
 }

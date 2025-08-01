@@ -1148,20 +1148,8 @@ const removeCoupon = () => {
   };
 
   const handleNextSteps = async (order: OrderData) => {
-    // Track payment info added (Razorpay in this case)
-    trackAddPaymentInfo(
-      items.map(item => ({
-        item_id: item.productId,
-        item_name: item.product.name,
-        price: Number(item.product.price) || 0,
-        quantity: item.quantity,
-        item_variant: item.color || undefined,
-        discount: appliedCoupon && appliedCoupon.discountAmount ? (appliedCoupon.discountAmount / items.length) : 0
-      })),
-      order.total,
-      'Razorpay',
-      appliedCoupon?.code
-    );
+    // Debug environment variables
+    console.log('Debug - Environment variables:');
     
     // Ensure the order amount is positive - Razorpay doesn't accept negative amounts
     const orderAmount = Math.max(1, order.total); // Minimum 1 rupee if total is zero or negative
@@ -1170,6 +1158,11 @@ const removeCoupon = () => {
     console.log(`Creating Razorpay order for amount: ₹${orderAmount} (will be converted to ${orderAmount * 100} paise)`);
     
     try {
+      console.log('Creating Razorpay order with the following parameters:');
+      console.log('- Amount:', orderAmount, 'rupees');
+      console.log('- Receipt:', order.id);
+      console.log('- User:', user?.id || 'guest');
+      
       const razorpayOrderResponse = await createRazorpayOrder(
         orderAmount, // Positive amount in rupees (will be converted to paise)
         'INR',       // currency
@@ -1183,7 +1176,12 @@ const removeCoupon = () => {
         }
       );
       
-      console.log('Razorpay order response details:');
+      // Verify we received a valid order response
+      if (!razorpayOrderResponse || !razorpayOrderResponse.id) {
+        throw new Error('Invalid order response from Razorpay');
+      }
+      
+      console.log('Razorpay order created successfully:');
       console.log('- ID:', razorpayOrderResponse.id);
       console.log('- Amount:', razorpayOrderResponse.amount, 'paise (₹' + (razorpayOrderResponse.amount / 100).toFixed(2) + ')');
       console.log('- Currency:', razorpayOrderResponse.currency);
@@ -1202,14 +1200,32 @@ const removeCoupon = () => {
       // Track payment start
       trackPaymentStart(order.id, order.total, 'Razorpay');
       
+      // Check environment variables again before attempting payment
+      const razorpayKeyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
+      console.log('VITE_RAZORPAY_KEY_ID present:', !!razorpayKeyId);
+      if (!razorpayKeyId) {
+        console.error('ERROR: VITE_RAZORPAY_KEY_ID environment variable is not set');
+        throw new Error('Payment configuration error: API key missing');
+      }
+      
       // Load the Razorpay script first
       console.log('Loading Razorpay script...');
-      await loadRazorpayScript();
-      console.log('Razorpay script loaded successfully');
+      try {
+        const scriptLoaded = await loadRazorpayScript();
+        if (!scriptLoaded) {
+          console.error('Failed to load Razorpay checkout script');
+          throw new Error('Payment system unavailable. Please try again later.');
+        }
+        console.log('✅ Razorpay script loaded successfully');
+      } catch (scriptError) {
+        console.error('Error loading Razorpay script:', scriptError);
+        throw new Error('Payment initialization failed. Please try again.');
+      }
 
-      // Open Razorpay payment form
+      // Open Razorpay payment form with explicit key from environment
+      console.log('Opening Razorpay checkout with key:', razorpayKeyId.substring(0, 4) + '...');
       openRazorpayCheckout({
-        key: getRazorpayKeyId(),
+        key: razorpayKeyId, // Use the validated key directly
         order_id: razorpayOrderResponse.id,
         amount: razorpayOrderResponse.amount, // Amount is already in paise from the Razorpay order
         currency: 'INR',
