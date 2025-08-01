@@ -76,6 +76,8 @@
 # Actual values should be set in the Netlify UI or dashboard
 [template.environment]
   VITE_POCKETBASE_URL = "Your PocketBase backend URL, e.g., https://backend-pocketbase.example.com"
+  VITE_ENABLE_GOOGLE_AUTH = "Set to 'true' to enable Google sign-in, or 'false' to hide it"
+  VITE_LOGO_PATH = "Path to the logo file, e.g., /karigai-logo.webp"
 
 # Image optimization settings
 [[headers]]

@@ -8,10 +8,13 @@ interface LogoProps {
 }
 
 export function Logo({ className, variant = 'default' }: LogoProps) {
-  // Use local logo files instead of PocketBase URLs
+  // Get logo path from environment variable or use default
+  const logoPath = import.meta.env.VITE_LOGO_PATH || '/karigai-logo.webp';
+  
+  // Use environment-specific logo files
   const logoUrl = variant === 'light' 
-    ? '/karigai-logo-white.svg'
-    : '/karigai-logo.svg';
+    ? logoPath.replace('.webp', '-white.webp').replace('.svg', '-white.svg')
+    : logoPath;
 
   // Set loaded to true by default since we're using local files
   const [error, setError] = useState<boolean>(false);
