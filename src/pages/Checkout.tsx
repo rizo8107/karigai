@@ -535,8 +535,8 @@ const removeCoupon = () => {
 
       // Update order in PocketBase with correct payment status
       const orderUpdateData = {
-        // Use 'completed' status to properly reflect successful payment
-        payment_status: 'completed',
+        // Use 'paid' status to properly reflect successful payment (matching PocketBase schema)
+        payment_status: 'paid',
         status: 'processing', // Keep order processing until fulfillment
         payment_id: paymentId,
         razorpay_order_id: razorpayOrderId,
