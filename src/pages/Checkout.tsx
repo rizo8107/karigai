@@ -1546,7 +1546,8 @@ const removeCoupon = () => {
           </h2>
           <div className="space-y-4">
             <div className="space-y-2">
-              {import.meta.env.VITE_ENABLE_ADDRESS_AUTOCOMPLETE === 'true' ? (
+              {/* Force disable address autocomplete in production to prevent any issues */}
+              {import.meta.env.MODE === 'development' && import.meta.env.VITE_ENABLE_ADDRESS_AUTOCOMPLETE === 'true' ? (
                 <AddressAutocomplete
                   onAddressSelect={handleAddressSelect}
                   defaultValue={formData.address}
