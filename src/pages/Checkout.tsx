@@ -1276,7 +1276,7 @@ const removeCoupon = () => {
       });
 
       // NOTE: After this point, the payment flow is handled by Razorpay's modal
-      // The handlePaymentSuccess function will be called when payment is completed
+      // The handlePaymentSuccess function will be called when payment is completedss
     } catch (error) {
       console.error('Error creating Razorpay order:', error);
       trackPaymentFailure(order.id, order.total, 'Razorpay', error instanceof Error ? error.message : 'Unknown error');
