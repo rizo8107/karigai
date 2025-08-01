@@ -12,7 +12,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, ShoppingBag, LockIcon, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { 
-  loadRazorpayScript, 
   getRazorpayKeyId,
   RazorpayResponse
 } from '@/lib/razorpay';
@@ -21,7 +20,8 @@ import {
   verifyRazorpayPayment,
   captureRazorpayPayment,
   openRazorpayCheckout,
-  getRazorpayKeySecret
+  getRazorpayKeySecret,
+  loadRazorpayScript
 } from '@/lib/razorpay-client';
 import { trackEcommerceEvent } from '@/utils/analytics';
 import { 
@@ -1201,6 +1201,11 @@ const removeCoupon = () => {
 
       // Track payment start
       trackPaymentStart(order.id, order.total, 'Razorpay');
+      
+      // Load the Razorpay script first
+      console.log('Loading Razorpay script...');
+      await loadRazorpayScript();
+      console.log('Razorpay script loaded successfully');
 
       // Open Razorpay payment form
       openRazorpayCheckout({

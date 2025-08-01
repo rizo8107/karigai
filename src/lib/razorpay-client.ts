@@ -52,10 +52,10 @@ export interface RazorpayPaymentResponse {
 const SERVER_URL = '/api/razorpay';
 
 // New CRM Supabase endpoint for order creation
-const CRM_ORDER_ENDPOINT = import.meta.env.VITE_CRM_ORDER_ENDPOINT || 'https://crm-supabase.7za6uc.easypanel.host/functions/v1/create-order';
+const CRM_ORDER_ENDPOINT = import.meta.env.VITE_CRM_ORDER_ENDPOINT || 'https://crm-supabase.7za6uc.easypanel.host/functions/v1/create-order-karigai';
 
 // New CRM Supabase endpoint for payment verification
-const CRM_VERIFY_ENDPOINT = import.meta.env.VITE_CRM_VERIFY_ENDPOINT || 'https://crm-supabase.7za6uc.easypanel.host/functions/v1/verify-payment';
+const CRM_VERIFY_ENDPOINT = import.meta.env.VITE_CRM_VERIFY_ENDPOINT || 'https://crm-supabase.7za6uc.easypanel.host/functions/v1/verify-payment-karigai';
 
 // Get Razorpay Key ID from environment
 export function getRazorpayKeyId(): string {
@@ -91,7 +91,7 @@ export async function createRazorpayOrder(
     // 4. Razorpay displays correct amount (₹1.00)
     
     // Convert rupees to paise (1 rupee = 100 paise)
-    const amountInPaise = Math.round(amount);
+    const amountInPaise = Math.round(amount * 100);
     console.log(`Converting ₹${amount} to ${amountInPaise} paise for Razorpay`);
     
     // Log the exact payload we're sending to the CRM endpoint
