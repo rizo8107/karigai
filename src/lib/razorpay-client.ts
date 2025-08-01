@@ -371,23 +371,50 @@ export async function captureRazorpayPayment(
   amount?: number
 ): Promise<RazorpayPaymentResponse> {
   try {
-    const response = await fetch(`${SERVER_URL}/capture-payment`, {
+    console.log(`Attempting to capture Razorpay payment: ${paymentId}`);
+    
+    // Use the main verification endpoint and specify action as 'capture'
+    // This fixes the 405 Method Not Allowed error
+    const response = await fetch(CRM_VERIFY_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         payment_id: paymentId,
-        amount,
+        razorpay_payment_id: paymentId, // Include both formats to be safe
+        action: 'capture',
+        amount, // Include amount if provided
+        timestamp: new Date().toISOString(),
       }),
     });
 
+    console.log(`Payment capture response status: ${response.status}`);
+    
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Payment capture failed');
+      const errorText = await response.text();
+      console.error('Capture error response:', errorText);
+      try {
+        const errorData = JSON.parse(errorText);
+        return {
+          success: false,
+          error: errorData.error || `Payment capture failed: ${response.status}`,
+        };
+      } catch (e) {
+        return {
+          success: false,
+          error: `Payment capture failed: ${response.status} - ${errorText.substring(0, 100)}`,
+        };
+      }
     }
 
-    return await response.json();
+    const responseData = await response.json();
+    console.log('Payment capture success response:', responseData);
+    
+    return {
+      success: true,
+      payment: responseData
+    };
   } catch (error) {
     console.error('Error capturing Razorpay payment:', error);
     return {

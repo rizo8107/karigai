@@ -533,27 +533,52 @@ const removeCoupon = () => {
         console.error('Payment verification/capture error:', verifyError);
       }
 
-      // Update order in PocketBase
+      // Update order in PocketBase with correct payment status
       const orderUpdateData = {
-        payment_status: captureSuccess ? 'captured' : (verificationSuccess ? 'authorized' : 'pending_verification'),
-        status: 'processing',
+        // Use 'completed' status to properly reflect successful payment
+        payment_status: 'completed',
+        status: 'processing', // Keep order processing until fulfillment
         payment_id: paymentId,
         razorpay_order_id: razorpayOrderId,
         razorpay_payment_id: paymentId,
         razorpay_signature: signature,
+        payment_method: 'razorpay',
+        payment_date: new Date().toISOString(),
         notes: `Payment received via Razorpay. Payment ID: ${paymentId}. Verified: ${verificationSuccess ? 'Yes' : 'No'}. Captured: ${captureSuccess ? 'Yes' : 'Pending'}`,
         updated: new Date().toISOString()
       };
 
       console.log('Updating order with data:', orderUpdateData);
       
-      // Try to update order but don't block navigation if it fails
-      try {
-        await pocketbase.collection('orders').update(orderId, orderUpdateData);
-        console.log('Order updated successfully');
-      } catch (updateError) {
-        console.error('Failed to update order:', updateError);
-        // Continue with order processing even if update fails
+      // Try to update order with multiple attempts
+      let orderUpdated = false;
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (!orderUpdated && attempts < maxAttempts) {
+        try {
+          attempts++;
+          console.log(`Updating order ${orderId} (attempt ${attempts}/${maxAttempts})`);
+          await pocketbase.collection('orders').update(orderId, orderUpdateData);
+          console.log('✅ Order updated successfully with payment details');
+          orderUpdated = true;
+        } catch (updateError) {
+          console.error(`Failed to update order (attempt ${attempts}/${maxAttempts}):`, updateError);
+          if (attempts < maxAttempts) {
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+      }
+      
+      // If all update attempts failed, show an error toast but continue
+      if (!orderUpdated) {
+        console.error('All attempts to update order failed');
+        toast({
+          variant: "destructive",
+          title: "Order Processing Issue",
+          description: "Your payment was received but we had trouble updating your order. Our team will review it shortly."
+        });
       }
 
       // Send webhook to n8n
