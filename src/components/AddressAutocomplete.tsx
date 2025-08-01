@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-// Global script loading state to prevent multiple script loads
+// Global script loading state to prevent multiple script loadsdddd
 let googleMapsScriptLoaded = false;
 let googleMapsScriptLoading = false;
 let googleMapsLoadCallbacks: (() => void)[] = [];
