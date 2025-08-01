@@ -677,7 +677,7 @@ const removeCoupon = () => {
           event: "order.payment_success",
           order: {
             id: orderId,
-            order_link: `https://konipai.in/orders/${orderId}`,
+            order_link: `https://shop.karigaistore.in/orders/${orderId}`,
             customer: {
               name: orderDetails.customer_name,
               email: orderDetails.customer_email,
@@ -706,7 +706,8 @@ const removeCoupon = () => {
 
         // Send to the n8n webhook
         console.log('Sending order details to n8n webhook:', n8nWebhookData);
-        const n8nWebhookResponse = await fetch('https://backend-n8n.7za6uc.easypanel.host/webhook/e09ff5b4-57f4-4549-91ea-18f9cee355c7', {
+        const n8nWebhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://backend-n8n.7za6uc.easypanel.host/webhook/';
+        const n8nWebhookResponse = await fetch(n8nWebhookUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -964,7 +965,7 @@ const removeCoupon = () => {
         price: Number(item.product.price) || 0,
         quantity: item.quantity,
         item_variant: item.color || undefined,
-        affiliation: 'Konipai Web Store'
+        affiliation: 'Karigai Web Store'
       })),
       calculateFinalTotal().finalTotal
       // Removed third parameter as trackBeginCheckout only accepts two parameters
@@ -1254,9 +1255,9 @@ const removeCoupon = () => {
         order_id: razorpayOrderResponse.id,
         amount: razorpayOrderResponse.amount, // Amount is already in paise from the Razorpay order
         currency: 'INR',
-        name: 'Konipai',
+        name: 'Karigai',
         description: `Order #${order.id}`,
-        image: import.meta.env.VITE_SITE_LOGO || 'https://konipai.in/assets/logo.png',
+        image: import.meta.env.VITE_SITE_LOGO || 'https://karigai.in/assets/logo.png',
         handler: (response) => handlePaymentSuccess(response, order.id),
         prefill: {
           name: formData.name,
@@ -1545,11 +1546,28 @@ const removeCoupon = () => {
           </h2>
           <div className="space-y-4">
             <div className="space-y-2">
-              <AddressAutocomplete
-                onAddressSelect={handleAddressSelect}
-                defaultValue={formData.address}
-                error={errors?.address || (!formData.address ? "Address is required" : undefined)}
-              />
+              {import.meta.env.VITE_ENABLE_ADDRESS_AUTOCOMPLETE === 'true' ? (
+                <AddressAutocomplete
+                  onAddressSelect={handleAddressSelect}
+                  defaultValue={formData.address}
+                  error={errors?.address || (!formData.address ? "Address is required" : undefined)}
+                />
+              ) : (
+                <div>
+                  <Label htmlFor="address">Street Address</Label>
+                  <Input
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    required
+                    className={!formData.address ? "border-red-300" : ""}
+                  />
+                  {!formData.address && (
+                    <p className="text-xs text-red-500">Address is required</p>
+                  )}
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
