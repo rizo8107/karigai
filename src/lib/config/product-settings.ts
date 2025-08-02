@@ -4,6 +4,7 @@
  * This file contains settings for product display and checkout process
  * Settings can be overridden with environment variables
  */
+import { isTamilNaduPincode } from '../utils/tn-pincodes';
 
 export interface ProductDisplaySettings {
   // Display options
@@ -67,15 +68,25 @@ export const getProductSettings = (): ProductDisplaySettings => {
 };
 
 /**
- * Calculate shipping cost based on state
- * @param state The delivery state
+ * Calculate shipping cost based on state or pincode
+ * @param stateOrPincode The delivery state or pincode
  * @returns Shipping cost in rupees
  */
-export const calculateShippingCost = (state: string): number => {
+export const calculateShippingCost = (stateOrPincode: string): number => {
   const settings = getProductSettings();
   
-  // Check if the state is Tamil Nadu (case insensitive)
-  if (state.toLowerCase() === 'tamil nadu' || state.toLowerCase() === 'tamilnadu' || state.toLowerCase() === 'tn') {
+  // First check if it's a pincode
+  if (/^\d{6}$/.test(stateOrPincode)) {
+    if (isTamilNaduPincode(stateOrPincode)) {
+      return settings.tnShippingCost;
+    }
+    return settings.otherStatesShippingCost;
+  }
+  
+  // If not a pincode, check if the state is Tamil Nadu (case insensitive)
+  if (stateOrPincode.toLowerCase() === 'tamil nadu' || 
+      stateOrPincode.toLowerCase() === 'tamilnadu' || 
+      stateOrPincode.toLowerCase() === 'tn') {
     return settings.tnShippingCost;
   }
   
@@ -84,15 +95,25 @@ export const calculateShippingCost = (state: string): number => {
 };
 
 /**
- * Get estimated delivery time based on state
- * @param state The delivery state
+ * Get estimated delivery time based on state or pincode
+ * @param stateOrPincode The delivery state or pincode
  * @returns Delivery time as a string
  */
-export const getDeliveryTime = (state: string): string => {
+export const getDeliveryTime = (stateOrPincode: string): string => {
   const settings = getProductSettings();
   
-  // Check if the state is Tamil Nadu (case insensitive)
-  if (state.toLowerCase() === 'tamil nadu' || state.toLowerCase() === 'tamilnadu' || state.toLowerCase() === 'tn') {
+  // First check if it's a pincode
+  if (/^\d{6}$/.test(stateOrPincode)) {
+    if (isTamilNaduPincode(stateOrPincode)) {
+      return settings.tnDeliveryDays;
+    }
+    return settings.otherStatesDeliveryDays;
+  }
+  
+  // If not a pincode, check if the state is Tamil Nadu (case insensitive)
+  if (stateOrPincode.toLowerCase() === 'tamil nadu' || 
+      stateOrPincode.toLowerCase() === 'tamilnadu' || 
+      stateOrPincode.toLowerCase() === 'tn') {
     return settings.tnDeliveryDays;
   }
   

@@ -1,0 +1,257 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { pocketbase } from '@/lib/pocketbase';
+import { CountdownTimer } from '@/components/ui/countdown-timer';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader2, ShoppingBag, LockIcon, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { 
+  getRazorpayKeyId,
+  RazorpayResponse
+} from '@/lib/razorpay';
+import {
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+  captureRazorpayPayment,
+  openRazorpayCheckout,
+  getRazorpayKeySecret,
+  loadRazorpayScript
+} from '@/lib/razorpay-client';
+import { trackEcommerceEvent } from '@/utils/analytics';
+import { 
+  trackBeginCheckout, 
+  trackAddShippingInfo, 
+  trackAddPaymentInfo, 
+  trackPaymentStart, 
+  trackPaymentSuccess, 
+  trackPaymentFailure,
+  trackButtonClick,
+  trackFormStart,
+  trackFormCompletion,
+  trackFormError,
+  trackDynamicConversion
+} from '@/lib/analytics';
+import { AddressAutocomplete } from '@/components/AddressAutocomplete';
+import { calculateShippingCost, getDeliveryTime } from '@/lib/config/product-settings';
+import { getShippingConfig, ShippingConfig } from '@/lib/shipping-config-service';
+import type { isTamilNaduPincodeType } from '@/lib/utils/tn-pincodes';
+
+interface CouponData {
+  id: string;
+  code: string;
+  type: 'percentage' | 'fixed';
+  amount: number;
+  active: boolean;
+  expiration_date?: string;
+  min_purchase?: number;
+  max_uses?: number;
+  current_uses?: number;
+  discountAmount?: number;
+}
+
+interface CheckoutFormData {
+  name: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  phone: string;
+}
+
+// Rest of the file remains the same until the shipping config section
+
+// Add the rest of your Checkout component here
+
+const Checkout = () => {
+  // All your existing state and hooks
+  
+  // State to store shipping configuration
+  const [shippingConfig, setShippingConfig] = useState<ShippingConfig>({ 
+    tnShippingCost: 45,
+    otherStatesShippingCost: 60,
+    tnDeliveryDays: '2 days',
+    otherStatesDeliveryDays: '3-4 days',
+    isActive: true
+  });
+  
+  // Import the Tamil Nadu pincode utility
+  const [tnPincodeUtil, setTnPincodeUtil] = useState<{
+    isTamilNaduPincode: (pincode: string | number) => boolean | Promise<boolean>
+  } | null>(null);
+  
+  // Load shipping configuration from PocketBase
+  useEffect(() => {
+    const loadShippingConfig = async () => {
+      try {
+        const config = await getShippingConfig();
+        setShippingConfig(config);
+        console.log('Loaded shipping config:', config);
+      } catch (error) {
+        console.error('Failed to load shipping config:', error);
+      }
+    };
+    
+    loadShippingConfig();
+  }, []);
+  
+  // Load the Tamil Nadu pincode utility
+  useEffect(() => {
+    const loadTnPincodeUtil = async () => {
+      try {
+        const module = await import('@/lib/utils/tn-pincodes');
+        setTnPincodeUtil(module);
+      } catch (error) {
+        console.error('Failed to load Tamil Nadu pincode utility:', error);
+      }
+    };
+    
+    loadTnPincodeUtil();
+  }, []);
+  
+  const calculateFinalTotal = () => {
+    const finalSubtotal = subtotal;
+    let finalDiscount = 0;
+    
+    // Apply coupon discount if available
+    let couponDiscountAmount = 0;
+    if (appliedCoupon && appliedCoupon.discountAmount) {
+      couponDiscountAmount = appliedCoupon.discountAmount;
+      finalDiscount += couponDiscountAmount;
+      console.log(`Applying coupon discount: ${couponDiscountAmount}`);
+    }
+    
+    // Apply limited time offer discount if active
+    let offerDiscountAmount = 0;
+    if (showOffer && offerDiscount > 0) {
+      offerDiscountAmount = parseFloat(((finalSubtotal * offerDiscount) / 100).toFixed(2));
+      finalDiscount += offerDiscountAmount;
+      console.log(`Applying offer discount: ${offerDiscountAmount}`);
+    }
+    
+    // Round the final discount to 2 decimal places
+    finalDiscount = parseFloat(finalDiscount.toFixed(2));
+    console.log(`Total discount: ${finalDiscount}`);
+    
+    // Calculate shipping cost based on state or pincode using PocketBase config
+    let shippingCost = 60; // Default value
+    
+    if (formData.state) {
+      // Check if it's a pincode or state name
+      if (/^\d{6}$/.test(formData.state)) {
+        // It's a pincode - use the Tamil Nadu pincode utility
+        if (tnPincodeUtil && typeof tnPincodeUtil.isTamilNaduPincode === 'function') {
+          const isTNPincode = tnPincodeUtil.isTamilNaduPincode(formData.state);
+          
+          // Handle both synchronous and Promise-based return values
+          if (isTNPincode instanceof Promise) {
+            // For async version, use default for now and update later
+            shippingCost = shippingConfig.otherStatesShippingCost;
+            
+            // Update asynchronously when the promise resolves
+            isTNPincode.then(result => {
+              if (result) {
+                setShippingCost(shippingConfig.tnShippingCost);
+              } else {
+                setShippingCost(shippingConfig.otherStatesShippingCost);
+              }
+            });
+          } else {
+            // For synchronous version
+            shippingCost = isTNPincode ? 
+              shippingConfig.tnShippingCost : 
+              shippingConfig.otherStatesShippingCost;
+          }
+        } else {
+          // Fallback to the static function if utility isn't loaded
+          shippingCost = calculateShippingCost(formData.state);
+        }
+      } else {
+        // It's a state name
+        if (formData.state.toLowerCase() === 'tamil nadu' || 
+            formData.state.toLowerCase() === 'tamilnadu' || 
+            formData.state.toLowerCase() === 'tn') {
+          shippingCost = shippingConfig.tnShippingCost;
+        } else {
+          shippingCost = shippingConfig.otherStatesShippingCost;
+        }
+      }
+    }
+    
+    console.log(`Shipping cost for ${formData.state || 'unknown state'}: ${shippingCost}`);
+    
+    // Calculate estimated delivery time
+    let estimatedDelivery = '3-4 days'; // Default value
+    
+    if (formData.state) {
+      // Check if it's a pincode or state name
+      if (/^\d{6}$/.test(formData.state)) {
+        // It's a pincode - use the Tamil Nadu pincode utility
+        if (tnPincodeUtil && typeof tnPincodeUtil.isTamilNaduPincode === 'function') {
+          const isTNPincode = tnPincodeUtil.isTamilNaduPincode(formData.state);
+          
+          // Handle both synchronous and Promise-based return values
+          if (isTNPincode instanceof Promise) {
+            // For async version, use default for now and update later
+            estimatedDelivery = shippingConfig.otherStatesDeliveryDays;
+            
+            // Update asynchronously when the promise resolves
+            isTNPincode.then(result => {
+              if (result) {
+                setEstimatedDelivery(shippingConfig.tnDeliveryDays);
+              } else {
+                setEstimatedDelivery(shippingConfig.otherStatesDeliveryDays);
+              }
+            });
+          } else {
+            // For synchronous version
+            estimatedDelivery = isTNPincode ? 
+              shippingConfig.tnDeliveryDays : 
+              shippingConfig.otherStatesDeliveryDays;
+          }
+        } else {
+          // Fallback to the static function if utility isn't loaded
+          estimatedDelivery = getDeliveryTime(formData.state);
+        }
+      } else {
+        // It's a state name
+        if (formData.state.toLowerCase() === 'tamil nadu' || 
+            formData.state.toLowerCase() === 'tamilnadu' || 
+            formData.state.toLowerCase() === 'tn') {
+          estimatedDelivery = shippingConfig.tnDeliveryDays;
+        } else {
+          estimatedDelivery = shippingConfig.otherStatesDeliveryDays;
+        }
+      }
+    }
+    
+    console.log(`Estimated delivery for ${formData.state || 'unknown state'}: ${estimatedDelivery}`);
+    
+    const finalTotal = Math.max(0, finalSubtotal + shippingCost - finalDiscount);
+    console.log(`Final calculation: ${finalSubtotal} + ${shippingCost} - ${finalDiscount} = ${finalTotal}`);
+    
+    return {
+      finalSubtotal,
+      finalDiscount,
+      couponDiscountAmount,
+      offerDiscountAmount,
+      shippingCost,
+      finalTotal,
+      estimatedDelivery
+    };
+  };
+  
+  // Add state for shipping cost and estimated delivery
+  const [shippingCost, setShippingCost] = useState(60);
+  const [estimatedDelivery, setEstimatedDelivery] = useState('3-4 days');
+  
+  // Rest of your component code
+}
+
+export default Checkout;

@@ -39,6 +39,7 @@ import {
 } from '@/lib/analytics';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import { calculateShippingCost, getDeliveryTime } from '@/lib/config/product-settings';
+import { getShippingConfig, calculateShippingCostFromConfig, getDeliveryTimeFromConfig } from '@/lib/shipping-config-service';
 
 interface CouponData {
   id: string;
@@ -887,6 +888,55 @@ const removeCoupon = () => {
     }
   };
 
+  // State to store shipping configuration
+  const [shippingConfig, setShippingConfig] = useState<{
+    tnShippingCost: number;
+    otherStatesShippingCost: number;
+    tnDeliveryDays: string;
+    otherStatesDeliveryDays: string;
+  }>({ 
+    tnShippingCost: 45,
+    otherStatesShippingCost: 60,
+    tnDeliveryDays: '2 days',
+    otherStatesDeliveryDays: '3-4 days'
+  });
+  
+  // State to store calculated shipping cost and delivery time
+  const [shippingCost, setShippingCost] = useState<number>(0);
+  const [estimatedDelivery, setEstimatedDelivery] = useState<string>('');
+  
+  // Load shipping configuration from PocketBase
+  useEffect(() => {
+    const loadShippingConfig = async () => {
+      try {
+        const config = await getShippingConfig();
+        setShippingConfig(config);
+        console.log('Loaded shipping config:', config);
+      } catch (error) {
+        console.error('Failed to load shipping config:', error);
+      }
+    };
+    
+    loadShippingConfig();
+  }, []);
+  
+  // Import the Tamil Nadu pincode utility
+  const [tnPincodeUtil, setTnPincodeUtil] = useState<{ isTamilNaduPincode: (pincode: string | number) => boolean | Promise<boolean> } | null>(null);
+  
+  // Load the Tamil Nadu pincode utility
+  useEffect(() => {
+    const loadTnPincodeUtil = async () => {
+      try {
+        const module = await import('@/lib/utils/tn-pincodes');
+        setTnPincodeUtil(module);
+      } catch (error) {
+        console.error('Failed to load Tamil Nadu pincode utility:', error);
+      }
+    };
+    
+    loadTnPincodeUtil();
+  }, []);
+
   const calculateFinalTotal = () => {
     const finalSubtotal = subtotal;
     let finalDiscount = 0;
@@ -909,26 +959,83 @@ const removeCoupon = () => {
     
     // Round the final discount to 2 decimal places
     finalDiscount = parseFloat(finalDiscount.toFixed(2));
-    console.log(`Total discount: ${finalDiscount}`);
     
-    // Calculate shipping cost based on state (Tamil Nadu: 45, Other states: 60)
-    const shippingCost = formData.state ? calculateShippingCost(formData.state) : 60;
-    console.log(`Shipping cost for ${formData.state || 'unknown state'}: ${shippingCost}`);
+    // Calculate shipping cost based on state or pincode using PocketBase config
+    let calculatedShippingCost = formData.state ? shippingCost : 0;
+    let calculatedDeliveryTime = formData.state ? estimatedDelivery : '';
     
-    // Calculate estimated delivery time
-    const estimatedDelivery = formData.state ? getDeliveryTime(formData.state) : '3-4 days';
-    console.log(`Estimated delivery for ${formData.state || 'unknown state'}: ${estimatedDelivery}`);
+    if (formData.state) {
+      // Use the shipping config from PocketBase if available
+      if (shippingConfig) {
+        // Check if it's a pincode or state name
+        if (/^\d{6}$/.test(formData.state)) {
+          // It's a pincode - use the Tamil Nadu pincode utility
+          if (tnPincodeUtil && typeof tnPincodeUtil.isTamilNaduPincode === 'function') {
+            const isTNPincode = tnPincodeUtil.isTamilNaduPincode(formData.state);
+            if (isTNPincode instanceof Promise) {
+              // Handle async result - we'll use the default for now
+              // and update the UI when the promise resolves
+              isTNPincode.then(result => {
+                const newShippingCost = result ? shippingConfig.tnShippingCost : shippingConfig.otherStatesShippingCost;
+                const newDeliveryTime = result ? shippingConfig.tnDeliveryDays : shippingConfig.otherStatesDeliveryDays;
+                setShippingCost(newShippingCost);
+                setEstimatedDelivery(newDeliveryTime);
+              });
+              // Use current state values for now
+              calculatedShippingCost = shippingCost;
+              calculatedDeliveryTime = estimatedDelivery;
+            } else {
+              // Handle synchronous result
+              calculatedShippingCost = isTNPincode ? shippingConfig.tnShippingCost : shippingConfig.otherStatesShippingCost;
+              calculatedDeliveryTime = isTNPincode ? shippingConfig.tnDeliveryDays : shippingConfig.otherStatesDeliveryDays;
+              // Update state for consistency
+              setShippingCost(calculatedShippingCost);
+              setEstimatedDelivery(calculatedDeliveryTime);
+            }
+          } else {
+            // Fallback if utility not loaded
+            calculatedShippingCost = shippingConfig.otherStatesShippingCost;
+            calculatedDeliveryTime = shippingConfig.otherStatesDeliveryDays;
+            // Update state
+            setShippingCost(calculatedShippingCost);
+            setEstimatedDelivery(calculatedDeliveryTime);
+          }
+        } else {
+          // It's a state name
+          const isTamilNadu = formData.state.toLowerCase() === 'tamil nadu' || 
+                            formData.state.toLowerCase() === 'tamilnadu' || 
+                            formData.state.toLowerCase() === 'tn';
+          
+          calculatedShippingCost = isTamilNadu ? shippingConfig.tnShippingCost : shippingConfig.otherStatesShippingCost;
+          calculatedDeliveryTime = isTamilNadu ? shippingConfig.tnDeliveryDays : shippingConfig.otherStatesDeliveryDays;
+          // Update state
+          setShippingCost(calculatedShippingCost);
+          setEstimatedDelivery(calculatedDeliveryTime);
+        }
+      } else {
+        // Fallback to the static function if config isn't loaded
+        calculatedShippingCost = calculateShippingCost(formData.state);
+        calculatedDeliveryTime = getDeliveryTime(formData.state);
+        // Update state
+        setShippingCost(calculatedShippingCost);
+        setEstimatedDelivery(calculatedDeliveryTime);
+      }
+    }
     
-    const finalTotal = Math.max(0, finalSubtotal + shippingCost - finalDiscount);
-    console.log(`Final calculation: ${finalSubtotal} + ${shippingCost} - ${finalDiscount} = ${finalTotal}`);
+    console.log(`Shipping cost for ${formData.state || 'unknown state'}: ${calculatedShippingCost}`);
+    console.log(`Estimated delivery for ${formData.state || 'unknown state'}: ${calculatedDeliveryTime}`);
+    
+    const finalTotal = Math.max(0, finalSubtotal + calculatedShippingCost - finalDiscount);
+    console.log(`Final calculation: ${finalSubtotal} + ${calculatedShippingCost} - ${finalDiscount} = ${finalTotal}`);
     
     return {
       finalSubtotal,
       finalDiscount,
       couponDiscountAmount,
       offerDiscountAmount,
-      shippingCost,
-      finalTotal
+      shippingCost: calculatedShippingCost,
+      finalTotal,
+      estimatedDelivery: calculatedDeliveryTime
     };
   };
   
@@ -1709,8 +1816,18 @@ const removeCoupon = () => {
             </div>
             <div className="flex justify-between py-1">
               <span className="text-gray-600">Shipping</span>
-              <span className="font-medium">{subtotal >= 100 ? 'Free' : `₹${10.00.toFixed(2)}`}</span>
+              <span className="font-medium">
+                {formData.state ? 
+                  `₹${shippingCost.toFixed(2)}` : 
+                  'Calculated after address'}
+              </span>
             </div>
+            {formData.state && (
+              <div className="flex justify-between py-1">
+                <span className="text-gray-600">Estimated Delivery</span>
+                <span className="font-medium">{estimatedDelivery}</span>
+              </div>
+            )}
             {appliedCoupon && (
               <div className="flex justify-between py-1">
                 <span className="text-gray-600">Discount ({appliedCoupon.code})</span>
@@ -1719,7 +1836,11 @@ const removeCoupon = () => {
             )}
             <div className="flex justify-between py-1 font-semibold">
               <span>Total</span>
-              <span>₹{(calculateFinalTotal()?.finalTotal || 0).toFixed(2)}</span>
+              <span>
+                {formData.state ? 
+                  `₹${(calculateFinalTotal()?.finalTotal || 0).toFixed(2)}` : 
+                  `₹${subtotal.toFixed(2)}`}
+              </span>
             </div>
           </div>
         </div>

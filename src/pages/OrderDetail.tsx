@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { format, isValid } from 'date-fns';
 import { pocketbase } from '@/lib/pocketbase';
 import { useAuth } from '@/contexts/AuthContext';
+import { getOrderConfig } from '@/lib/order-config-service';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -115,6 +116,23 @@ export default function OrderDetail() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeliveryInfo, setShowDeliveryInfo] = useState(true);
+
+  // Load configuration
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const config = await getOrderConfig();
+        setShowDeliveryInfo(config.showDeliveryInformation);
+      } catch (err) {
+        console.error('Error loading order config:', err);
+        // Default to showing delivery info if config fails to load
+        setShowDeliveryInfo(true);
+      }
+    };
+    
+    loadConfig();
+  }, []);
 
   // Define fetchOrderDetails with useCallback to avoid dependency cycle
   const fetchOrderDetails = useCallback(async () => {
@@ -410,8 +428,18 @@ export default function OrderDetail() {
         {/* Customer & Shipping Information */}
         <div>
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Customer Information</CardTitle>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Show Delivery Info</span>
+                <Button 
+                  variant={showDeliveryInfo ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowDeliveryInfo(!showDeliveryInfo)}
+                >
+                  {showDeliveryInfo ? "Hide" : "Show"}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -433,43 +461,45 @@ export default function OrderDetail() {
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="font-medium mb-2">Shipping Address</h3>
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
-                    <div className="text-sm">
-                      {order.expand?.shipping_address ? (
-                        <>
-                          <p>{order.expand.shipping_address.street}</p>
-                          <p>
-                            {order.expand.shipping_address.city}, {order.expand.shipping_address.state} {order.expand.shipping_address.postalCode}
-                          </p>
-                          <p>{order.expand.shipping_address.country}</p>
-                        </>
-                      ) : order.shipping_address_text ? (
-                        <>
-                          <p>Using address from text backup:</p>
-                          {(() => {
-                            try {
-                              const addr = JSON.parse(order.shipping_address_text);
-                              return (
-                                <>
-                                  <p>{addr.street}</p>
-                                  <p>{addr.city}, {addr.state} {addr.postalCode}</p>
-                                  <p>{addr.country}</p>
-                                </>
-                              );
-                            } catch (e) {
-                              return <p>{order.shipping_address_text}</p>;
-                            }
-                          })()}
-                        </>
-                      ) : (
-                        <p className="text-muted-foreground">Address details not available</p>
-                      )}
+                {showDeliveryInfo && (
+                  <div>
+                    <h3 className="font-medium mb-2">Shipping Address</h3>
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
+                      <div className="text-sm">
+                        {order.expand?.shipping_address ? (
+                          <>
+                            <p>{order.expand.shipping_address.street}</p>
+                            <p>
+                              {order.expand.shipping_address.city}, {order.expand.shipping_address.state} {order.expand.shipping_address.postalCode}
+                            </p>
+                            <p>{order.expand.shipping_address.country}</p>
+                          </>
+                        ) : order.shipping_address_text ? (
+                          <>
+                            <p>Using address from text backup:</p>
+                            {(() => {
+                              try {
+                                const addr = JSON.parse(order.shipping_address_text);
+                                return (
+                                  <>
+                                    <p>{addr.street}</p>
+                                    <p>{addr.city}, {addr.state} {addr.postalCode}</p>
+                                    <p>{addr.country}</p>
+                                  </>
+                                );
+                              } catch (e) {
+                                return <p>{order.shipping_address_text}</p>;
+                              }
+                            })()}
+                          </>
+                        ) : (
+                          <p className="text-muted-foreground">Address details not available</p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </CardContent>
             <CardFooter className="border-t bg-muted/30 flex justify-between">

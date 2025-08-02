@@ -13,6 +13,7 @@ export interface OrderDetailsConfig {
   showReturnOption: boolean;
   showReviewComments: boolean;
   showReviews: boolean;
+  showDeliveryInformation: boolean;
   
   // Home page display options
   showHero: boolean;
@@ -47,6 +48,7 @@ export const DEFAULT_CONFIG: OrderDetailsConfig = {
   showReturnOption: false,
   showReviewComments: true,
   showReviews: true,
+  showDeliveryInformation: true,
   
   // Home page display options - all enabled by default
   showHero: true,
@@ -88,6 +90,7 @@ const mapRecordToConfig = (record: RecordModel): OrderDetailsConfig => {
     showReturnOption: record.show_return_option,
     showReviewComments: record.show_review_comments ?? true,
     showReviews: record.show_reviews ?? true,
+    showDeliveryInformation: record.show_delivery_information ?? true,
     
     // Home page display options
     showHero: record.show_hero ?? true,
@@ -139,6 +142,7 @@ export const getOrderConfig = async (): Promise<OrderDetailsConfig> => {
         show_dimensions: DEFAULT_CONFIG.showDimensions,
         show_usage_guidelines: DEFAULT_CONFIG.showUsageGuidelines,
         show_return_option: DEFAULT_CONFIG.showReturnOption,
+        show_delivery_information: DEFAULT_CONFIG.showDeliveryInformation,
         default_weight: DEFAULT_CONFIG.defaultWeight,
         tn_shipping_cost: DEFAULT_CONFIG.tnShippingCost,
         other_states_shipping_cost: DEFAULT_CONFIG.otherStatesShippingCost,

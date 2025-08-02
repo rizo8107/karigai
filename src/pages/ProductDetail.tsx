@@ -49,6 +49,7 @@ import { Breadcrumbs, BreadcrumbItem } from '@/components/Breadcrumbs';
 import { BuilderComponent } from "@/components/BuilderComponent";
 import { builder } from "@/lib/builder";
 import { DEFAULT_CONFIG, getOrderConfig } from '@/lib/order-config-service';
+import { getProductSettings } from '@/lib/config/product-settings';
 
 // Generate a very low-res placeholder
 const generatePlaceholder = (color = '#f3f4f6') => {
@@ -84,6 +85,7 @@ const ProductDetail = () => {
   const [averageRating, setAverageRating] = useState(0);
   // Initialize with default config and update when loaded from API
   const [orderConfig, setOrderConfig] = useState(DEFAULT_CONFIG);
+  const [productSettings, setProductSettings] = useState(getProductSettings());
   
   // Check if the current product is already in cart
   const isInCart = useMemo(() => {
@@ -105,6 +107,11 @@ const ProductDetail = () => {
         const config = await getOrderConfig();
         console.log('Loaded order configuration:', config);
         setOrderConfig(config);
+        
+        // Also load product settings
+        const settings = getProductSettings();
+        console.log('Loaded product settings:', settings);
+        setProductSettings(settings);
       } catch (error) {
         console.error('Failed to load order configuration:', error);
         // Keep using the default config
@@ -770,26 +777,7 @@ const ProductDetail = () => {
               </div>
             </div>
             
-            {/* Shipping Information */}
-            <div className="p-4 bg-gray-50 rounded-lg mb-6">
-                <h3 className="text-sm font-medium mb-2">Delivery Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs font-medium">Tamil Nadu</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                      <Truck className="h-4 w-4 text-primary" />
-                      <p>₹{orderConfig.tnShippingCost} · {orderConfig.tnDeliveryDays}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium">Other States</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                      <Truck className="h-4 w-4 text-primary" />
-                      <p>₹{orderConfig.otherStatesShippingCost} · {orderConfig.otherStatesDeliveryDays}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {/* Delivery information section removed */}
             </div>
             
             {/* Description Tabs */}
