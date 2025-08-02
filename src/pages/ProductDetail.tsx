@@ -837,13 +837,7 @@ const ProductDetail = () => {
               </div>
             )}
             
-            {/* Social Proof */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-8">
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <ThumbsUp className="h-4 w-4 text-green-600" />
-                <span>{Math.floor(Math.random() * 50) + 20} people bought this in the last 24 hours</span>
-              </div>
-            </div>
+            {/* Social Proof removed as requested */}
           </div>
         </div>
         
