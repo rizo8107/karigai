@@ -38,6 +38,7 @@ import {
   trackDynamicConversion
 } from '@/lib/analytics';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
+import { calculateShippingCost, getDeliveryTime } from '@/lib/config/product-settings';
 
 interface CouponData {
   id: string;
@@ -533,6 +534,20 @@ const removeCoupon = () => {
         console.error('Payment verification/capture error:', verifyError);
       }
 
+      // First, fetch the current order to ensure we don't lose any data
+      let existingOrder;
+      try {
+        existingOrder = await pocketbase.collection('orders').getOne(orderId);
+        console.log('Retrieved existing order data:', {
+          id: existingOrder.id,
+          shipping_address: existingOrder.shipping_address,
+          shipping_address_text: existingOrder.shipping_address_text,
+        });
+      } catch (fetchError) {
+        console.error('Failed to fetch existing order data:', fetchError);
+        // Continue with the update even if fetch fails
+      }
+
       // Update order in PocketBase with correct payment status
       const orderUpdateData = {
         // Use 'paid' status to properly reflect successful payment (matching PocketBase schema)
@@ -545,7 +560,13 @@ const removeCoupon = () => {
         payment_method: 'razorpay',
         payment_date: new Date().toISOString(),
         notes: `Payment received via Razorpay. Payment ID: ${paymentId}. Verified: ${verificationSuccess ? 'Yes' : 'No'}. Captured: ${captureSuccess ? 'Yes' : 'Pending'}`,
-        updated: new Date().toISOString()
+        updated: new Date().toISOString(),
+        // Preserve the shipping address data from the existing order
+        shipping_address: existingOrder?.shipping_address || null,
+        // Only include shipping_address_text if it exists in the original order
+        ...(existingOrder?.shipping_address_text ? {
+          shipping_address_text: existingOrder.shipping_address_text
+        } : {})
       };
 
       console.log('Updating order with data:', orderUpdateData);
@@ -890,7 +911,14 @@ const removeCoupon = () => {
     finalDiscount = parseFloat(finalDiscount.toFixed(2));
     console.log(`Total discount: ${finalDiscount}`);
     
-    const shippingCost = subtotal >= 100 ? 0 : 10;
+    // Calculate shipping cost based on state (Tamil Nadu: 45, Other states: 60)
+    const shippingCost = formData.state ? calculateShippingCost(formData.state) : 60;
+    console.log(`Shipping cost for ${formData.state || 'unknown state'}: ${shippingCost}`);
+    
+    // Calculate estimated delivery time
+    const estimatedDelivery = formData.state ? getDeliveryTime(formData.state) : '3-4 days';
+    console.log(`Estimated delivery for ${formData.state || 'unknown state'}: ${estimatedDelivery}`);
+    
     const finalTotal = Math.max(0, finalSubtotal + shippingCost - finalDiscount);
     console.log(`Final calculation: ${finalSubtotal} + ${shippingCost} - ${finalDiscount} = ${finalTotal}`);
     
@@ -1120,12 +1148,12 @@ const removeCoupon = () => {
         // Only include shipping_address for logged-in users
         ...(user && addressId ? { shipping_address: addressId } : {}),
         shipping_address_text: JSON.stringify({
-          street: formData.address,
+          street: formData.address, // Match expected field name in your system
           city: formData.city,
           state: formData.state,
-          postalCode: formData.zipCode,
+          postalCode: formData.zipCode, // Using the original field name as shown in your example
           country: 'India'
-        }), // Store address as text for all orders (including guest orders)
+        }), // Store address in the exact format your system expects
         products: JSON.stringify(items.map(item => ({
           productId: item.productId,
           product: item.product,
@@ -1296,13 +1324,31 @@ const removeCoupon = () => {
     postalCode: string;
     country: string;
   }) => {
+    console.log('Address selected from Google Maps:', address);
+    
+    // For some addresses from Google Maps, the street field might contain the full formatted address
+    // We need to handle this case to properly extract the components
+    let streetAddress = address.street;
+    const cityValue = address.city;
+    const stateValue = address.state;
+    const zipCodeValue = address.postalCode;
+    
+    // If the street field contains commas, it might be a full address - extract just the street part
+    if (address.street && address.street.includes(',')) {
+      // Keep only the part before the first comma as street address
+      streetAddress = address.street.split(',')[0].trim();
+    }
+    
+    // Format address fields consistently
     const updatedFormData = {
       ...formData,
-      address: address.street,
-      city: address.city,
-      state: address.state,
-      zipCode: address.postalCode
+      address: streetAddress,
+      city: cityValue || formData.city,
+      state: stateValue || formData.state,
+      zipCode: zipCodeValue || formData.zipCode
     };
+    
+    console.log('Updated form data with address:', updatedFormData);
     setFormData(updatedFormData);
     validateForm(updatedFormData);
   };

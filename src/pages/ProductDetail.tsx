@@ -48,6 +48,7 @@ import { ProductDetails } from '@/components/ProductDetails';
 import { Breadcrumbs, BreadcrumbItem } from '@/components/Breadcrumbs';
 import { BuilderComponent } from "@/components/BuilderComponent";
 import { builder } from "@/lib/builder";
+import { DEFAULT_CONFIG, getOrderConfig } from '@/lib/order-config-service';
 
 // Generate a very low-res placeholder
 const generatePlaceholder = (color = '#f3f4f6') => {
@@ -64,7 +65,7 @@ const ProductDetail = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [imagesPreloaded, setImagesPreloaded] = useState(false);
-  const [productDescription, setProductDescription] = useState<any>(null);
+  const [productDescription, setProductDescription] = useState<Record<string, unknown> | null>(null);
   
   const { addItem, items, getItem } = useCart();
   const [quantity, setQuantity] = useState(1);
@@ -81,6 +82,8 @@ const ProductDetail = () => {
   const [activeTab, setActiveTab] = useState('description');
   
   const [averageRating, setAverageRating] = useState(0);
+  // Initialize with default config and update when loaded from API
+  const [orderConfig, setOrderConfig] = useState(DEFAULT_CONFIG);
   
   // Check if the current product is already in cart
   const isInCart = useMemo(() => {
@@ -94,6 +97,22 @@ const ProductDetail = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
+  
+  // Load order configuration from PocketBase
+  useEffect(() => {
+    const loadOrderConfig = async () => {
+      try {
+        const config = await getOrderConfig();
+        console.log('Loaded order configuration:', config);
+        setOrderConfig(config);
+      } catch (error) {
+        console.error('Failed to load order configuration:', error);
+        // Keep using the default config
+      }
+    };
+    
+    loadOrderConfig();
+  }, []);
   
   // Preload images for better performance
   useEffect(() => {
@@ -695,41 +714,46 @@ const ProductDetail = () => {
                   </>
                 )}
               </div>
-              <div className="flex items-center gap-1">
-                {product.reviews && product.reviews > 0 ? (
-                  <div className="flex items-center gap-1 text-yellow-400">
-                    {Array(5).fill(null).map((_, i) => (
-                      <Star 
-                        key={i} 
-                        className={cn(
-                          "h-4 w-4",
-                          i < Math.round(averageRating) ? "fill-current" : ""
-                        )} 
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1 text-gray-300">
-                    {Array(5).fill(null).map((_, i) => (
-                      <Star key={i} className="h-4 w-4" />
-                    ))}
-                  </div>
-                )}
-                <Link to="#reviews" className="text-sm text-muted-foreground hover:text-primary ml-2">
-                  ({product.reviews || 0} reviews)
-                </Link>
-              </div>
+              {orderConfig.showStarRating && (
+                <div className="flex items-center gap-1">
+                  {product.reviews && product.reviews > 0 ? (
+                    <div className="flex items-center gap-1 text-yellow-400">
+                      {Array(5).fill(null).map((_, i) => (
+                        <Star 
+                          key={i} 
+                          className={cn(
+                            "h-4 w-4",
+                            i < Math.round(averageRating) ? "fill-current" : ""
+                          )} 
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-gray-300">
+                      {Array(5).fill(null).map((_, i) => (
+                        <Star key={i} className="h-4 w-4" />
+                      ))}
+                    </div>
+                  )}
+                  <Link to="#reviews" className="text-sm text-muted-foreground hover:text-primary ml-2">
+                    ({product.reviews || 0} reviews)
+                  </Link>
+                </div>
+              )}
             </div>
             
-            {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg mb-6">
+            {/* Weight Information */}
+            <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg mb-6">
+              {/* Weight information */}
               <div className="flex flex-col items-center text-center gap-2">
-                <Truck className="h-6 w-6 text-primary" />
+                <Package className="h-6 w-6 text-primary" />
                 <div className="text-xs">
-                  <p className="font-medium">Free Shipping</p>
-                  <p className="text-muted-foreground">On orders over ₹999</p>
+                  <p className="font-medium">Product Weight</p>
+                  <p className="text-muted-foreground">{orderConfig.defaultWeight}</p>
                 </div>
               </div>
+              
+              {/* Secure Payment - Always show */}
               <div className="flex flex-col items-center text-center gap-2">
                 <Shield className="h-6 w-6 text-primary" />
                 <div className="text-xs">
@@ -737,40 +761,50 @@ const ProductDetail = () => {
                   <p className="text-muted-foreground">100% secure checkout</p>
                 </div>
               </div>
-              <div className="flex flex-col items-center text-center gap-2">
-                <RotateCcw className="h-6 w-6 text-primary" />
-                <div className="text-xs">
-                  <p className="font-medium">Easy Returns</p>
-                  <p className="text-muted-foreground">30 day returns</p>
+            </div>
+            
+            {/* Shipping Information */}
+            <div className="p-4 bg-gray-50 rounded-lg mb-6">
+                <h3 className="text-sm font-medium mb-2">Delivery Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-medium">Tamil Nadu</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                      <Truck className="h-4 w-4 text-primary" />
+                      <p>₹{orderConfig.tnShippingCost} · {orderConfig.tnDeliveryDays}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium">Other States</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                      <Truck className="h-4 w-4 text-primary" />
+                      <p>₹{orderConfig.otherStatesShippingCost} · {orderConfig.otherStatesDeliveryDays}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
             
             {/* Description Tabs */}
             <Tabs defaultValue="description" className="mb-6">
-              <TabsList className="w-full grid grid-cols-3">
+              <TabsList className="w-full grid grid-cols-1">
                 <TabsTrigger value="description">Description</TabsTrigger>
-                <TabsTrigger value="features">Features</TabsTrigger>
-                <TabsTrigger value="shipping">Shipping</TabsTrigger>
+                {orderConfig.showDimensions && (
+                  <TabsTrigger value="features">Features</TabsTrigger>
+                )}
               </TabsList>
               <TabsContent value="description" className="pt-4">
                 <p className="text-muted-foreground">{product.description}</p>
               </TabsContent>
-              <TabsContent value="features" className="pt-4">
-                <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-                  {product.features.map((feature, index) => (
-                    <li key={index}>{feature}</li>
-                  ))}
-                </ul>
-              </TabsContent>
-              <TabsContent value="shipping" className="pt-4">
-                <div className="space-y-4 text-muted-foreground">
-                  <p>• Free standard shipping on orders over ₹999</p>
-                  <p>• Standard delivery: 3-5 business days</p>
-                  <p>• Express delivery: 1-2 business days (additional charges apply)</p>
-                  <p>• Easy 30-day returns policy</p>
-                </div>
-              </TabsContent>
+              {orderConfig.showDimensions && (
+                <TabsContent value="features" className="pt-4">
+                  <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+                    {product.features.map((feature, index) => (
+                      <li key={index}>{feature}</li>
+                    ))}
+                  </ul>
+                </TabsContent>
+              )}
             </Tabs>
 
             {/* Color Selection */}
@@ -808,98 +842,6 @@ const ProductDetail = () => {
               </div>
             )}
             
-            {/* Quantity Selection */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium">Quantity</h3>
-                {product.inStock && (
-                  <span className="text-sm text-green-600 flex items-center gap-1">
-                    <Check className="h-4 w-4" />
-                    In Stock
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center border rounded-md">
-                  <button
-                    onClick={decreaseQuantity}
-                    className="p-2 hover:bg-gray-100 transition-colors"
-                    disabled={quantity <= 1}
-                    title="Decrease quantity"
-                    aria-label="Decrease quantity"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <span className="px-4 py-2 font-medium">{quantity}</span>
-                  <button
-                    onClick={increaseQuantity}
-                    className="p-2 hover:bg-gray-100 transition-colors"
-                    title="Increase quantity"
-                    aria-label="Increase quantity"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-                {product.inStock && (
-                  <span className="text-sm text-muted-foreground">
-                    {product.stock > 10 ? 'More than 10 available' : `Only ${product.stock} left`}
-                  </span>
-                )}
-              </div>
-            </div>
-            
-            {/* Add to Cart and Actions */}
-            <div className="flex flex-col gap-4 mb-8">
-              <Button 
-                size="lg" 
-                className="w-full"
-                onClick={handleAddToCart}
-                disabled={!product.inStock}
-              >
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                {product.inStock ? 'Add to Cart' : 'Out of Stock'}
-              </Button>
-              
-              {isInCart && (
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="w-full bg-green-100 text-green-800 hover:bg-green-200 border border-green-300"
-                  asChild
-                >
-                  <Link to="/checkout">
-                    <CornerDownRight className="mr-2 h-5 w-5" />
-                    Proceed to Checkout
-                  </Link>
-                </Button>
-              )}
-              
-              <div className="flex gap-4">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={toggleWishlist}
-                  className={cn(
-                    "flex-1",
-                    isWishlisted && "text-pink-600 fill-pink-600"
-                  )}
-                >
-                  <Heart className={cn(
-                    "h-5 w-5",
-                    isWishlisted && "fill-current"
-                  )} />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleShare}
-                  className="flex-1"
-                >
-                  <Share2 className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-            
             {/* Social Proof */}
             <div className="bg-gray-50 rounded-lg p-4 mb-8">
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -933,7 +875,7 @@ const ProductDetail = () => {
       )}
         
         {/* Reviews Section */}
-        {id && (
+        {id && orderConfig.showReviews && (
           <ProductReviews 
             productId={id} 
             initialReviewCount={product.reviews} 
@@ -1035,10 +977,9 @@ const ProductDetail = () => {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Floating Add to Cart Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t py-4 shadow-lg z-50">
+        
+        {/* Floating Add to Cart Button */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t py-4 shadow-lg z-50">
         <div className="konipai-container">
           <div className="flex gap-2">
             {isInCart ? (
@@ -1066,10 +1007,10 @@ const ProductDetail = () => {
                 className="w-full"
                 onClick={handleAddToCart}
                 size="lg"
-                disabled={!product.inStock}
+                disabled={!product?.inStock}
               >
                 <ShoppingCart className="h-4 w-4 mr-2" /> 
-                {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                {product?.inStock ? 'Add to Cart' : 'Out of Stock'}
               </Button>
             )}
           </div>

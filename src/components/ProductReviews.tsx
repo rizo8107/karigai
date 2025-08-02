@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Star, ThumbsUp, MessageSquare, Image as ImageIcon, X, Camera } from 'lucide-react';
 import { format } from 'date-fns';
 import { 
@@ -18,6 +18,12 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { getOrderConfig } from '@/lib/order-config-service';
+
+// Extend the Review type to include the commentCount property
+interface ExtendedReview extends Review {
+  commentCount?: number;
+}
 
 interface ProductReviewsProps {
   productId: string;
@@ -26,7 +32,7 @@ interface ProductReviewsProps {
 }
 
 export const ProductReviews = ({ productId, initialReviewCount = 0, onReviewAdded }: ProductReviewsProps) => {
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<ExtendedReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -37,15 +43,24 @@ export const ProductReviews = ({ productId, initialReviewCount = 0, onReviewAdde
   const [submitting, setSubmitting] = useState(false);
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
   const [commentContent, setCommentContent] = useState('');
+  const [orderConfig, setOrderConfig] = useState<{ showReviewComments: boolean }>({ showReviewComments: true });
+  const [configLoaded, setConfigLoaded] = useState(false);
   
   const { toast } = useToast();
   const { user } = useAuth();
-  
-  useEffect(() => {
-    loadReviews();
-  }, [productId]);
-  
-  const loadReviews = async () => {
+
+  const loadOrderConfig = async () => {
+    try {
+      const config = await getOrderConfig();
+      setOrderConfig(config);
+      setConfigLoaded(true);
+    } catch (error) {
+      console.error('Error loading order configuration:', error);
+      setConfigLoaded(true);
+    }
+  };
+
+  const loadReviews = useCallback(async () => {
     try {
       const data = await getProductReviews(productId);
       setReviews(data);
@@ -59,7 +74,12 @@ export const ProductReviews = ({ productId, initialReviewCount = 0, onReviewAdde
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId, toast]);
+  
+  useEffect(() => {
+    loadReviews();
+    loadOrderConfig();
+  }, [loadReviews]);
   
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -172,6 +192,16 @@ export const ProductReviews = ({ productId, initialReviewCount = 0, onReviewAdde
   };
   
   const handleAddComment = async (reviewId: string) => {
+    // Check if comments are enabled in the config
+    if (!orderConfig.showReviewComments) {
+      toast({
+        variant: "destructive",
+        title: "Comments Disabled",
+        description: "Comments are currently disabled for this product.",
+      });
+      return;
+    }
+
     if (!user) {
       toast({
         variant: "destructive",
@@ -341,15 +371,16 @@ export const ProductReviews = ({ productId, initialReviewCount = 0, onReviewAdde
                   Helpful ({review.helpful_votes})
                 </Button>
                 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setActiveCommentId(review.id)}
-                  className="text-sm"
-                >
-                  <MessageSquare className="h-4 w-4 mr-1" />
-                  Comment
-                </Button>
+                {orderConfig.showReviewComments && (
+                  <button
+                    onClick={() => setActiveCommentId(activeCommentId === review.id ? null : review.id)}
+                    className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Add comment"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-1" />
+                    {review.commentCount || 0} Comments
+                  </button>
+                )}
               </div>
               
               {/* Comments Section */}
@@ -372,20 +403,24 @@ export const ProductReviews = ({ productId, initialReviewCount = 0, onReviewAdde
               )}
               
               {/* Comment Form */}
-              {activeCommentId === review.id && (
-                <div className="flex gap-2">
-                  <Input
-                    value={commentContent}
-                    onChange={(e) => setCommentContent(e.target.value)}
-                    placeholder="Write a comment..."
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={() => handleAddComment(review.id)}
-                    disabled={!commentContent.trim()}
-                  >
-                    Post
-                  </Button>
+              {activeCommentId === review.id && orderConfig.showReviewComments && (
+                <div className="mt-4 border-t pt-3">
+                  <div className="flex gap-2">
+                    <Textarea
+                      value={commentContent}
+                      onChange={(e) => setCommentContent(e.target.value)}
+                      placeholder="Add a comment..."
+                      className="text-sm min-h-[60px]"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={!commentContent.trim()}
+                      onClick={() => handleAddComment(review.id)}
+                    >
+                      Post
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -393,7 +428,7 @@ export const ProductReviews = ({ productId, initialReviewCount = 0, onReviewAdde
         </div>
       </div>
       
-      {/* Review Form Dialog */}
+      {/* Review Dialog */}
       <Dialog open={showReviewForm} onOpenChange={setShowReviewForm}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -495,4 +530,4 @@ export const ProductReviews = ({ productId, initialReviewCount = 0, onReviewAdde
       </Dialog>
     </div>
   );
-}; 
+};
