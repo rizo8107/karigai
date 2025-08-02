@@ -227,9 +227,17 @@ const ProductDetail = () => {
     }
   }, [relatedProducts]);
   
+  // Update document title when product changes
   useEffect(() => {
-    document.title = product?.name ? `${product.name} | Konipai` : 'Product | Konipai';
-    
+    if (product) {
+      document.title = `${product.name} - Karigai`;
+    } else {
+      document.title = 'Product | Karigai';
+    }
+  }, [product]);
+  
+  // Load product data when ID changes
+  useEffect(() => {
     const loadProduct = async () => {
       console.log(`[PROD DEBUG] loadProduct called for id: ${id}`);
       if (!id) return;
@@ -370,12 +378,11 @@ const ProductDetail = () => {
     };
     
     loadProduct();
-    
-    // Start preloading images after main product is loaded
+
     return () => {
       relatedLoaded.current = false;
     };
-  }, [id]);
+  }, [id]); // Only depend on id, not product
   
   // Optimize image selection handling
   const handleImageSelect = (image: string) => {

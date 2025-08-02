@@ -17,66 +17,67 @@ const ShippingPolicy = () => {
           <AlertCircle className="h-5 w-5" />
           <AlertTitle>Last Updated</AlertTitle>
           <AlertDescription>
-            June 15, 2023
+            August 2, 2025
           </AlertDescription>
         </Alert>
 
         <Card className="p-6 space-y-6">
           <div>
             <p className="mb-4">
-              For international buyers, orders are shipped and delivered through registered international 
-              courier companies and/or International speed post only.
-            </p>
-            
-            <p className="mb-4">
-              For domestic buyers, orders are shipped through registered domestic courier companies and/or 
-              speed post only.
+              At Karigai, we strive to deliver your products with the utmost care and efficiency.
+              We are committed to providing efficient and reliable delivery services to our customers.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold mb-3">Delivery Timeframes</h2>
-            <p className="mb-4">
-              Orders are shipped within 3-5 days or as per the delivery date agreed at the time of order 
-              confirmation. The actual delivery of the shipment is subject to courier company/post office norms.
+            <h2 className="text-xl font-bold mb-3">Shipping Charges</h2>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>For all deliveries within Tamilnadu, are charged Rs.45 as minimum</li>
+              <li>Shipping Charges beyond Tamilnadu are charged Rs.60 as minimum.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold mb-3">Delivery Timeline</h2>
+            <p className="mb-3">
+              We at Karigai are dedicated to ensuring that your ordered products reach you in the best condition 
+              and within the promised time frame. Please find our delivery timeline conditions below:
             </p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li><strong>Minimum Delivery Time:</strong> 2 days</li>
+              <li><strong>Maximum Delivery Time:</strong> 3 days</li>
+            </ul>
+            <p className="mt-3">
+              We aim to dispatch all orders within 2 working days of receiving payment.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold mb-3">Delivery Process</h2>
             <p>
-              Konipai is not liable for any delay in delivery by the courier company/postal authorities and 
-              only guarantees to hand over the consignment to the courier company or postal authorities within 
-              3-5 days from the date of the order and payment or as per the delivery date agreed at the time 
-              of order confirmation.
+              Once your order is confirmed and payment is received, we will process your order and hand it over 
+              to our shipping partners. You will receive updates about your shipment via email or SMS.
             </p>
           </div>
 
           <div>
             <h2 className="text-xl font-bold mb-3">Delivery Address</h2>
             <p>
-              Delivery of all orders will be to the address provided by the buyer. Delivery of our services 
-              will be confirmed on your email ID as specified during registration.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-bold mb-3">Shipping Costs</h2>
-            <p>
-              Shipping costs are calculated during checkout based on weight, dimensions, and destination of 
-              the items in your order. Payment for shipping will be collected with the purchase.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-bold mb-3">Razorpay Processing</h2>
-            <p>
-              Orders processed through Razorpay are securely handled, and shipping information is managed 
-              in accordance with our Privacy Policy.
+              Delivery of all orders will be to the address provided by you during checkout. Please ensure 
+              that the shipping address is accurate and complete to avoid any delays in delivery.
             </p>
           </div>
 
           <div className="pt-4 border-t">
+            <h2 className="text-xl font-bold mb-3">Contact Us</h2>
             <p>
-              For any issues regarding shipping or delivery of your order, you may contact our helpdesk at 
-              +91 9363020252 or email us at contact@konipai.in.
+              For any issues regarding shipping or delivery of your order, please contact us at:
             </p>
+            <ul className="list-none mt-2">
+              <li><strong>Email:</strong> karigaishree@gmail.com</li>
+              <li><strong>Phone:</strong> 9486054899</li>
+              <li><strong>Address:</strong> Old busstand, Salem, Tamil Nadu, India - 636001</li>
+            </ul>
           </div>
         </Card>
       </div>
@@ -84,4 +85,4 @@ const ShippingPolicy = () => {
   );
 };
 
-export default ShippingPolicy; 
+export default ShippingPolicy;

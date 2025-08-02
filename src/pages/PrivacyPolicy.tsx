@@ -16,101 +16,87 @@ const PrivacyPolicy = () => {
           <AlertCircle className="h-5 w-5" />
           <AlertTitle>Last Updated</AlertTitle>
           <AlertDescription>
-            June 15, 2023
+            August 2, 2025
           </AlertDescription>
         </Alert>
 
         <Card className="p-6 space-y-6">
           <div>
             <p className="mb-4">
-              This privacy policy sets out how Konipai uses and protects any information that you give us when you visit our 
-              website and/or agree to purchase from us. We are committed to ensuring that your privacy is protected.
-            </p>
-            
-            <p className="mb-4">
-              Should we ask you to provide certain information by which you can be identified when using this website, 
-              you can be assured that it will only be used in accordance with this privacy statement.
+              Karigai, Salem ("We" or "Us") is committed to protecting the privacy and security of your personal information. 
+              This Privacy Policy describes how we collect, use, and disclose personal information when you visit our website 
+              or make a purchase from our shop.
             </p>
           </div>
 
           <div>
             <h2 className="text-xl font-bold mb-3">Information We Collect</h2>
-            <p className="mb-3">We may collect the following information:</p>
+            <p className="mb-3">When you visit our website or place an order, we may collect certain information from you, including:</p>
             <ul className="list-disc pl-6 space-y-1">
-              <li>Name</li>
-              <li>Contact information including email address and phone number</li>
-              <li>Demographic information such as address, postal code, and preferences</li>
-              <li>Other information relevant to customer surveys and/or offers</li>
+              <li>Personal information such as your name, email address, mailing address, and phone number.</li>
+              <li>Payment information, such as credit card details or other payment methods.</li>
+              <li>Order details, including the products you purchase and the shipping address.</li>
+              <li>Information collected automatically through cookies and other tracking technologies, such as your IP address, browser type, and browsing preferences.</li>
             </ul>
           </div>
 
           <div>
             <h2 className="text-xl font-bold mb-3">How We Use Your Information</h2>
-            <p className="mb-3">We require this information to understand your needs and provide you with better service, specifically for:</p>
+            <p className="mb-3">We may use the information we collect for various purposes, including to:</p>
             <ul className="list-disc pl-6 space-y-1">
-              <li>Internal record keeping</li>
-              <li>Improving our products and services</li>
-              <li>Sending promotional emails about new products, special offers, or other information we think you may find interesting</li>
-              <li>Contacting you for market research purposes</li>
-              <li>Customizing the website according to your interests</li>
+              <li>Process and fulfill your orders.</li>
+              <li>Communicate with you about your orders, account, or inquiries.</li>
+              <li>Send you marketing communications about our products and promotions, if you have opted in to receive such communications.</li>
+              <li>Improve our website and services.</li>
+              <li>Prevent and detect fraud or abuse.</li>
             </ul>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold mb-3">Security</h2>
-            <p>
-              We are committed to ensuring that your information is secure. We have implemented suitable physical, 
-              electronic, and managerial procedures to safeguard and secure the information we collect online.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-bold mb-3">How We Use Cookies</h2>
-            <p className="mb-4">
-              A cookie is a small file that asks permission to be placed on your computer's hard drive. 
-              We use traffic log cookies to identify which pages are being used and to improve our website.
-              We only use this information for statistical analysis and then remove the data from the system.
-            </p>
-            
-            <p>
-              You can choose to accept or decline cookies. Most web browsers automatically accept cookies, 
-              but you can usually modify your browser settings to decline cookies if you prefer. This may 
-              prevent you from taking full advantage of the website.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-bold mb-3">Controlling Your Personal Information</h2>
-            <p className="mb-3">You may choose to restrict the collection or use of your personal information in the following ways:</p>
-            <ul className="list-disc pl-6 space-y-2">
-              <li>
-                Look for opt-out options when filling forms on our website
-              </li>
-              <li>
-                Email us at contact@konipai.in if you previously agreed to us using your personal information for direct marketing
-              </li>
+            <h2 className="text-xl font-bold mb-3">Information Sharing and Disclosure</h2>
+            <p className="mb-3">We may share your personal information with third parties in the following circumstances:</p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li>With service providers who help us operate our business and provide services to you, such as payment processors, shipping carriers, and IT service providers.</li>
+              <li>With our business partners for marketing purposes, if you have opted in to receive such communications.</li>
+              <li>When required by law or to protect our rights, property, or safety, or the rights, property, or safety of others.</li>
             </ul>
-            
-            <p className="mt-4">
-              We will not sell, distribute, or lease your personal information to third parties unless we have 
-              your permission or are required by law to do so.
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold mb-3">Data Retention</h2>
+            <p>
+              We will retain your personal information for as long as necessary to fulfill the purposes outlined in this Privacy Policy, 
+              unless a longer retention period is required or permitted by law.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold mb-3">Payment Information</h2>
+            <h2 className="text-xl font-bold mb-3">Your Rights</h2>
             <p>
-              For transactions processed through Razorpay, please note that your payment information is handled 
-              securely by Razorpay's payment gateway. We do not store your credit card details or other payment 
-              method information on our servers.
+              You have the right to access, correct, or delete your personal information. You may also have the right to object to 
+              or restrict certain processing of your personal information. If you would like to exercise any of these rights, please 
+              contact us using the contact information provided below.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold mb-3">Changes to this Privacy Policy</h2>
+            <p>
+              We may update this Privacy Policy from time to time to reflect changes in our practices or applicable laws. 
+              We encourage you to review this Privacy Policy periodically for any updates.
             </p>
           </div>
 
           <div className="pt-4 border-t">
+            <h2 className="text-xl font-bold mb-3">Contact Us</h2>
             <p>
-              If you believe that any information we hold about you is incorrect or incomplete, please email us 
-              at contact@konipai.in as soon as possible. We will promptly correct any information found to be incorrect.
+              If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at:
             </p>
+            <ul className="list-none mt-2">
+              <li><strong>Email:</strong> karigaishree@gmail.com</li>
+              <li><strong>Phone:</strong> 9486054899</li>
+              <li><strong>Address:</strong> Old busstand, Salem, Tamil Nadu, India - 636001</li>
+            </ul>
           </div>
         </Card>
       </div>
@@ -118,4 +104,4 @@ const PrivacyPolicy = () => {
   );
 };
 
-export default PrivacyPolicy; 
+export default PrivacyPolicy;

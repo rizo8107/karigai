@@ -6,7 +6,7 @@ import { Logo } from '@/components/Logo';
 const Footer = () => {
   return (
     <footer className="bg-[#219898] text-white">
-      <div className="konipai-container py-16">
+      <div className="karigai-container py-16">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-5">
             <Link to="/" className="inline-block mb-6">
@@ -84,8 +84,8 @@ const Footer = () => {
       </div>
       
       <div className="border-t border-white/10">
-        <div className="konipai-container py-6 flex flex-col md:flex-row justify-between items-center text-white/60 text-sm">
-          <p>© {new Date().getFullYear()} Konipai. All rights reserved.</p>
+        <div className="karigai-container py-6 flex flex-col md:flex-row justify-between items-center text-white/60 text-sm">
+          <p>© {new Date().getFullYear()} Karigai. All rights reserved.</p>
           <div className="flex gap-4 mt-4 md:mt-0">
             <Link to="/privacy-policy" className="hover:text-white transition-colors">
               Privacy

@@ -295,7 +295,7 @@ export const ProductReviews = ({ productId, initialReviewCount = 0, onReviewAdde
                   <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-yellow-400 rounded-full"
-                      style={{ width: `${percentage}%` }}
+                      style={{ width: `${percentage}%` }} // eslint-disable-line @typescript-eslint/no-explicit-any
                     />
                   </div>
                   <span className="text-sm w-12 text-right">{count}</span>

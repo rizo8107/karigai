@@ -14,6 +14,14 @@ export interface OrderDetailsConfig {
   showReviewComments: boolean;
   showReviews: boolean;
   
+  // Home page display options
+  showHero: boolean;
+  showNewArrivals: boolean;
+  showFeatures: boolean;
+  showBestsellers: boolean;
+  showTestimonials: boolean;
+  showNewsletter: boolean;
+  
   // Product defaults
   defaultWeight: string;
   
@@ -39,6 +47,14 @@ export const DEFAULT_CONFIG: OrderDetailsConfig = {
   showReturnOption: false,
   showReviewComments: true,
   showReviews: true,
+  
+  // Home page display options - all enabled by default
+  showHero: true,
+  showNewArrivals: true,
+  showFeatures: true,
+  showBestsellers: true,
+  showTestimonials: true,
+  showNewsletter: true,
   
   // Product defaults
   defaultWeight: '100 grams',
@@ -72,6 +88,14 @@ const mapRecordToConfig = (record: RecordModel): OrderDetailsConfig => {
     showReturnOption: record.show_return_option,
     showReviewComments: record.show_review_comments ?? true,
     showReviews: record.show_reviews ?? true,
+    
+    // Home page display options
+    showHero: record.show_hero ?? true,
+    showNewArrivals: record.show_new_arrivals ?? true,
+    showFeatures: record.show_features ?? true,
+    showBestsellers: record.show_bestsellers ?? true,
+    showTestimonials: record.show_testimonials ?? true,
+    showNewsletter: record.show_newsletter ?? true,
     defaultWeight: record.default_weight,
     tnShippingCost: record.tn_shipping_cost,
     otherStatesShippingCost: record.other_states_shipping_cost,

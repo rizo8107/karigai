@@ -19,7 +19,7 @@ const ProductGrid = ({ products, title, loading = false }: ProductGridProps) => 
   
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {Array.from({ length: 8 }).map((_, index) => (
           <div key={index} className="animate-pulse">
             <div className="aspect-square bg-gray-100 rounded-lg mb-4"></div>
@@ -39,7 +39,7 @@ const ProductGrid = ({ products, title, loading = false }: ProductGridProps) => 
         <h2 className="text-2xl font-bold mb-8 text-center">{title}</h2>
       )}
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {products.slice(0, displayCount).map(product => (
           <ProductCard key={product.id} product={product} />
         ))}

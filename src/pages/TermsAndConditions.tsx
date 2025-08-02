@@ -11,105 +11,97 @@ const TermsAndConditions = () => {
         <Alert variant="default" className="mb-8">
           <AlertCircle className="h-5 w-5" />
           <AlertDescription>
-            Last updated: June 15, 2023
+            Last updated: August 2, 2025
           </AlertDescription>
         </Alert>
 
         <Card className="p-6 space-y-6">
           <div>
+            <h2 className="text-xl font-bold mb-3">Product Availability</h2>
             <p className="mb-4">
-              For the purpose of these Terms and Conditions, The term "we", "us", "our" used anywhere on this page shall mean 
-              Konipai, whose registered/operational office is Vignarajapuram 1st Main Road Santhosapuram Kanchipuram TAMIL NADU 600073.
-            </p>
-            
-            <p className="mb-4">
-              "You", "your", "user", "visitor" shall mean any natural or legal person who is visiting our website and/or 
-              agreed to purchase from us.
-            </p>
-            
-            <p className="mb-4">
-              Your use of the website and/or purchase from us are governed by the following Terms and Conditions:
+              All products listed on our website or in-store are subject to availability. We strive to keep our inventory 
+              up to date, but occasionally items may be out of stock.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold mb-3">Website Content and Usage</h2>
-            <ul className="list-disc pl-6 space-y-3">
-              <li>
-                The content of the pages of this website is subject to change without notice.
-              </li>
-              <li>
-                Neither we nor any third parties provide any warranty or guarantee as to the accuracy, timeliness, 
-                performance, completeness, or suitability of the information and materials found or offered on this 
-                website for any particular purpose.
-              </li>
-              <li>
-                You acknowledge that such information and materials may contain inaccuracies or errors and we 
-                expressly exclude liability for any such inaccuracies or errors to the fullest extent permitted by law.
-              </li>
-              <li>
-                Your use of any information or materials on our website and/or product pages is entirely at your own risk, 
-                for which we shall not be liable. It shall be your own responsibility to ensure that any products, services, 
-                or information available through our website and/or product pages meet your specific requirements.
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-bold mb-3">Intellectual Property</h2>
-            <p className="mb-4">
-              Our website contains material which is owned by or licensed to us. This material includes, but is not limited to, 
-              the design, layout, look, appearance, and graphics. Reproduction is prohibited other than in accordance with the 
-              copyright notice, which forms part of these terms and conditions.
-            </p>
+            <h2 className="text-xl font-bold mb-3">Pricing</h2>
             <p>
-              All trademarks reproduced in our website which are not the property of, or licensed to, the operator are 
-              acknowledged on the website. Unauthorized use of information provided by us shall give rise to a claim for 
-              damages and/or be a criminal offense.
+              Prices of products are subject to change without prior notice. However, once you place an order, the price will remain 
+              fixed for that transaction.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold mb-3">External Links</h2>
-            <p className="mb-4">
-              From time to time, our website may also include links to other websites. These links are provided for your 
-              convenience to provide further information. They do not signify that we endorse the website(s).
-            </p>
+            <h2 className="text-xl font-bold mb-3">Order Confirmation</h2>
             <p>
-              You may not create a link to our website from another website or document without Konipai's prior written consent.
+              After placing an order, you will receive an email confirming receipt of your order. This email will only be an 
+              acknowledgment and will not constitute acceptance of your order. A contract between us for the purchase of the 
+              goods will not be formed until your payment has been approved by us and we have debited your credit or debit card.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold mb-3">Payments and Transactions</h2>
+            <h2 className="text-xl font-bold mb-3">Delivery</h2>
             <p>
-              We shall be under no liability whatsoever in respect of any loss or damage arising directly or indirectly 
-              out of the decline of authorization for any Transaction, on Account of the Cardholder having exceeded the 
-              preset limit mutually agreed by us with our acquiring bank from time to time.
+              We aim to dispatch all orders within 2 to 3 working days of receiving payment. Delivery times may vary depending 
+              on your location and other factors beyond our control.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold mb-3">Razorpay Payment Processing</h2>
+            <h2 className="text-xl font-bold mb-3">Quality Assurance</h2>
             <p>
-              For transactions processed through Razorpay, additional terms of service from Razorpay may apply. 
-              All payment information is securely handled through Razorpay's payment gateway.
+              We take great care in sourcing and packaging our products to ensure they reach you in perfect condition. However, 
+              if you receive a product that is damaged or of unsatisfactory quality, please contact us immediately to arrange 
+              for a replacement or refund.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold mb-3">Dispute Resolution</h2>
+            <h2 className="text-xl font-bold mb-3">Privacy Policy</h2>
             <p>
-              Any dispute arising out of use of our website and/or purchase with us and/or any engagement with us 
-              is subject to the laws of India.
+              We respect your privacy and are committed to protecting your personal information. Any personal information you 
+              provide to us will be used solely for the purpose of processing your order and will not be shared with third parties.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold mb-3">Copyright</h2>
+            <p>
+              All content included on our website, such as text, graphics, logos, button icons, images, audio clips, digital 
+              downloads, data compilations, and software, is the property of our company or its content suppliers and is 
+              protected by international copyright laws.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold mb-3">Governing Law</h2>
+            <p>
+              These terms and conditions shall be governed by and construed in accordance with the laws of India, and any 
+              disputes relating to these terms and conditions shall be subject to the exclusive jurisdiction of the courts of Salem.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold mb-3">Changes to Terms and Conditions</h2>
+            <p>
+              We reserve the right to update or modify these terms and conditions at any time without prior notice. Your 
+              continued use of our website or services following any such changes constitutes your acceptance of the new 
+              terms and conditions.
             </p>
           </div>
 
           <div className="pt-4 border-t">
+            <h2 className="text-xl font-bold mb-3">Contact Us</h2>
             <p>
-              By using our website and services, you acknowledge that you have read, understood, and agree 
-              to be bound by these Terms and Conditions.
+              If you have any questions about our Terms and Conditions, please contact us at:
             </p>
+            <ul className="list-none mt-2">
+              <li><strong>Email:</strong> karigaishree@gmail.com</li>
+              <li><strong>Phone:</strong> 9486054899</li>
+              <li><strong>Address:</strong> Old busstand, Salem, Tamil Nadu, India - 636001</li>
+            </ul>
           </div>
         </Card>
       </div>
@@ -117,4 +109,4 @@ const TermsAndConditions = () => {
   );
 };
 
-export default TermsAndConditions; 
+export default TermsAndConditions;

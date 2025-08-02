@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom"
 import { useAuth } from "@/contexts/AuthContext"
 import { useCart } from "@/contexts/CartContext"
@@ -11,14 +12,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ShoppingBag, Menu, Award, Sparkles, Info, Package, Heart, Settings, LogOut } from "lucide-react"
+import { ShoppingBag, Menu, Award, Sparkles, Info, Package, Heart, Settings, LogOut, Gift, Mail, Rss } from "lucide-react"
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Cart } from "./Cart"
 import { Logo } from '@/components/Logo'
+import { getNavbarConfig, type NavbarConfig } from "@/lib/navbar-config-service";
 
 export default function Navbar() {
   const { user, signOut } = useAuth()
   const { itemCount } = useCart()
+  const [navConfig, setNavConfig] = useState<NavbarConfig | null>(null);
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      const config = await getNavbarConfig();
+      setNavConfig(config);
+    };
+    fetchConfig();
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -44,15 +55,17 @@ export default function Navbar() {
               {/* Menu Items */}
               <div className="flex-1 overflow-y-auto">
                 <div className="flex flex-col gap-1 p-4">
-                  <SheetClose asChild>
-                    <Link 
-                      to="/shop" 
-                      className="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-gray-100"
-                    >
-                      <ShoppingBag className="h-5 w-5 text-gray-500" />
-                      Shop
-                    </Link>
-                  </SheetClose>
+                  {navConfig?.showShop && (
+                    <SheetClose asChild>
+                      <Link 
+                        to="/shop" 
+                        className="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-gray-100"
+                      >
+                        <ShoppingBag className="h-5 w-5 text-gray-500" />
+                        Shop
+                      </Link>
+                    </SheetClose>
+                  )}
                   <SheetClose asChild>
                     <Link 
                       to="/bestsellers" 
@@ -71,100 +84,96 @@ export default function Navbar() {
                       New Arrivals
                     </Link>
                   </SheetClose>
-                  <SheetClose asChild>
-                    <Link 
-                      to="/about" 
-                      className="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-gray-100"
-                    >
-                      <Info className="h-5 w-5 text-gray-500" />
-                      About
-                    </Link>
-                  </SheetClose>
+                  {navConfig?.showAbout && (
+                    <SheetClose asChild>
+                      <Link 
+                        to="/about" 
+                        className="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-gray-100"
+                      >
+                        <Info className="h-5 w-5 text-gray-500" />
+                        About
+                      </Link>
+                    </SheetClose>
+                  )}
+                  {navConfig?.showGifting && (
+                    <SheetClose asChild>
+                      <Link 
+                        to="/gifting"
+                        className="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-gray-100"
+                      >
+                        <Gift className="h-5 w-5 text-gray-500" />
+                        Gifting
+                      </Link>
+                    </SheetClose>
+                  )}
+                  {navConfig?.showContact && (
+                    <SheetClose asChild>
+                      <Link 
+                        to="/contact"
+                        className="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-gray-100"
+                      >
+                        <Mail className="h-5 w-5 text-gray-500" />
+                        Contact
+                      </Link>
+                    </SheetClose>
+                  )}
+                  {navConfig?.showBlog && (
+                    <SheetClose asChild>
+                      <Link 
+                        to="/blog"
+                        className="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-gray-100"
+                      >
+                        <Rss className="h-5 w-5 text-gray-500" />
+                        Blog
+                      </Link>
+                    </SheetClose>
+                  )}
                 </div>
               </div>
               
-              {/* Footer */}
-              <div className="border-t p-6">
-                <div className="flex flex-col gap-4">
-                  {user ? (
-                    <>
-                      <div className="flex items-center gap-4 mb-2">
-                        <Avatar>
-                          <AvatarImage src={user.avatar} />
-                          <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
-                        </div>
-                      </div>
-                      <SheetClose asChild>
-                        <Link 
-                          to="/orders" 
-                          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors hover:bg-gray-100"
-                        >
-                          <Package className="h-4 w-4 text-gray-500" />
-                          My Orders
-                        </Link>
-                      </SheetClose>
-                      <SheetClose asChild>
-                        <Link 
-                          to="/wishlist" 
-                          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors hover:bg-gray-100"
-                        >
-                          <Heart className="h-4 w-4 text-gray-500" />
-                          Wishlist
-                        </Link>
-                      </SheetClose>
-                      <SheetClose asChild>
-                        <Link 
-                          to="/settings" 
-                          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors hover:bg-gray-100"
-                        >
-                          <Settings className="h-4 w-4 text-gray-500" />
-                          Settings
-                        </Link>
-                      </SheetClose>
-                      <Button 
-                        variant="outline" 
-                        className="w-full mt-2"
-                        onClick={() => signOut()}
-                      >
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Sign Out
+              {/* Footer - Auth Section */}
+              <div className="border-t p-4">
+                {user ? (
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={user.avatar} alt={user.name} />
+                      <AvatarFallback>{user.name ? user.name.charAt(0) : '?'}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold">{user.name}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
+                    </div>
+                    <SheetClose asChild>
+                      <Button variant="ghost" size="icon" onClick={() => signOut()} aria-label="Log out">
+                        <LogOut className="h-5 w-5" />
                       </Button>
-                    </>
-                  ) : (
-                    <>
-                      <SheetClose asChild>
-                        <Button asChild className="w-full">
-                          <Link to="/login">Sign In</Link>
-                        </Button>
-                      </SheetClose>
-                      <SheetClose asChild>
-                        <Button asChild variant="outline" className="w-full">
-                          <Link to="/register">Create Account</Link>
-                        </Button>
-                      </SheetClose>
-                    </>
-                  )}
-                </div>
+                    </SheetClose>
+                  </div>
+                ) : (
+                  <SheetClose asChild>
+                    <Button asChild className="w-full">
+                      <Link to="/auth/login">Sign In</Link>
+                    </Button>
+                  </SheetClose>
+                )}
               </div>
             </nav>
           </SheetContent>
         </Sheet>
 
-        <Link to="/" className="mr-6 flex items-center space-x-2">
+        <Link to="/" className="mr-6 hidden lg:flex items-center space-x-2">
           <Logo />
         </Link>
 
         <nav className="hidden lg:flex items-center space-x-6 justify-center mx-auto">
-          <Link
-            to="/shop"
-            className="text-sm font-medium transition-colors hover:text-primary"
-          >
-            Shop
-          </Link>
+          {navConfig?.showShop && (
+            <Link
+              to="/shop"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              Shop
+            </Link>
+          )}
           <Link
             to="/bestsellers"
             className="text-sm font-medium transition-colors hover:text-primary"
@@ -177,12 +186,38 @@ export default function Navbar() {
           >
             New Arrivals
           </Link>
-          <Link
-            to="/about"
-            className="text-sm font-medium transition-colors hover:text-primary"
-          >
-            About
-          </Link>
+          {navConfig?.showAbout && (
+            <Link
+              to="/about"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              About
+            </Link>
+          )}
+          {navConfig?.showGifting && (
+            <Link
+              to="/gifting"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              Gifting
+            </Link>
+          )}
+          {navConfig?.showContact && (
+            <Link
+              to="/contact"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              Contact
+            </Link>
+          )}
+          {navConfig?.showBlog && (
+            <Link
+              to="/blog"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              Blog
+            </Link>
+          )}
         </nav>
 
         <div className="flex flex-1 items-center justify-end space-x-4">
@@ -199,42 +234,44 @@ export default function Navbar() {
               </Button>
             </Cart>
 
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback>{user.name ? user.name.charAt(0) : '?'}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.name}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile">Profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/orders">Orders</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => signOut()}>
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button variant="ghost" asChild>
-                <Link to="/auth/login">Sign in</Link>
-              </Button>
-            )}
+            <div className="hidden lg:block">
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarFallback>{user.name ? user.name.charAt(0) : '?'}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.name}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile">Profile</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/orders">Orders</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => signOut()}>
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button variant="ghost" asChild>
+                  <Link to="/auth/login">Sign in</Link>
+                </Button>
+              )}
+            </div>
           </nav>
         </div>
       </div>

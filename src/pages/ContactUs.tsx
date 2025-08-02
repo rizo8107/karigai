@@ -52,9 +52,9 @@ const ContactUs = () => {
               <div>
                 <h3 className="font-medium">Address</h3>
                 <address className="not-italic text-muted-foreground">
-                  Vignarajapuram 1st Main Road <br />
-                  Santhosapuram Kanchipuram <br />
-                  TAMIL NADU 600073
+                  Old busstand <br />
+                  Salem, Tamil Nadu <br />
+                  India - 636001
                 </address>
               </div>
             </div>
@@ -63,7 +63,7 @@ const ContactUs = () => {
               <Phone className="h-5 w-5 text-primary mt-1" />
               <div>
                 <h3 className="font-medium">Phone</h3>
-                <p className="text-muted-foreground">+91 9363020252</p>
+                <p className="text-muted-foreground">9486054899</p>
               </div>
             </div>
 
@@ -71,7 +71,7 @@ const ContactUs = () => {
               <Mail className="h-5 w-5 text-primary mt-1" />
               <div>
                 <h3 className="font-medium">Email</h3>
-                <p className="text-muted-foreground">contact@konipai.in</p>
+                <p className="text-muted-foreground">karigaishree@gmail.com</p>
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import '@/styles/home.css';
 import { ArrowRight, ShieldCheck, Truck, Leaf, Heart, Package, ShoppingBag, PlusCircle } from 'lucide-react';
 import Hero from '@/components/Hero';
@@ -17,6 +17,7 @@ import { trackButtonClick } from '@/lib/analytics';
 import UtmLink from '@/components/UtmLink';
 import { BuilderComponent } from "@/components/BuilderComponent";
 import { builder } from "@/lib/builder";
+import { DEFAULT_HOMEPAGE_CONFIG, getHomepageConfig, type HomepageConfig } from '@/lib/homepage-config-service';
 
 const FeatureItem = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
   <div className="flex flex-col items-center text-center p-6 transition-all rounded-lg">
@@ -40,8 +41,17 @@ const CategoryBadge = ({ title, onClick }: { title: string, onClick?: () => void
 const Index = () => {
   const [bestsellers, setBestsellers] = useState<Product[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Start with loading true
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  
+  // Debug state to track product loading
+  const [productLoadState, setProductLoadState] = useState({
+    attempted: false,
+    success: false,
+    productsCount: 0
+  });
+  const [homepageConfig, setHomepageConfig] = useState<HomepageConfig>(DEFAULT_HOMEPAGE_CONFIG);
+  const [configLoaded, setConfigLoaded] = useState(false);
   interface BuilderContent {
     data?: {
       title?: string;
@@ -65,27 +75,113 @@ const Index = () => {
   const bestsellersRef = useRef<HTMLElement>(null);
   const newArrivalsRef = useRef<HTMLElement>(null);
   
+  // Load homepage configuration from PocketBase
+  const loadHomepageConfig = async () => {
+    try {
+      const config = await getHomepageConfig();
+      setHomepageConfig(config);
+      setConfigLoaded(true);
+      console.log("Home page config loaded:", config);
+      console.log("Section ordering:", {
+        hero: config.heroOrder,
+        featured: config.featuredOrder,
+        newArrivals: config.newArrivalsOrder,
+        features: config.featuresOrder,
+        bestsellers: config.bestsellersOrder,
+        testimonials: config.testimonialsOrder,
+        newsletter: config.newsletterOrder
+      });
+    } catch (error) {
+      console.error('Error loading homepage configuration:', error);
+      setConfigLoaded(true); // Still mark as loaded to not block UI
+    }
+  };
+
   useEffect(() => {
+    console.log('Index component mounted');
+    // Load configuration on component mount
+    loadHomepageConfig();
+    
     const controller = new AbortController();
 
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const [bestsellersData, newArrivalsData] = await Promise.all([
+        setProductLoadState(prev => ({ ...prev, attempted: true }));
+        
+        // Log the product fetching attempt
+        console.log('Attempting to fetch products...');
+        
+        // First try to get products with bestseller/new flags
+        let [bestsellersData, newArrivalsData] = await Promise.all([
           getProducts({ bestseller: true }, controller.signal),
           getProducts({ new: true }, controller.signal)
         ]);
         
-        // Get featured products from bestsellers if needed
-        const featuredOnes = bestsellersData.slice(0, 1);
+        // If no bestsellers were found, fallback to getting some general products
+        if (bestsellersData.length === 0) {
+          console.log('No bestsellers found, fetching general products as fallback...');
+          const fallbackProducts = await getProducts({}, controller.signal);
+          bestsellersData = fallbackProducts.slice(0, 4); // Take first 4 as bestsellers
+          
+          if (newArrivalsData.length === 0) {
+            // If no new arrivals either, use the rest as new arrivals
+            newArrivalsData = fallbackProducts.slice(4, 8);
+          }
+        }
+        
+        // Debug log the product data
+        console.log('Bestsellers data:', bestsellersData);
+        console.log('New arrivals data:', newArrivalsData);
+        
+        // Get featured products - prioritize actual bestsellers, but fallback if needed
+        let featuredOnes = bestsellersData.length > 0 ? [bestsellersData[0]] : [];
+        
+        // If no featured product yet, try to get one from any available product
+        if (featuredOnes.length === 0 && newArrivalsData.length > 0) {
+          featuredOnes = [newArrivalsData[0]];
+        }
+        
+        // If still no products, make one final attempt to get any product
+        if ((bestsellersData.length === 0 || newArrivalsData.length === 0) && !controller.signal.aborted) {
+          try {
+            const anyProducts = await getProducts({}, controller.signal);
+            console.log('Fallback to any products:', anyProducts);
+            
+            if (bestsellersData.length === 0) {
+              bestsellersData = anyProducts.slice(0, 4);
+            }
+            
+            if (newArrivalsData.length === 0) {
+              newArrivalsData = anyProducts.slice(0, 4);
+            }
+            
+            if (featuredOnes.length === 0 && anyProducts.length > 0) {
+              featuredOnes = [anyProducts[0]];
+            }
+          } catch (err) {
+            console.error('Error in fallback product fetch:', err);
+          }
+        }
         
         setBestsellers(bestsellersData);
         setNewArrivals(newArrivalsData);
         setFeaturedProducts(featuredOnes);
+        
+        // Update product load state
+        const totalProducts = bestsellersData.length + newArrivalsData.length;
+        setProductLoadState({
+          attempted: true,
+          success: totalProducts > 0,
+          productsCount: totalProducts
+        });
+        
+        console.log(`Products loaded successfully: ${totalProducts} total products`);
       } catch (error) {
         // Only log error if it's not an abort error
         if (!(error instanceof Error) || error.name !== 'AbortError') {
           console.error('Error fetching products:', error);
+          setProductLoadState(prev => ({ ...prev, success: false }));
         }
       } finally {
         setLoading(false);
@@ -134,209 +230,250 @@ const Index = () => {
   
   return (
     <div className="flex flex-col bg-white">
-      {/* Hero Section - Builder.io Editable */}
-      <div ref={heroRef} className="relative">
-        {heroContent ? (
-          <BuilderComponent 
-            model="home-hero" 
-            content={heroContent}
-          />
-        ) : (
-          <Hero />
-        )}
-      </div>
 
-      {/* Featured Categories */}
-      <section className="py-16 bg-white">
-        <div className="konipai-container">
-          <div className="flex flex-wrap justify-center gap-4 mb-12">
-            <CategoryBadge title="All Soaps" onClick={() => handleCategoryClick('All')} />
-            <CategoryBadge title="Natural Soaps" onClick={() => handleCategoryClick('Natural Soaps')} />
-            <CategoryBadge title="Herbal Soaps" onClick={() => handleCategoryClick('Herbal Soaps')} />
-            <CategoryBadge title="Moisturizing" onClick={() => handleCategoryClick('Moisturizing')} />
-            <CategoryBadge title="Eco Friendly" onClick={() => handleCategoryClick('Eco Friendly')} />
-          </div>
-        </div>
-      </section>
 
-      {/* Featured Product */}
-      {featuredProducts && featuredProducts.length > 0 && (
-        <section className="py-12 hero-section-bg">
-          <div className="konipai-container">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-              <div className="rounded-2xl overflow-hidden h-[500px] relative group">
-                {featuredProducts[0]?.images && featuredProducts[0].images[0] && (
-                  <ProductImage 
-                    url={featuredProducts[0].images[0]} 
-                    alt={featuredProducts[0].name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    priority={true}
+      {/* All other sections are rendered based on backend configuration */}
+      {(() => {
+        // Define array to hold all sections in the correct order
+        const sections: {
+          id: string;
+          order: number;
+          component: React.ReactNode;
+        }[] = [];
+        
+        // Only proceed if homepage config is loaded
+        if (!configLoaded) {
+          return <div className="konipai-container py-12 text-center"><p>Loading homepage configuration...</p></div>;
+        }
+        
+        console.log('Product state for rendering:', {
+          bestsellers: bestsellers?.length || 0,
+          newArrivals: newArrivals?.length || 0,
+          featuredProducts: featuredProducts?.length || 0,
+          loading
+        });
+        // Hero Section
+        if (homepageConfig.showHero) {
+          sections.push({
+            id: "hero",
+            order: homepageConfig.heroOrder,
+            component: (
+              <div key="hero" ref={heroRef} className="relative">
+                {heroContent ? (
+                  <BuilderComponent 
+                    model="home-hero" 
+                    content={heroContent}
                   />
+                ) : (
+                  <Hero />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-                  <div className="text-white">
-                    <p className="text-sm font-medium uppercase tracking-wider mb-2">Featured Collection</p>
-                    <h3 className="text-2xl font-bold mb-2">{featuredProducts[0]?.name}</h3>
-                    <Button asChild variant="outline" className="bg-white/20 border-white text-white backdrop-blur-sm hover:bg-white hover:text-black">
-                      <UtmLink to={`/product/${featuredProducts[0]?.id}`}>View Product</UtmLink>
-                    </Button>
-                  </div>
-                </div>
               </div>
-              <div className="flex flex-col justify-center max-w-lg">
-                <Badge className="mb-4 py-1.5 px-3 bg-[#219898]/10 text-[#219898] hover:bg-[#219898]/20 self-start">Featured Collection</Badge>
-                <h2 className="text-4xl font-bold mb-6">Discover Our Premium Collection</h2>
-                <p className="text-gray-600 mb-8 leading-relaxed">
-                  Our premium collection combines innovative design with sustainable materials, crafted for the conscious minimalist who values both style and environmental responsibility.
-                </p>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <ShieldCheck className="h-5 w-5 text-[#219898] mt-1 flex-shrink-0" />
-                    <div>
-                      <h4 className="font-medium">Premium Quality</h4>
-                      <p className="text-sm text-gray-600">Handcrafted with premium sustainable materials</p>
-                    </div>
+            )
+          });
+        }
+
+
+        
+        // New Arrivals Section
+        if (homepageConfig.showNewArrivals) {
+          sections.push({
+            id: "new-arrivals",
+            order: homepageConfig.newArrivalsOrder,
+            component: (
+              <section 
+                key="new-arrivals"
+                ref={newArrivalsRef}
+                className="py-24 bg-white animate-fade-in new-arrivals-section"
+              >
+                <div className="konipai-container">
+                  <div className="text-center max-w-3xl mx-auto mb-12">
+                    <Badge className="mb-4 py-1.5 px-3 bg-primary text-white hover:bg-primary/90">Just Arrived</Badge>
+                    <h2 className="text-4xl font-bold mb-4">New Arrivals</h2>
+                    <p className="text-gray-600">
+                      Discover our latest collection of handcrafted natural soaps, made with care for your skin and the environment.
+                    </p>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <Leaf className="h-5 w-5 text-[#219898] mt-1 flex-shrink-0" />
-                    <div>
-                      <h4 className="font-medium">Eco-friendly</h4>
-                      <p className="text-sm text-gray-600">Made from 100% organic cotton and recycled materials</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Package className="h-5 w-5 text-[#219898] mt-1 flex-shrink-0" />
-                    <div>
-                      <h4 className="font-medium">Durable Design</h4>
-                      <p className="text-sm text-gray-600">Built to last with reinforced stitching and quality hardware</p>
+                  <div className="relative">
+                    <ProductGrid products={newArrivals.slice(0, 4)} loading={loading} />
+                    {newArrivals.length === 0 && !loading && (
+                      <div className="py-8 text-center">
+                        <p className="text-gray-500">No new arrival products found</p>
+                      </div>
+                    )}
+                    <div className="mt-10 text-center">
+                      <Button 
+                        asChild 
+                        variant="outline" 
+                        size="lg" 
+                        className="rounded-full border-[#219898] text-[#219898] hover:bg-[#219898] hover:text-white px-8"
+                        onClick={() => trackButtonClick('view_new_arrivals_button', 'View All New Arrivals', window.location.pathname)}
+                      >
+                        <UtmLink to="/new-arrivals">
+                          View All
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </UtmLink>
+                      </Button>
                     </div>
                   </div>
                 </div>
-                <div className="mt-8">
-                  <Button 
-                    asChild 
-                    className="gap-2 bg-[#219898] hover:bg-[#1a7a7a] text-white rounded-full px-6"
-                    onClick={() => trackButtonClick('explore_collection_button', 'Explore Collection', window.location.pathname)}
-                  >
-                    <UtmLink to="/shop">
-                      Explore Collection
-                      <ArrowRight className="h-4 w-4" />
-                    </UtmLink>
-                  </Button>
+              </section>
+            )
+          });
+        }
+        
+        // Features Section
+        if (homepageConfig.showFeatures) {
+          sections.push({
+            id: "features",
+            order: homepageConfig.featuresOrder,
+            component: (
+              <section 
+                key="features"
+                ref={featuresRef}
+                className="py-20 bg-[#219898]/5 animate-fade-in features-section"
+              >
+                <div className="konipai-container">
+                  <div className="text-center max-w-3xl mx-auto mb-12">
+                    <Badge className="mb-4 py-1.5 px-3 bg-[#219898]/10 text-[#219898] hover:bg-[#219898]/20">Why Choose Us</Badge>
+                    <h2 className="text-4xl font-bold mb-4">Crafted with Care</h2>
+                    <p className="text-gray-600">
+                      Our products are made with natural ingredients, designed for sustainability, and delivered with exceptional service.
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+                    <FeatureItem 
+                      icon={Leaf} 
+                      title="Natural Ingredients" 
+                      description="We use only the purest natural ingredients, sourced sustainably and carefully selected for their beneficial properties."
+                    />
+                    <FeatureItem 
+                      icon={ShieldCheck} 
+                      title="Quality Guaranteed" 
+                      description="Every product meets our strict quality standards, ensuring you receive only the best for your skin and home."
+                    />
+                    <FeatureItem 
+                      icon={Heart} 
+                      title="Made with Love" 
+                      description="Each item is handcrafted with attention to detail and a genuine passion for creating exceptional products."
+                    />
+                  </div>
                 </div>
+              </section>
+            )
+          });
+        }
+
+        // Bestsellers Section
+        if (homepageConfig.showBestsellers) {
+          sections.push({
+            id: "bestsellers",
+            order: homepageConfig.bestsellersOrder,
+            component: (
+              <section 
+                key="bestsellers"
+                ref={bestsellersRef}
+                className="py-24 bg-[#F9F9F9] animate-fade-in bestsellers-section"
+              >
+                <div className="konipai-container">
+                  <div className="text-center max-w-3xl mx-auto mb-12">
+                    <Badge className="mb-4 py-1.5 px-3 bg-[#219898]/10 text-[#219898] hover:bg-[#219898]/20">Most Popular</Badge>
+                    <h2 className="text-4xl font-bold mb-4">Our Bestsellers</h2>
+                    <p className="text-gray-600">
+                      Our most popular products loved by customers. High-quality, sustainable, and effective solutions for everyday use.
+                    </p>
+                  </div>
+                  <div className="relative">
+                    <ProductGrid products={bestsellers} loading={loading} />
+                    {bestsellers.length === 0 && !loading && (
+                      <div className="py-8 text-center">
+                        <p className="text-gray-500">No bestseller products found</p>
+                      </div>
+                    )}
+                    <div className="mt-10 text-center">
+                      <Button 
+                        asChild 
+                        variant="outline" 
+                        size="lg" 
+                        className="rounded-full border-[#219898] text-[#219898] hover:bg-[#219898] hover:text-white px-8"
+                        onClick={() => trackButtonClick('view_bestsellers_button', 'View All Bestsellers', window.location.pathname)}
+                      >
+                        <UtmLink to="/bestsellers">
+                          View All
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </UtmLink>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )
+          });
+        }
+        
+        // Testimonials Section
+        if (homepageConfig.showTestimonials) {
+          sections.push({
+            id: "testimonials",
+            order: homepageConfig.testimonialsOrder,
+            component: (
+              <div key="testimonials" className="relative">
+                <Testimonials />
               </div>
-            </div>
-          </div>
-        </section>
-      )}
+            )
+          });
+        }
+        
+        // Newsletter Section
+        if (homepageConfig.showNewsletter) {
+          sections.push({
+            id: "newsletter",
+            order: homepageConfig.newsletterOrder,
+            component: (
+              <div key="newsletter" className="relative bg-gray-50">
+                <Newsletter />
+              </div>
+            )
+          });
+        }
+        
+        console.log("Sections before sorting:", sections.map(s => ({ section: s.id, order: s.order })));
+        
+        // Debug information for product states
+        console.log('Product rendering state:', { 
+          loading, 
+          bestsellersCount: bestsellers?.length || 0,
+          newArrivalsCount: newArrivals?.length || 0,
+          featuredCount: featuredProducts?.length || 0,
+          productLoadState 
+        });
 
-      {/* New Arrivals Section */}
-      <section 
-        ref={newArrivalsRef} 
-        className="py-24 bg-white animate-fade-in new-arrivals-section"
-      >
-        <div className="konipai-container">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <h2 className="text-4xl font-bold mb-4">New Arrivals</h2>
-            <p className="text-gray-600">
-              Discover our latest collection of handcrafted natural soaps, made with care for your skin and the environment.
-            </p>
-          </div>
-          <div className="relative">
-            <ProductGrid products={newArrivals.slice(0, 4)} loading={loading} />
-            <div className="mt-10 text-center">
-              <Button 
-                asChild 
-                variant="outline" 
-                size="lg" 
-                className="rounded-full border-[#219898] text-[#219898] hover:bg-[#219898] hover:text-white px-8"
-                onClick={() => trackButtonClick('view_new_arrivals_button', 'View All New Arrivals', window.location.pathname)}
-              >
-                <UtmLink to="/new-arrivals">
-                  View All
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </UtmLink>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section 
-        ref={featuresRef}
-        className="py-20 bg-[#219898]/5 animate-fade-in features-section"
-      >
-        <div className="konipai-container">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <Badge className="mb-4 py-1.5 px-3 bg-white text-[#219898] hover:bg-white/80">What Makes Us Different</Badge>
-            <h2 className="text-4xl font-bold mb-4">Crafted with Care</h2>
-            <p className="text-gray-600">
-              At Karigai, we believe in creating soaps that are not only beautiful but also nourishing for your skin. Every ingredient matters.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <FeatureItem 
-              icon={Leaf}
-              title="Natural Ingredients"
-              description="Made from 100% natural oils, butters, and botanical extracts, our soaps are gentle on your skin and kind to the planet."
-            />
-            <FeatureItem 
-              icon={ShieldCheck}
-              title="Handcrafted Excellence"
-              description="Each soap is meticulously handmade in small batches, ensuring premium quality and attention to detail."
-            />
-            <FeatureItem 
-              icon={Truck}
-              title="Eco-Friendly Packaging"
-              description="We use minimal, biodegradable packaging to reduce waste and environmental impact."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Bestsellers Section */}
-      <section 
-        ref={bestsellersRef}
-        className="py-24 bg-white animate-fade-in bestsellers-section"
-      >
-        <div className="konipai-container">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <h2 className="text-4xl font-bold mb-4">Bestsellers</h2>
-            <p className="text-gray-600">
-              Our most popular handmade soaps selected by our customers.
-            </p>
-          </div>
-          <div className="relative">
-            <ProductGrid products={bestsellers.slice(0, 4)} loading={loading} />
-            <div className="mt-10 text-center">
-              <Button 
-                asChild 
-                variant="outline" 
-                size="lg" 
-                className="rounded-full border-[#219898] text-[#219898] hover:bg-[#219898] hover:text-white px-8"
-                onClick={() => trackButtonClick('view_bestsellers_button', 'View All Bestsellers', window.location.pathname)}
-              >
-                <UtmLink to="/bestsellers">
-                  View All
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </UtmLink>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <div className="relative">
-        <Testimonials />
-      </div>
-
-      {/* Newsletter Section */}
-      <div className="relative bg-gray-50">
-        <Newsletter />
-      </div>
+        // Render the sorted sections
+        return (
+          <>
+            {/* Check if products are still loading */}
+            {loading && (
+              <div className="konipai-container py-12 text-center">
+                <p className="text-gray-600">Loading products...</p>
+              </div>
+            )}
+            
+            {/* Render sorted sections */}
+            {sections.sort((a, b) => a.order - b.order).map((section) => (
+              <React.Fragment key={section.id}>
+                {section.component}
+              </React.Fragment>
+            ))}
+            
+            {/* Debug section - only visible in development */}
+            {process.env.NODE_ENV !== 'production' && productLoadState.attempted && !loading && bestsellers.length === 0 && newArrivals.length === 0 && (
+              <div className="konipai-container py-4 bg-red-50 border border-red-200 rounded-lg my-4">
+                <p className="text-sm text-red-600">No products found. Please make sure you have products marked as bestsellers or new arrivals in your database.</p>
+              </div>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 };

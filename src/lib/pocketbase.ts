@@ -1,4 +1,5 @@
-import PocketBase, { RecordModel } from 'pocketbase';
+import PocketBase, { type RecordModel } from 'pocketbase';
+export type { RecordModel };
 
 console.log('Initializing PocketBase client with URL:', import.meta.env.VITE_POCKETBASE_URL);
 
@@ -214,7 +215,8 @@ export async function signInWithGoogle() {
 
         console.log('Google auth successful:', authData);
         return authData;
-    } catch (error: any) {
+    } catch (e: unknown) {
+        const error = e as { status?: number; response?: { data?: { code?: number } }, message?: string };
         console.error('Google sign-in error:', error);
         
         // More specific error message for the user
@@ -265,8 +267,7 @@ export async function getProducts(filter?: ProductFilter, signal?: AbortSignal):
         const filterString = filterRules.length > 0 ? filterRules.join(' && ') : '';
         
         const options: ListOptions = {
-            $autoCancel: false,
-            requestKey: `products_${Date.now()}` // Add unique request key to prevent cancellation
+            $autoCancel: false
         };
 
         if (signal) {
@@ -304,8 +305,7 @@ export async function getProducts(filter?: ProductFilter, signal?: AbortSignal):
                     pocketbase.collection('reviews').getList(1, 1, {
                         filter: `product = "${record.id}"`,
                         fields: 'id',
-                        $autoCancel: false,
-                        requestKey: `reviews_count_${record.id}_${Date.now()}`
+                        $autoCancel: false
                     })
                 )
             );
@@ -321,9 +321,10 @@ export async function getProducts(filter?: ProductFilter, signal?: AbortSignal):
         }
 
         return processedProducts;
-    } catch (error) {
-        if (error.name === 'AbortError') {
-            throw error;
+    } catch (e: unknown) {
+        const error = e as { name?: string };
+        if (error?.name === 'AbortError') {
+            throw e;
         }
         console.error('Error fetching products:', error);
         // Return empty array instead of throwing to prevent UI from breaking
@@ -487,11 +488,12 @@ export async function getSliderImages(signal?: AbortSignal): Promise<SliderImage
 
         return records.items.map(record => ({
             ...record,
-            image: pocketbase.files.getUrl(record, record.image)
+            image: pocketbase.files.getURL(record, record.image)
         })) as SliderImage[];
-    } catch (error) {
-        if (error.name === 'AbortError') {
-            throw error;
+    } catch (e: unknown) {
+        const error = e as { name?: string };
+        if (error?.name === 'AbortError') {
+            throw e;
         }
         console.error('Error fetching slider images:', error);
         return [];
