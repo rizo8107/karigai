@@ -4,6 +4,12 @@ const imageUrlCache = new Map<string, string>();
 // Track which images have been preloaded to avoid duplicates
 const preloadedImages = new Set<string>();
 
+// Cache for storing image blobs to avoid redundant network requests
+const imageBlobCache = new Map<string, string>();
+
+// Maximum number of entries in the blob cache to prevent memory issues
+const MAX_BLOB_CACHE_SIZE = 50;
+
 // Default size optimizations for different screen sizes
 export type ImageSize = "thumbnail" | "small" | "medium" | "large" | "original";
 export type ImageFormat = "avif" | "webp" | "jpeg" | "png" | "original";
@@ -97,6 +103,75 @@ export function getPocketBaseImageUrl(
     imageUrlCache.set(cacheKey, fullUrl);
     
     return fullUrl;
+  } catch (error) {
+    console.error('Error processing image URL:', error);
+    return url; // Return original URL on error
+  }
+}
+
+/**
+ * Preload an image to improve perceived loading speed
+ * @param url Image URL to preload
+ * @param collection PocketBase collection name
+ * @param size Image size preset
+ * @param format Image format
+ */
+export function preloadImage(
+  url: string,
+  collection: string,
+  size: ImageSize = "medium",
+  format: ImageFormat = "webp"
+): void {
+  const imageUrl = getPocketBaseImageUrl(url, collection, size, format);
+  
+  // Skip if already preloaded
+  if (preloadedImages.has(imageUrl)) {
+    return;
+  }
+  
+  // Add to preloaded set
+  preloadedImages.add(imageUrl);
+  
+  // Create image element to trigger browser preloading
+  const img = new Image();
+  img.src = imageUrl;
+}
+
+/**
+ * Fetch and cache image as blob URL for faster subsequent loads
+ * @param url Image URL to fetch and cache
+ * @returns Promise resolving to the blob URL
+ */
+export async function fetchAndCacheImage(url: string): Promise<string> {
+  // Check if already in blob cache
+  if (imageBlobCache.has(url)) {
+    return imageBlobCache.get(url)!;
+  }
+  
+  try {
+    // Fetch the image
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.status}`);
+    }
+    
+    // Convert to blob and create object URL
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    
+    // Manage cache size
+    if (imageBlobCache.size >= MAX_BLOB_CACHE_SIZE) {
+      // Remove oldest entry (first key)
+      const oldestKey = imageBlobCache.keys().next().value;
+      if (oldestKey) {
+        URL.revokeObjectURL(imageBlobCache.get(oldestKey)!);
+        imageBlobCache.delete(oldestKey);
+      }
+    }
+    
+    // Cache the blob URL
+    imageBlobCache.set(url, blobUrl);
+    return blobUrl;
   } catch (error) {
     console.error('Error processing image URL:', error);
     return '';

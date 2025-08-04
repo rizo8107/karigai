@@ -12,6 +12,15 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, ShoppingBag, LockIcon, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { 
+  initializeCheckoutOptimizations,
+  cacheShippingConfig,
+  getCachedShippingConfig,
+  cacheUserAddress,
+  getCachedUserAddress,
+  preloadCartItemImages,
+  trackCheckoutStep
+} from '@/utils/checkoutPerformance';
+import { 
   getRazorpayKeyId,
   RazorpayResponse
 } from '@/lib/razorpay';

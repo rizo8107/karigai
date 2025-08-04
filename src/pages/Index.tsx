@@ -451,12 +451,7 @@ const Index = () => {
         // Render the sorted sections
         return (
           <>
-            {/* Check if products are still loading */}
-            {loading && (
-              <div className="konipai-container py-12 text-center">
-                <p className="text-gray-600">Loading products...</p>
-              </div>
-            )}
+            {/* Loading state handled by skeleton components */}
             
             {/* Render sorted sections */}
             {sections.sort((a, b) => a.order - b.order).map((section) => (
