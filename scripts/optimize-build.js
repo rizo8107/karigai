@@ -77,7 +77,11 @@ async function optimizeHTML() {
     const preloadLinks = `
     <link rel="preconnect" href="https://backend-pocketbase.7za6uc.easypanel.host">
     <link rel="dns-prefetch" href="https://backend-pocketbase.7za6uc.easypanel.host">
+    <link rel="preconnect" href="https://crm-supabase.7za6uc.easypanel.host" crossorigin>
+    <link rel="dns-prefetch" href="https://crm-supabase.7za6uc.easypanel.host">
     <link rel="preload" href="/images/shop-hero.webp" as="image" type="image/webp" fetchpriority="high">
+    <link rel="preload" href="/assets/index-*.js" as="script">
+    <link rel="preload" href="/assets/react-*.js" as="script">
     `;
     
     // Insert preload links after the opening head tag
