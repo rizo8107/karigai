@@ -283,20 +283,61 @@ export async function getProducts(filter?: ProductFilter, signal?: AbortSignal):
         console.log(`Successfully fetched ${records.items.length} products`);
 
         // Process products even if reviews fail
-        let processedProducts = records.items.map(record => ({
-            ...record,
-            $id: record.id,
-            images: Array.isArray(record.images) 
-                ? record.images.map((image: string) => `${record.id}/${image}`)
-                : [],
-            colors: typeof record.colors === 'string' ? JSON.parse(record.colors) : record.colors,
-            features: typeof record.features === 'string' ? JSON.parse(record.features) : record.features,
-            care: typeof record.care === 'string' ? JSON.parse(record.care) : record.care,
-            tags: typeof record.tags === 'string' ? JSON.parse(record.tags) : record.tags,
-            createdAt: record.created,
-            updatedAt: record.updated,
-            reviews: 0 // Default to 0 reviews initially
-        })) as unknown as Product[];
+        let processedProducts = records.items.map(record => {
+            // Helper function to safely parse JSON fields
+            const safeParseJson = <T>(value: any, defaultValue: T): T => {
+                if (value === null || value === undefined) return defaultValue;
+                if (typeof value === 'object') return value as T;
+                try {
+                    if (typeof value === 'string') {
+                        if (value === '' || value === 'null') return defaultValue;
+                        return JSON.parse(value) as T;
+                    }
+                    return defaultValue;
+                } catch (e) {
+                    console.warn(`Failed to parse JSON field:`, e);
+                    return defaultValue;
+                }
+            };
+            
+            // Process the record with safe defaults for all fields
+            return {
+                ...record,
+                $id: record.id,
+                name: record.name || '',
+                description: record.description || '',
+                price: typeof record.price === 'number' ? record.price : 0,
+                original_price: typeof record.original_price === 'number' ? record.original_price : 0,
+                images: Array.isArray(record.images) 
+                    ? record.images.map((image: string) => `${record.id}/${image}`)
+                    : [],
+                colors: safeParseJson(record.colors, []),
+                features: safeParseJson(record.features, []),
+                care: safeParseJson(record.care, []),
+                tags: safeParseJson(record.tags, []),
+                specifications: safeParseJson(record.specifications, {
+                    material: '',
+                    dimensions: '',
+                    weight: '',
+                    capacity: '',
+                    style: '',
+                    pattern: '',
+                    closure: '',
+                    waterResistant: false
+                }),
+                care_instructions: safeParseJson(record.care_instructions, { cleaning: [], storage: [] }),
+                usage_guidelines: safeParseJson(record.usage_guidelines, { recommended_use: [], pro_tips: [] }),
+                category: record.category || '',
+                material: record.material || '',
+                dimensions: record.dimensions || '',
+                bestseller: Boolean(record.bestseller),
+                new: Boolean(record.new),
+                inStock: Boolean(record.inStock),
+                createdAt: record.created,
+                updatedAt: record.updated,
+                reviews: 0 // Default to 0 reviews initially
+            };
+        }) as unknown as Product[];
 
         // Try to get review counts, but don't block product display if this fails
         try {
@@ -359,14 +400,57 @@ export async function getProduct(id: string) {
         const endTime = Date.now();
         console.log(`[PROD DEBUG] getProduct completed in ${endTime - startTime}ms`);
         
+        // Helper function to safely parse JSON fields
+        const safeParseJson = <T>(value: any, defaultValue: T): T => {
+            if (value === null || value === undefined) return defaultValue;
+            if (typeof value === 'object') return value as T;
+            try {
+                if (typeof value === 'string') {
+                    if (value === '' || value === 'null') return defaultValue;
+                    return JSON.parse(value) as T;
+                }
+                return defaultValue;
+            } catch (e) {
+                console.warn(`Failed to parse JSON field:`, e);
+                return defaultValue;
+            }
+        };
+        
+        // Default specifications object with all required properties
+        const defaultSpecifications = {
+            material: '',
+            dimensions: '',
+            weight: '',
+            capacity: '',
+            style: '',
+            pattern: '',
+            closure: '',
+            waterResistant: false
+        };
+        
         return {
             ...record,
             $id: record.id,
-            images: record.images.map(image => `${record.id}/${image}`),
-            colors: typeof record.colors === 'string' ? JSON.parse(record.colors) : record.colors,
-            features: typeof record.features === 'string' ? JSON.parse(record.features) : record.features,
-            care: typeof record.care === 'string' ? JSON.parse(record.care) : record.care,
-            tags: typeof record.tags === 'string' ? JSON.parse(record.tags) : record.tags,
+            name: record.name || '',
+            description: record.description || '',
+            price: typeof record.price === 'number' ? record.price : 0,
+            original_price: typeof record.original_price === 'number' ? record.original_price : 0,
+            images: Array.isArray(record.images) 
+                ? record.images.map((image: string) => `${record.id}/${image}`)
+                : [],
+            colors: safeParseJson(record.colors, []),
+            features: safeParseJson(record.features, []),
+            care: safeParseJson(record.care, []),
+            tags: safeParseJson(record.tags, []),
+            specifications: safeParseJson(record.specifications, defaultSpecifications),
+            care_instructions: safeParseJson(record.care_instructions, { cleaning: [], storage: [] }),
+            usage_guidelines: safeParseJson(record.usage_guidelines, { recommended_use: [], pro_tips: [] }),
+            category: record.category || '',
+            material: record.material || '',
+            dimensions: record.dimensions || '',
+            bestseller: Boolean(record.bestseller),
+            new: Boolean(record.new),
+            inStock: Boolean(record.inStock),
             reviews: reviewCount.totalItems // Set the actual review count
         };
     } catch (error) {

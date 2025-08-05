@@ -595,14 +595,8 @@ const ProductDetail = () => {
     }
   };
   
-  // We'll handle breadcrumbs in the render section
-  
-  // Prepare breadcrumb items
+  // Generate breadcrumb items
   const breadcrumbItems: BreadcrumbItem[] = [
-    {
-      label: 'Home',
-      href: '/',
-    },
     {
       label: 'Shop',
       href: '/shop',
@@ -623,38 +617,7 @@ const ProductDetail = () => {
       label: product.name,
     });
   }
-
-  // Check if product is loading or has an error
-  if (loading) {
-    return (
-      <div className="pb-32">
-        <div className="konipai-container py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-96">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <span className="ml-2 text-xl font-medium">Loading product...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !product) {
-    return (
-      <div className="pb-32">
-        <div className="konipai-container py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-center h-96">
-            <ImageIcon className="h-16 w-16 text-gray-400 mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Product Coming Soon</h2>
-            <p className="text-gray-500 mb-6">{error || "This product is currently unavailable or does not exist."}</p>
-            <Button onClick={() => navigate('/shop')} variant="outline">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Back to Shop
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  
   return (
     <div className="pb-32">
       <div className="konipai-container py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -683,16 +646,6 @@ const ProductDetail = () => {
                     title="View size guide"
                   >
                     <Ruler className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={toggleWishlist}
-                    className={cn(
-                      "absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg",
-                      isWishlisted ? "text-red-500" : "text-gray-600 hover:text-gray-900"
-                    )}
-                    title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-                  >
-                    <Heart className="h-5 w-5" fill={isWishlisted ? "currentColor" : "none"} />
                   </button>
                 </>
               ) : (
@@ -1009,38 +962,37 @@ const ProductDetail = () => {
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t py-5 shadow-lg z-50">
           <div className="konipai-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex gap-4">
-              {isInCart ? (
-                <>
-                  <Button 
-                    className="flex-1 border-2" 
-                    onClick={handleAddToCart}
-                    size="lg"
-                    variant="outline"
-                  >
-                    <ShoppingCart className="h-5 w-5 mr-2" /> Add Again
-                  </Button>
-                  <Button 
-                    className="flex-1 bg-green-600 hover:bg-green-700 shadow-sm" 
-                    asChild
-                    size="lg"
-                  >
-                    <Link to="/checkout">
-                      <CornerDownRight className="h-5 w-5 mr-2" /> Checkout
-                    </Link>
-                  </Button>
-                </>
-              ) : (
+            {isInCart ? (
+              <>
                 <Button 
-                  className="w-full shadow-sm"
+                  className="flex-1 border-2" 
                   onClick={handleAddToCart}
                   size="lg"
-                  disabled={!product?.inStock}
+                  variant="outline"
                 >
-                  <ShoppingCart className="h-5 w-5 mr-2" /> 
-                  {product?.inStock ? 'Add to Cart' : 'Out of Stock'}
+                  <ShoppingCart className="h-5 w-5 mr-2" /> Add Again
                 </Button>
-              )}
-            </div>
+                <Button 
+                  className="flex-1 bg-green-600 hover:bg-green-700 shadow-sm" 
+                  asChild
+                  size="lg"
+                >
+                  <Link to="/checkout">
+                    <CornerDownRight className="h-5 w-5 mr-2" /> Checkout
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <Button 
+                className="w-full shadow-sm"
+                onClick={handleAddToCart}
+                size="lg"
+                disabled={!product?.inStock}
+              >
+                <ShoppingCart className="h-5 w-5 mr-2" /> 
+                {product?.inStock ? 'Add to Cart' : 'Out of Stock'}
+              </Button>
+            )}
           </div>
         </div>
       </div>
