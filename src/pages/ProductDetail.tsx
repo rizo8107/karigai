@@ -754,7 +754,7 @@ const ProductDetail = () => {
             {/* Title and Price */}
             <h1 className="text-3xl font-bold mb-3 text-gray-800">{product.name}</h1>
             <div className="flex flex-wrap items-center gap-4 mb-8">
-              <div className="flex items-center border-2 rounded-lg shadow-sm">
+              <div className="flex items-center gap-2">
                 <p className="text-3xl font-semibold text-primary">
                   ₹{typeof product.price === 'number' ? product.price.toFixed(2) : '0.00'}
                 </p>
