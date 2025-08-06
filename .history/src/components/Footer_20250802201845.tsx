@@ -13,8 +13,8 @@ const Footer = () => {
               <Logo variant="light" className="h-8" />
             </Link>
             <p className="text-white/80 mb-6">
-            Karigai was founded with a simple mission to create beautiful, nourishing handmade soaps 
-            that don't compromise on quality or sustainability.
+              Crafting sustainable, stylish tote bags for the modern minimalist. 
+              Each piece is thoughtfully designed to complement your lifestyle while making a positive impact.
             </p>
             <div className="flex space-x-4">
               <Button variant="ghost" size="icon" className="text-white hover:text-white/80">
