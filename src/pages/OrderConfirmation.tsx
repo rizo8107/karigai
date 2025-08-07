@@ -159,8 +159,8 @@ export default function OrderConfirmation() {
               items,
               orderData.id,
               orderData.total,
-              orderData.shipping_cost || 0,
-              orderData.tax || 0,
+              orderData.shipping_cost,
+              orderData.tax,
               orderData.coupon_code
             );
             
@@ -168,8 +168,8 @@ export default function OrderConfirmation() {
             trackDynamicConversion({
               transaction_id: orderData.id,
               value: orderData.total,
-              shipping: orderData.shipping_cost || 0,
-              tax: orderData.tax || 0,
+              shipping: orderData.shipping_cost,
+              tax: orderData.tax,
               currency: 'INR',
               items: items,
               conversion_type: 'Purchase'

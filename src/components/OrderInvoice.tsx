@@ -1,10 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from './ui/button';
 import { Download, Printer } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { Logo } from '@/components/Logo';
-import html2pdf from 'html2pdf.js';
-import { useToast } from '@/components/ui/use-toast';
+import { Logo } from './Logo';
+import { useToast } from './ui/use-toast';
+import { formatOrderDate, calculateOrderTotal, OrderData } from '@/utils/orderUtils';
 
 // Define interfaces for products in order
 interface OrderProduct {
@@ -60,15 +60,7 @@ interface OrderInvoiceProps {
   products: OrderProduct[];
 }
 
-const formatDate = (dateString?: string) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-IN', { 
-    day: '2-digit', 
-    month: 'short', 
-    year: 'numeric' 
-  });
-};
+// Using the declaration file in src/types/html2pdf.d.ts
 
 export function OrderInvoice({ order, products }: OrderInvoiceProps) {
   const invoiceRef = useRef<HTMLDivElement>(null);
@@ -149,7 +141,7 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
       if (invoiceContent) {
         const logoDiv = invoiceContent.querySelector('.logo-container');
         if (logoDiv && logoUrl) {
-          logoDiv.innerHTML = `<img src="${logoUrl}" alt="ZentharaStudios" class="h-12" />`;
+          logoDiv.innerHTML = `<img src="${logoUrl}" alt="Karigai" class="h-12" />`;
         }
       }
 
@@ -206,68 +198,11 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
     }
   };
 
-  // Add PDF download function
-  const handleDownloadPDF = () => {
-    try {
-      // Check if html2pdf is available
-      if (typeof html2pdf === 'undefined') {
-        console.error('html2pdf is not available');
-        toast({
-          title: "Error",
-          description: "PDF generation library is not available. Please try HTML download instead.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Clone the invoice content for PDF generation
-      const invoiceContent = invoiceRef.current?.cloneNode(true) as HTMLElement;
-      
-      // Replace Logo component with direct image for PDF export
-      if (invoiceContent) {
-        const logoDiv = invoiceContent.querySelector('.logo-container');
-        if (logoDiv && logoUrl) {
-          logoDiv.innerHTML = `<img src="${logoUrl}" alt="ZentharaStudios" style="height: 48px;" />`;
-        }
-      }
-      
-      const options = {
-        margin: [10, 10],
-        filename: `Invoice-${order.id}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
-      
-      // Generate PDF
-      html2pdf()
-        .from(invoiceContent || invoiceRef.current)
-        .set(options)
-        .save()
-        .then(() => {
-          // Track the download event
-          if (typeof window !== 'undefined' && window.dataLayer) {
-            window.dataLayer.push({
-              event: 'invoice_download',
-              download_format: 'pdf',
-              order_id: order.id,
-              order_value: order.total
-            });
-          }
-        });
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast({
-        title: "Error",
-        description: "Failed to generate PDF. Please try HTML download instead.",
-        variant: "destructive"
-      });
-    }
-  };
+
 
   const shippingAddress = order.expand?.shipping_address;
-  const orderDate = formatDate(order.created);
-  const invoiceDate = formatDate(order.updated);
+  const orderDate = formatOrderDate(order.created);
+  const invoiceDate = formatOrderDate(order.updated);
 
   return (
     <div className="mt-6">
@@ -276,13 +211,9 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
           <Printer className="h-4 w-4" />
           Print
         </Button>
-        <Button onClick={handleDownload} variant="outline" className="flex items-center gap-2">
+        <Button onClick={handleDownload} variant="default" className="flex items-center gap-2">
           <Download className="h-4 w-4" />
           HTML
-        </Button>
-        <Button onClick={handleDownloadPDF} variant="default" className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          PDF
         </Button>
       </div>
       
@@ -290,60 +221,65 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
         ref={invoiceRef} 
         className="bg-white p-6 border rounded-lg shadow-sm print:shadow-none print:border-none"
       >
-        <div className="invoice-header flex justify-between items-start mb-8">
+        <div className="invoice-header flex justify-between items-start mb-10">
           <div>
             <div className="mb-4 logo-container">
               <Logo className="h-12" />
             </div>
             <div className="text-sm text-gray-600">
-              <p className="font-bold text-gray-800">ZentharaStudios</p>
-              <p>Vignarajapuram 1st Cross Street</p>
-              <p>Chennai, Tamil Nadu 600073</p>
+              <p className="font-bold text-gray-800">Karigai</p>
+              <p>Old busstand</p>
+              <p>Salem, Tamil Nadu 600073</p>
               <p>India</p>
-            
             </div>
           </div>
           
           <div className="text-right">
-            <h1 className="text-xl font-bold text-gray-800 mb-1">INVOICE</h1>
-            <p className="text-sm text-gray-600">#INV-{order.id}</p>
-            <div className="mt-4 text-sm text-gray-600">
-              <p><span className="font-medium">Order Date:</span> {orderDate}</p>
-              <p><span className="font-medium">Invoice Date:</span> {invoiceDate}</p>
-              <p><span className="font-medium">Payment Status:</span> {order.payment_status === 'paid' ? 'Paid' : 'Pending'}</p>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">INVOICE</h1>
+            <p className="text-sm text-gray-600 mb-4">{order.id ? `#INV-${order.id}` : ''}</p>
+            <div className="text-sm text-gray-600">
+              <p className="mb-1"><span className="font-medium">Order Date:</span> {orderDate}</p>
+              <p className="mb-1"><span className="font-medium">Invoice Date:</span> {invoiceDate}</p>
+              <p className="mb-1"><span className="font-medium">Payment Status:</span> {order.payment_status === 'paid' ? 'Paid' : 'Pending'}</p>
               {order.payment_id && (
-                <p><span className="font-medium">Payment ID:</span> {order.payment_id}</p>
+                <p className="mb-1"><span className="font-medium">Payment ID:</span> {order.payment_id}</p>
               )}
             </div>
           </div>
         </div>
         
-        <div className="invoice-section grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="invoice-section grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
           <div>
-            <h2 className="text-sm font-bold text-gray-800 mb-3 uppercase">Bill To:</h2>
+            <h2 className="text-sm font-bold text-gray-800 mb-3 uppercase">BILL TO</h2>
             <div className="text-sm text-gray-600">
-              <p className="font-medium text-gray-800">{order.customer_name}</p>
+              <p className="font-medium text-gray-800 mb-1">{order.customer_name || 'Customer'}</p>
               {shippingAddress && (
                 <>
-                  <p>{shippingAddress.street}</p>
-                  <p>{shippingAddress.city}, {shippingAddress.state} {shippingAddress.postalCode}</p>
-                  <p>{shippingAddress.country}</p>
+                  <p className="mb-1">{shippingAddress.street || ''}</p>
+                  <p className="mb-1">
+                    {shippingAddress.city || ''}{shippingAddress.city && shippingAddress.state ? ', ' : ''}
+                    {shippingAddress.state || ''} {shippingAddress.postalCode || ''}
+                  </p>
+                  <p className="mb-1">{shippingAddress.country || ''}</p>
                 </>
               )}
-              <p>{order.customer_email}</p>
-              <p>{order.customer_phone}</p>
+              {order.customer_email && <p className="mb-1">{order.customer_email}</p>}
+              {order.customer_phone && <p className="mb-1">{order.customer_phone}</p>}
             </div>
           </div>
           
           <div>
-            <h2 className="text-sm font-bold text-gray-800 mb-3 uppercase">Ship To:</h2>
+            <h2 className="text-sm font-bold text-gray-800 mb-3 uppercase">SHIP TO</h2>
             <div className="text-sm text-gray-600">
-              <p className="font-medium text-gray-800">{order.customer_name}</p>
+              <p className="font-medium text-gray-800 mb-1">{order.customer_name || 'Customer'}</p>
               {shippingAddress && (
                 <>
-                  <p>{shippingAddress.street}</p>
-                  <p>{shippingAddress.city}, {shippingAddress.state} {shippingAddress.postalCode}</p>
-                  <p>{shippingAddress.country}</p>
+                  <p className="mb-1">{shippingAddress.street || ''}</p>
+                  <p className="mb-1">
+                    {shippingAddress.city || ''}{shippingAddress.city && shippingAddress.state ? ', ' : ''}
+                    {shippingAddress.state || ''} {shippingAddress.postalCode || ''}
+                  </p>
+                  <p className="mb-1">{shippingAddress.country || ''}</p>
                 </>
               )}
             </div>
@@ -351,15 +287,15 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
         </div>
         
         <div className="invoice-section mb-8">
-          <h2 className="text-sm font-bold text-gray-800 mb-4 uppercase">Order Summary</h2>
-          <table className="invoice-table w-full text-sm">
+          <h2 className="text-sm font-bold text-gray-800 mb-4 uppercase">ORDER SUMMARY</h2>
+          <table className="invoice-table w-full text-sm border-collapse">
             <thead>
               <tr className="bg-gray-50">
-                <th className="px-4 py-2 text-left">Item</th>
-                <th className="px-4 py-2 text-left">Description</th>
-                <th className="px-4 py-2 text-center">Quantity</th>
-                <th className="px-4 py-2 text-right">Unit Price</th>
-                <th className="px-4 py-2 text-right">Amount</th>
+                <th className="px-4 py-3 text-left border-b">Item</th>
+                <th className="px-4 py-3 text-left border-b">Description</th>
+                <th className="px-4 py-3 text-center border-b">Quantity</th>
+                <th className="px-4 py-3 text-right border-b">Unit Price</th>
+                <th className="px-4 py-3 text-right border-b">Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -370,17 +306,17 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
                 const total = price * quantity;
                 
                 return (
-                  <tr key={index} className="border-b">
-                    <td className="px-4 py-2">{index + 1}</td>
-                    <td className="px-4 py-2">
+                  <tr key={index} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-3">{index + 1}</td>
+                    <td className="px-4 py-3">
                       <div>
                         <p className="font-medium">{name}</p>
-                        {item.color && <p className="text-gray-500 text-xs">Color: {item.color}</p>}
+                        {item.color && <p className="text-gray-500 text-xs mt-1">Color: {item.color}</p>}
                       </div>
                     </td>
-                    <td className="px-4 py-2 text-center">{quantity}</td>
-                    <td className="px-4 py-2 text-right">{formatCurrency(price)}</td>
-                    <td className="px-4 py-2 text-right">{formatCurrency(total)}</td>
+                    <td className="px-4 py-3 text-center">{quantity}</td>
+                    <td className="px-4 py-3 text-right">{formatCurrency(price)}</td>
+                    <td className="px-4 py-3 text-right">{formatCurrency(total)}</td>
                   </tr>
                 );
               })}
@@ -389,50 +325,102 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
         </div>
         
         <div className="invoice-section">
-          <table className="totals-table ml-auto text-sm">
+          <table className="totals-table ml-auto text-sm w-64 border-t border-gray-200">
             <tbody>
               <tr>
-                <td className="font-medium">Subtotal:</td>
-                <td className="text-right">{formatCurrency(order.subtotal)}</td>
+                <td className="font-medium py-2">Subtotal</td>
+                <td className="text-right py-2">
+                  {(() => {
+                    let subtotal = Number(order.subtotal || 0);
+                    if (subtotal > 10000) subtotal = subtotal / 100;
+                    return formatCurrency(subtotal);
+                  })()}
+                </td>
               </tr>
               <tr>
-                <td className="font-medium">Shipping:</td>
-                <td className="text-right">
-                  {order.shipping_cost === null || order.shipping_cost === 0
-                    ? 'Free'
-                    : formatCurrency(order.shipping_cost)}
+                <td className="font-medium py-2">Shipping</td>
+                <td className="text-right py-2">
+                  {(() => {
+                    if (order.shipping_cost === null || order.shipping_cost === 0) {
+                      return 'Free';
+                    } else {
+                      let shipping = Number(order.shipping_cost);
+                      if (shipping > 10000) shipping = shipping / 100;
+                      return formatCurrency(shipping);
+                    }
+                  })()}
                 </td>
               </tr>
               {order.discount_amount && order.discount_amount > 0 && (
                 <tr>
-                  <td className="font-medium">Discount:</td>
-                  <td className="text-right">-{formatCurrency(order.discount_amount)}</td>
+                  <td className="font-medium py-2">Discount</td>
+                  <td className="text-right py-2 text-red-600">
+                    {(() => {
+                      let discount = Number(order.discount_amount);
+                      if (discount > 10000) discount = discount / 100;
+                      return '-' + formatCurrency(discount);
+                    })()}
+                  </td>
                 </tr>
               )}
               {order.tax && order.tax > 0 && (
                 <tr>
-                  <td className="font-medium">Tax:</td>
-                  <td className="text-right">{formatCurrency(order.tax)}</td>
+                  <td className="font-medium py-2">Tax</td>
+                  <td className="text-right py-2">{formatCurrency(order.tax)}</td>
                 </tr>
               )}
               <tr className="total-row">
-                <td className="font-bold pt-3">Total:</td>
-                <td className="text-right font-bold pt-3">{formatCurrency(order.total)}</td>
+                <td className="font-bold py-3 border-t border-gray-300">Total</td>
+                <td className="text-right font-bold py-3 border-t border-gray-300">
+                  {/* Add debugging to check the actual values */}
+                  {(() => {
+                    // Check if values might be in paise instead of rupees
+                    let subtotal = Number(order.subtotal || 0);
+                    let shipping = Number(order.shipping_cost || 0);
+                    let discount = Number(order.discount_amount || 0);
+                    
+                    // If total is significantly larger than expected, values might be in paise
+                    // Check if any value is suspiciously large (100x what it should be)
+                    if (subtotal > 10000 || shipping > 10000) {
+                      console.log('Values appear to be in paise, converting to rupees');
+                      subtotal = subtotal / 100;
+                      shipping = shipping / 100;
+                      discount = discount / 100;
+                    }
+                    
+                    // Check if we should use the stored total or recalculate
+                    let calculatedTotal;
+                    
+                    // If the order already has a total field, use that directly
+                    if (order.total !== undefined && order.total !== null) {
+                      calculatedTotal = Number(order.total);
+                      // Convert from paise if needed
+                      if (calculatedTotal > 10000) calculatedTotal = calculatedTotal / 100;
+                      console.log('Using stored total:', calculatedTotal);
+                    } else {
+                      // Otherwise calculate as subtotal + shipping - discount
+                      calculatedTotal = subtotal + shipping - discount;
+                      console.log('Calculated total:', calculatedTotal);
+                    }
+                    console.log('Invoice calculation:', { subtotal, shipping, discount, calculatedTotal });
+                    return formatCurrency(calculatedTotal);
+                  })()}
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
         
-        <div className="invoice-section mt-10 border-t pt-8">
+        <div className="invoice-section mt-12 border-t pt-8">
           <div className="max-w-2xl mx-auto text-center text-sm text-gray-600">
-            <p className="mb-1 font-medium">Thank you for your purchase!</p>
+            <p className="mb-2 font-medium">Thank you for your purchase!</p>
             <p>If you have any questions about this invoice, please contact our customer support:</p>
-            <p className="mt-1">support@zenthrastudios.com | +91 1234567890</p>
+            <p className="mt-2">karigaishree@gmail.com | +91 9486054899</p>
           </div>
         </div>
         
-        <div className="company-info text-xs text-gray-500 mt-10 pt-4 border-t">
-          <p>ZentharaStudios | Registered in India | Company No: 123456789</p>
+        <div className="company-info text-xs text-gray-500 mt-12 pt-4 border-t">
+          <p>Karigai | Registered in India</p>
         </div>
       </div>
     </div>

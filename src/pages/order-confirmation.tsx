@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card';
 import { Loader2, CheckCircle2, ArrowRight } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { pocketbase } from '@/lib/pocketbase';
+import { formatOrderDate, calculateOrderTotal, OrderData as BaseOrderData } from '@/utils/orderUtils';
+
 import { useToast } from '@/components/ui/use-toast';
 
 interface OrderItem {
@@ -29,9 +31,11 @@ interface ShippingAddress {
   country: string;
 }
 
+// Define Order interface with specific fields needed for this component
 interface Order {
   id: string;
   created: string;
+  updated: string;
   customer_name: string;
   customer_email: string;
   customer_phone: string;
@@ -41,9 +45,19 @@ interface Order {
   products: string; // JSON string of OrderItem[]
   subtotal: number;
   shipping_cost: number;
+  discount_amount: number;
   total: number;
   status: string;
   payment_status: string;
+  payment_id?: string;
+  payment_date?: string;
+  payment_method?: string;
+  razorpay_order_id?: string;
+  razorpay_payment_id?: string;
+  razorpay_signature?: string;
+  coupon_code?: string | null;
+  notes?: string;
+  is_guest_order?: boolean;
 }
 
 export default function OrderConfirmation() {
@@ -155,7 +169,7 @@ export default function OrderConfirmation() {
           <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
           <h1 className="text-3xl font-bold mb-2">Thank You for Your Order!</h1>
           <p className="text-gray-600">
-            Order #{order.id} has been successfully placed
+            Order #{order.id} has been successfully placed on {formatOrderDate(order.created)}
           </p>
           <div className={`mt-4 payment-status-badge ${order.payment_status === 'captured' ? 'payment-status-completed' : order.payment_status === 'authorized' ? 'payment-status-authorized' : 'payment-status-pending'}`}>
             <span className="status-dot"></span>
@@ -211,15 +225,60 @@ export default function OrderConfirmation() {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>{formatCurrency(order.subtotal)}</span>
+                <span>
+                  {(() => {
+                    let subtotal = Number(order.subtotal || 0);
+                    if (subtotal > 10000) subtotal = subtotal / 100;
+                    return formatCurrency(subtotal);
+                  })()}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
-                <span>{formatCurrency(order.shipping_cost)}</span>
+                <span>
+                  {(() => {
+                    let shipping = Number(order.shipping_cost || 0);
+                    if (shipping > 10000) shipping = shipping / 100;
+                    return formatCurrency(shipping);
+                  })()}
+                </span>
               </div>
               <div className="flex justify-between font-bold text-lg">
                 <span>Total</span>
-                <span>{formatCurrency(order.total)}</span>
+                <span>
+                  {(() => {
+                    // Check if values might be in paise instead of rupees
+                    let subtotal = Number(order.subtotal || 0);
+                    let shipping = Number(order.shipping_cost || 0);
+                    let discount = Number(order.discount_amount || 0);
+                    
+                    // If total is significantly larger than expected, values might be in paise
+                    // Check if any value is suspiciously large (100x what it should be)
+                    if (subtotal > 10000 || shipping > 10000) {
+                      console.log('Values appear to be in paise, converting to rupees');
+                      subtotal = subtotal / 100;
+                      shipping = shipping / 100;
+                      discount = discount / 100;
+                    }
+                    
+                    // Check if we should use the stored total or recalculate
+                    let calculatedTotal;
+                    
+                    // If the order already has a total field, use that directly
+                    if (order.total !== undefined && order.total !== null) {
+                      calculatedTotal = Number(order.total);
+                      // Convert from paise if needed
+                      if (calculatedTotal > 10000) calculatedTotal = calculatedTotal / 100;
+                      console.log('Using stored total:', calculatedTotal);
+                    } else {
+                      // Otherwise calculate as subtotal + shipping - discount
+                      calculatedTotal = subtotal + shipping - discount;
+                      console.log('Calculated total:', calculatedTotal);
+                    }
+                    console.log('Order confirmation calculation:', { subtotal, shipping, discount, calculatedTotal });
+                    return formatCurrency(calculatedTotal);
+                  })()}
+                </span>
               </div>
             </div>
           </div>

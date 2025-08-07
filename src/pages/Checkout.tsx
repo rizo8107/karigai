@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatCurrency } from '@/lib/utils';
+import { calculateOrderTotal } from '@/utils/orderUtils';
 import { pocketbase } from '@/lib/pocketbase';
 import { CountdownTimer } from '@/components/ui/countdown-timer';
 import { Button } from '@/components/ui/button';
@@ -573,6 +575,10 @@ const removeCoupon = () => {
         updated: new Date().toISOString(),
         // Preserve the shipping address data from the existing order
         shipping_address: existingOrder?.shipping_address || null,
+        // Preserve discount amount from the existing order
+        discount_amount: existingOrder?.discount_amount || 0,
+        // Recalculate total to ensure consistency
+        total: (existingOrder?.subtotal || 0) + (existingOrder?.shipping_cost || 0) - (existingOrder?.discount_amount || 0),
         // Only include shipping_address_text if it exists in the original order
         ...(existingOrder?.shipping_address_text ? {
           shipping_address_text: existingOrder.shipping_address_text
@@ -1262,12 +1268,13 @@ const removeCoupon = () => {
           color: item.color
         }))),
         subtotal: subtotal,
-        shipping_cost: calculateFinalTotal().shippingCost,
-        total: calculateFinalTotal().finalTotal,
+        shipping_cost: shippingCost,
+        discount_amount: appliedCoupon?.discountAmount || 0,
+        // Calculate total consistently as: subtotal + shipping - discount
+        total: subtotal + shippingCost - ((appliedCoupon?.discountAmount || 0) + offerDiscount),
         status: 'pending',
         payment_status: 'pending',
         coupon_code: appliedCoupon?.code || null,
-        discount_amount: appliedCoupon?.discountAmount || 0,
         notes: isGuestCheckout ? 'Guest checkout order' : 'Order created, awaiting payment',
         payment_id: '',
         razorpay_order_id: '',
