@@ -14,7 +14,8 @@ export enum Collections {
     ADDRESSES = 'addresses',
     CARTS = 'carts',
     ASSETS = 'assets',
-    SLIDER_IMAGES = 'slider_images'
+    SLIDER_IMAGES = 'slider_images',
+    THEME_SETTINGS = 'theme_settings'
 }
 
 // Type definitions for PocketBase records
@@ -614,6 +615,19 @@ export interface ReviewComment {
     };
 }
 
+export interface ThemeSettings extends RecordModel {
+    name: string;
+    is_active: boolean;
+    primary_color: string;
+    primary_color_hover: string;
+    primary_color_hsl: string;
+    accent_color: string;
+    accent_color_hsl: string;
+    text_on_primary: string;
+    dark_mode_primary_color_hsl: string;
+    dark_mode_accent_color_hsl: string;
+}
+
 // Function to create a review
 export const createReview = async (
     productId: string,
@@ -707,4 +721,132 @@ export const voteReview = async (reviewId: string): Promise<Review> => {
     return await pocketbase.collection('reviews').update(reviewId, {
         helpful_votes: (review.helpful_votes || 0) + 1
     });
+};
+
+// Theme settings functions
+export const getActiveTheme = async (): Promise<ThemeSettings | null> => {
+    try {
+        const result = await pocketbase.collection(Collections.THEME_SETTINGS).getList(1, 1, {
+            filter: 'is_active=true',
+            sort: '-created'
+        });
+        
+        if (result.items.length > 0) {
+            return result.items[0] as unknown as ThemeSettings;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error fetching active theme:', error);
+        return null;
+    }
+};
+
+export const getAllThemes = async (): Promise<ThemeSettings[]> => {
+    try {
+        const result = await pocketbase.collection(Collections.THEME_SETTINGS).getFullList({
+            sort: '-created'
+        });
+        return result as unknown as ThemeSettings[];
+    } catch (error) {
+        console.error('Error fetching themes:', error);
+        return [];
+    }
+};
+
+export const createTheme = async (theme: { 
+    name: string;
+    is_active: boolean;
+    primary_color: string;
+    primary_color_hover: string;
+    primary_color_hsl: string;
+    accent_color: string;
+    accent_color_hsl: string;
+    text_on_primary: string;
+    dark_mode_primary_color_hsl: string;
+    dark_mode_accent_color_hsl: string;
+}): Promise<ThemeSettings> => {
+    try {
+        // If this theme is active, deactivate all other themes first
+        if (theme.is_active) {
+            await deactivateAllThemes();
+        }
+        
+        const result = await pocketbase.collection(Collections.THEME_SETTINGS).create(theme);
+        return result as unknown as ThemeSettings;
+    } catch (error) {
+        console.error('Error creating theme:', error);
+        throw new Error(error instanceof Error ? error.message : 'Failed to create theme');
+    }
+};
+
+export const updateTheme = async (id: string, theme: Partial<{
+    name: string;
+    is_active: boolean;
+    primary_color: string;
+    primary_color_hover: string;
+    primary_color_hsl: string;
+    accent_color: string;
+    accent_color_hsl: string;
+    text_on_primary: string;
+    dark_mode_primary_color_hsl: string;
+    dark_mode_accent_color_hsl: string;
+}>): Promise<ThemeSettings> => {
+    try {
+        // If this theme is being set to active, deactivate all other themes first
+        if (theme.is_active) {
+            await deactivateAllThemes();
+        }
+        
+        const result = await pocketbase.collection(Collections.THEME_SETTINGS).update(id, theme);
+        return result as unknown as ThemeSettings;
+    } catch (error) {
+        console.error('Error updating theme:', error);
+        throw new Error(error instanceof Error ? error.message : 'Failed to update theme');
+    }
+};
+
+export const deleteTheme = async (id: string): Promise<boolean> => {
+    try {
+        await pocketbase.collection(Collections.THEME_SETTINGS).delete(id);
+        return true;
+    } catch (error) {
+        console.error('Error deleting theme:', error);
+        return false;
+    }
+};
+
+export const activateTheme = async (id: string): Promise<ThemeSettings> => {
+    try {
+        // Deactivate all themes first
+        await deactivateAllThemes();
+        
+        // Then activate the selected theme
+        const result = await pocketbase.collection(Collections.THEME_SETTINGS).update(id, {
+            is_active: true
+        });
+        
+        return result as unknown as ThemeSettings;
+    } catch (error) {
+        console.error('Error activating theme:', error);
+        throw new Error(error instanceof Error ? error.message : 'Failed to activate theme');
+    }
+};
+
+// Helper function to deactivate all themes
+async function deactivateAllThemes(): Promise<void> {
+    try {
+        const activeThemes = await pocketbase.collection(Collections.THEME_SETTINGS).getFullList({
+            filter: 'is_active=true'
+        });
+        
+        // Update each active theme to be inactive
+        for (const theme of activeThemes) {
+            await pocketbase.collection(Collections.THEME_SETTINGS).update(theme.id, {
+                is_active: false
+            });
+        }
+    } catch (error) {
+        console.error('Error deactivating themes:', error);
+        throw new Error(error instanceof Error ? error.message : 'Failed to deactivate themes');
+    }
 }; 

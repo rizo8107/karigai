@@ -27,7 +27,8 @@
     "build:server": "tsc -p tsconfig.server.json",
     "start:server": "tsx src/server/index.ts",
     "dev:server": "tsx watch src/server/index.ts",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\""
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\"",
+    "setup:theme": "node scripts/setupTheme.js"
   },
   "dependencies": {
     "@builder.io/react": "^8.2.5",
