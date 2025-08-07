@@ -354,16 +354,16 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
           </div>
         </div>
         
-        <div className="invoice-section mb-8">
+        <div className="invoice-section mb-8 overflow-x-auto">
           <h2 className="text-sm font-bold text-gray-800 mb-4 uppercase">ORDER SUMMARY</h2>
-          <table className="invoice-table w-full text-sm border-collapse">
+          <table className="invoice-table w-full text-sm border-collapse table-fixed">
             <thead>
               <tr className="bg-gray-50">
-                <th className="px-4 py-3 text-left border-b">Item</th>
-                <th className="px-4 py-3 text-left border-b">Description</th>
-                <th className="px-4 py-3 text-center border-b">Quantity</th>
-                <th className="px-4 py-3 text-right border-b">Unit Price</th>
-                <th className="px-4 py-3 text-right border-b">Amount</th>
+                <th className="px-4 py-3 text-left border-b w-[8%]">Item</th>
+                <th className="px-4 py-3 text-left border-b w-[42%]">Description</th>
+                <th className="px-4 py-3 text-center border-b w-[10%]">Quantity</th>
+                <th className="px-4 py-3 text-right border-b w-[20%]">Unit Price</th>
+                <th className="px-4 py-3 text-right border-b w-[20%]">Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -392,48 +392,48 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
           </table>
         </div>
         
-        <div className="invoice-section">
-          <table className="totals-table ml-auto text-sm w-64 border-t border-gray-200">
-            <tbody>
-              <tr>
-                <td className="font-medium py-2">Subtotal</td>
-                <td className="text-right py-2">
-                  {formatCurrency(Number(order.subtotal || 0))}
-                </td>
-              </tr>
-              <tr>
-                <td className="font-medium py-2">Shipping cost</td>
-                <td className="text-right py-2">{order.shipping_cost ? formatCurrency(Number(order.shipping_cost)) : 'Free'}</td>
-              </tr>
-              {/* Only render discount row if there is a discount */}
-              {order.discount_amount && order.discount_amount > 0 && (
+        <div className="invoice-section mt-6">
+          <div className="flex justify-end">
+            <table className="w-72 text-sm border-collapse">
+              <tbody>
                 <tr>
-                  <td className="font-medium py-2">Discount</td>
-                  <td className="text-right py-2 text-red-600">
-                    - {formatCurrency(Number(order.discount_amount))}
+                  <td className="font-medium py-2">Subtotal</td>
+                  <td className="text-right py-2">{formatCurrency(Number(order.subtotal || 0))}</td>
+                </tr>
+                <tr>
+                  <td className="font-medium py-2">Shipping cost</td>
+                  <td className="text-right py-2">{order.shipping_cost ? formatCurrency(Number(order.shipping_cost)) : 'Free'}</td>
+                </tr>
+                {/* Only render discount row if there is a discount */}
+                {order.discount_amount !== null && order.discount_amount !== undefined && Number(order.discount_amount) > 0 && (
+                  <tr>
+                    <td className="font-medium py-2">Discount</td>
+                    <td className="text-right py-2 text-red-600">
+                      - {formatCurrency(Number(order.discount_amount))}
+                    </td>
+                  </tr>
+                )}
+                {order.tax && order.tax > 0 && (
+                  <tr>
+                    <td className="font-medium py-2">Tax</td>
+                    <td className="text-right py-2">{formatCurrency(order.tax)}</td>
+                  </tr>
+                )}
+                <tr className="total-row">
+                  <td className="font-bold py-3 border-t border-gray-300">Total</td>
+                  <td className="text-right font-bold py-3 border-t border-gray-300">
+                    {formatCurrency(
+                      // Recalculate total to ensure accuracy: subtotal + shipping - discount
+                      Number(order.subtotal || 0) + 
+                      Number(order.shipping_cost || 0) - 
+                      Number(order.discount_amount || 0) +
+                      Number(order.tax || 0)
+                    )}
                   </td>
                 </tr>
-              )}
-              {order.tax && order.tax > 0 && (
-                <tr>
-                  <td className="font-medium py-2">Tax</td>
-                  <td className="text-right py-2">{formatCurrency(order.tax)}</td>
-                </tr>
-              )}
-              <tr className="total-row">
-                <td className="font-bold py-3 border-t border-gray-300">Total</td>
-                <td className="text-right font-bold py-3 border-t border-gray-300">
-                  {formatCurrency(
-                    // Recalculate total to ensure accuracy: subtotal + shipping - discount
-                    Number(order.subtotal || 0) + 
-                    Number(order.shipping_cost || 0) - 
-                    Number(order.discount_amount || 0) +
-                    Number(order.tax || 0)
-                  )}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         </div>
         
         <div className="invoice-section mt-12 border-t pt-8">

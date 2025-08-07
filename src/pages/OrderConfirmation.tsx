@@ -407,7 +407,7 @@ export default function OrderConfirmation() {
                 <span>Shipping Cost</span>
                 <span>{order.shipping_cost ? formatCurrency(Number(order.shipping_cost)) : 'Free'}</span>
               </div>
-              {order.discount_amount && order.discount_amount > 0 && (
+              {order.discount_amount !== null && order.discount_amount !== undefined && Number(order.discount_amount) > 0 && (
                 <div className="flex justify-between py-1 text-green-600">
                   <span>Discount</span>
                   <span>
