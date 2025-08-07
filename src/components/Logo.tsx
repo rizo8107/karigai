@@ -8,20 +8,17 @@ interface LogoProps {
 }
 
 export function Logo({ className, variant = 'default' }: LogoProps) {
-  // Get logo path from environment variable or use default
-  const logoPath = import.meta.env.VITE_LOGO_PATH || '/karigai-logo.webp';
-  
-  // Use environment-specific logo files
+  // Use direct paths to the logo files in the public directory
   const logoUrl = variant === 'light' 
-    ? logoPath.replace('.webp', '-white.webp').replace('.svg', '-white.svg')
-    : logoPath;
+    ? '/karigai-logo-white.webp'
+    : '/karigai-logo.webp';
 
-  // Set loaded to true by default since we're using local files
   const [error, setError] = useState<boolean>(false);
   const [loaded, setLoaded] = useState<boolean>(true);
 
-  // Fallback handling if the local file fails to load
+  // Fallback handling if the logo fails to load
   const handleError = () => {
+    console.error('Logo failed to load:', logoUrl);
     setError(true);
     setLoaded(true);
   };
