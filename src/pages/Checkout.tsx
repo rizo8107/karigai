@@ -1267,11 +1267,12 @@ const removeCoupon = () => {
           quantity: item.quantity,
           color: item.color
         }))),
-        subtotal: subtotal,
-        shipping_cost: shippingCost,
-        discount_amount: appliedCoupon?.discountAmount || 0,
+        subtotal: Number(subtotal),
+        // CRITICAL FIX: Ensure shipping_cost is explicitly a number for PocketBase
+        shipping_cost: Number(shippingCost || 0),
+        discount_amount: Number(appliedCoupon?.discountAmount || 0),
         // Calculate total consistently as: subtotal + shipping - discount
-        total: subtotal + shippingCost - ((appliedCoupon?.discountAmount || 0) + offerDiscount),
+        total: Number(subtotal) + Number(shippingCost || 0) - (Number(appliedCoupon?.discountAmount || 0) + Number(offerDiscount || 0)),
         status: 'pending',
         payment_status: 'pending',
         coupon_code: appliedCoupon?.code || null,
@@ -1285,10 +1286,20 @@ const removeCoupon = () => {
         created: new Date().toISOString(),
       };
 
+      console.log('SHIPPING TRACKING - Before order creation:');
+      console.log(`- Calculated shippingCost: ₹${shippingCost}`);
+      console.log(`- orderData.shipping_cost: ₹${orderData.shipping_cost}`);
+      console.log(`- orderData.total: ₹${orderData.total}`);
+
       console.log('Creating order with data:', {
         ...orderData,
         products: `[${items.length} items]`, // Don't log the entire products array
       });
+
+      console.log('SHIPPING TRACKING - After order creation:');
+      console.log(`- Calculated shippingCost: ₹${shippingCost}`);
+      console.log(`- orderData.shipping_cost: ₹${orderData.shipping_cost}`);
+      console.log(`- orderData.total: ₹${orderData.total}`);
 
       // Ensure we have admin authentication for secure order creation
       const adminEmail = import.meta.env.VITE_POCKETBASE_ADMIN_EMAIL;
@@ -1345,11 +1356,116 @@ const removeCoupon = () => {
     // Debug environment variables
     console.log('Debug - Environment variables:');
     
-    // Ensure the order amount is positive - Razorpay doesn't accept negative amounts
-    const orderAmount = Math.max(1, order.total); // Minimum 1 rupee if total is zero or negative
+    // CRITICAL FIX: First ensure the shipping cost is present
+    // Based on logs, we can see shipping cost is disappearing between
+    // the initial calculation and payment processing
+    console.log('========== SHIPPING COST FIX ==========');
+    console.log('ORDER OBJECT BEFORE FIX:');
+    console.log('- Order ID:', order.id);
+    console.log('- Raw shipping_cost from order:', order.shipping_cost);
+    console.log('- Raw subtotal from order:', order.subtotal);
+    console.log('- Raw total from order:', order.total);
     
-    console.log(`Original order total: ₹${order.total}`);
-    console.log(`Creating Razorpay order for amount: ₹${orderAmount} (will be converted to ${orderAmount * 100} paise)`);
+    // SUPER IMPORTANT: If we detect our shipping cost disappeared, we need to fix it
+    const lastCalculatedShipping = formData.state ? calculateShippingCost(formData.state) : 0;
+    console.log(`Last calculated shipping cost from form state: ₹${lastCalculatedShipping}`);
+    
+    // If no shipping cost in order but we have a state, force the shipping cost
+    if (formData.state && (!order.shipping_cost || Number(order.shipping_cost) === 0)) {
+      console.warn('⚠️⚠️⚠️ CRITICAL: Shipping cost is missing from order object but we have an address! Fixing...');
+      
+      // Recover the shipping cost using the shipping cost calculation function
+      const fixedShippingCost = lastCalculatedShipping;
+      if (fixedShippingCost > 0) {
+        console.log(`Fixing shipping cost: Using calculated value ₹${fixedShippingCost} instead of ₹${order.shipping_cost || 0}`);
+        
+        // Fix the shipping cost in the order object
+        order.shipping_cost = fixedShippingCost;
+        
+        // Also recalculate total to ensure consistency
+        const newTotal = Number(order.subtotal || 0) + fixedShippingCost - Number(order.discount_amount || 0);
+        order.total = newTotal;
+        console.log(`Fixed total: ₹${order.total}`);
+      }
+    }
+    
+    // ===== CRITICAL PAYMENT FIX =====
+    // Fix for Razorpay amount discrepancy: ensure payment includes shipping cost
+    // This fixes the issue where Razorpay shows ₹300 instead of the correct ₹350 (which includes shipping)
+    
+    // 1. Get the raw component values
+    const subtotalAmount = Number(order.subtotal || 0);
+    let shippingAmount = Number(order.shipping_cost || 0);
+    const discountAmount = Number(order.discount_amount || 0);
+    
+    // CRITICAL SAFETY NET: If we still don't have shipping cost but have address,
+    // calculate it one last time before payment processing
+    if (formData.state && shippingAmount === 0) {
+      const finalShippingCost = calculateShippingCost(formData.state);
+      console.log(`🛡️ FINAL SAFETY CHECK: Address exists but shipping is still 0. Forcing shipping cost: ₹${finalShippingCost}`);
+      shippingAmount = finalShippingCost;
+      order.shipping_cost = finalShippingCost;
+    }
+    
+    // 2. Force the correct total calculation with shipping included
+    const calculatedTotal = subtotalAmount + shippingAmount - discountAmount;
+    const orderAmount = Math.max(1, calculatedTotal); // Minimum 1 rupee
+    
+    console.log(`======= PAYMENT AMOUNT FIX =======`);
+    console.log(`FIXING Razorpay payment amount to include shipping:`);
+    console.log(`Subtotal: ₹${subtotalAmount}`);
+    console.log(`+ Shipping: ₹${shippingAmount}`);
+    console.log(`- Discount: ₹${discountAmount}`);
+    console.log(`= TOTAL: ₹${orderAmount}`);
+    console.log(`Database order.total (which may be wrong): ₹${order.total}`);
+    console.log(`Using corrected amount: ₹${orderAmount} (${orderAmount * 100} paise)`);
+    
+    // 3. CRITICAL: Update the order total in our order object to ensure consistency
+    //    This ensures Razorpay gets the correct amount including shipping
+    order.total = orderAmount;
+    console.log(`Updated order.total to: ₹${order.total}`);
+    console.log(`================================`);
+    
+    // 4. IMPORTANT: Update PocketBase order record with the corrected values
+    //    This ensures the database reflects the same values used for payment
+    try {
+      console.log('Updating PocketBase order record with corrected values:');
+      console.log(`- Original shipping_cost: ₹${order.shipping_cost}`);
+      console.log(`- Original total: ₹${order.total}`);
+      
+      // Use admin authentication for update if available
+      const adminEmail = import.meta.env.VITE_POCKETBASE_ADMIN_EMAIL;
+      const adminPassword = import.meta.env.VITE_POCKETBASE_ADMIN_PASSWORD;
+      
+      if (adminEmail && adminPassword) {
+        // Store the current auth state
+        const currentAuthStore = pocketbase.authStore.exportToCookie();
+        
+        // Authenticate as admin
+        await pocketbase.admins.authWithPassword(adminEmail, adminPassword);
+        
+        // Update the order with corrected values
+        await pocketbase.collection('orders').update(order.id, {
+          shipping_cost: Number(shippingAmount),
+          total: Number(orderAmount)
+        });
+        
+        // Restore the original auth state
+        pocketbase.authStore.loadFromCookie(currentAuthStore);
+        console.log('✅ PocketBase order updated successfully with corrected values');
+      } else {
+        // Fallback to regular update
+        await pocketbase.collection('orders').update(order.id, {
+          shipping_cost: Number(shippingAmount),
+          total: Number(orderAmount)
+        });
+        console.log('✅ PocketBase order updated successfully with corrected values');
+      }
+    } catch (updateError) {
+      console.error('Failed to update PocketBase order with corrected values:', updateError);
+      // Don't block payment process if database update fails
+      // We'll proceed with payment using the correct values in memory
+    }
     
     try {
       console.log('Creating Razorpay order with the following parameters:');
@@ -1416,15 +1532,28 @@ const removeCoupon = () => {
         throw new Error('Payment initialization failed. Please try again.');
       }
 
+      // Verify that the Razorpay order amount matches our calculated total
+      const expectedAmountInPaise = orderAmount * 100;
+      if (razorpayOrderResponse.amount !== expectedAmountInPaise) {
+        console.error(
+          `⚠️ AMOUNT MISMATCH: Razorpay order amount (${razorpayOrderResponse.amount} paise) ` +
+          `doesn't match our calculated total (${expectedAmountInPaise} paise)`
+        );
+        // Use our correct amount instead of the response amount
+        console.log(`Using our calculated amount (${expectedAmountInPaise} paise) for Razorpay checkout`); 
+      }
+      
       // Open Razorpay payment form with explicit key from environment
       console.log('Opening Razorpay checkout with key:', razorpayKeyId.substring(0, 4) + '...');
       openRazorpayCheckout({
         key: razorpayKeyId, // Use the validated key directly
         order_id: razorpayOrderResponse.id,
-        amount: razorpayOrderResponse.amount, // Amount is already in paise from the Razorpay order
+        // CRITICAL FIX: Always use our calculated amount that includes shipping
+        // This ensures the amount shown in Razorpay matches our checkout total
+        amount: expectedAmountInPaise, // Force our calculated amount in paise
         currency: 'INR',
         name: 'Karigai',
-        description: `Order #${order.id}`,
+        description: `Order #${order.id} - Total ₹${orderAmount}`,
         image: import.meta.env.VITE_SITE_LOGO || 'https://karigai.in/assets/logo.png',
         handler: (response) => handlePaymentSuccess(response, order.id),
         prefill: {

@@ -418,7 +418,15 @@ export default function OrderConfirmation() {
               <div className="flex justify-between py-1 font-semibold">
                 <span>Total</span>
                 <span>
-                  {formatCurrency(Number(order.total || 0))}
+                  {(() => {
+                    // Recalculate total to ensure accuracy
+                    const calculatedTotal = (
+                      Number(order.subtotal || 0) + 
+                      Number(order.shipping_cost || 0) - 
+                      Number(order.discount_amount || 0)
+                    );
+                    return formatCurrency(calculatedTotal);
+                  })()}
                 </span>
               </div>
             </div>

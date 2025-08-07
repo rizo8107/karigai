@@ -423,7 +423,13 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
               <tr className="total-row">
                 <td className="font-bold py-3 border-t border-gray-300">Total</td>
                 <td className="text-right font-bold py-3 border-t border-gray-300">
-                  {formatCurrency(Number(order.total || 0))}
+                  {formatCurrency(
+                    // Recalculate total to ensure accuracy: subtotal + shipping - discount
+                    Number(order.subtotal || 0) + 
+                    Number(order.shipping_cost || 0) - 
+                    Number(order.discount_amount || 0) +
+                    Number(order.tax || 0)
+                  )}
                 </td>
               </tr>
             </tbody>
