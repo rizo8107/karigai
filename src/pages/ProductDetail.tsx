@@ -797,26 +797,7 @@ const ProductDetail = () => {
               )}
             </div>
             
-            {/* Weight Information */}
-            <div className="grid grid-cols-2 gap-6 p-5 bg-gray-50 rounded-xl mb-8 shadow-sm">
-              {/* Weight information */}
-              <div className="flex flex-col items-center text-center gap-2">
-                <Package className="h-6 w-6 text-primary" />
-                <div className="text-xs">
-                  <p className="font-medium">Product Weight</p>
-                  <p className="text-muted-foreground">{orderConfig.defaultWeight}</p>
-                </div>
-              </div>
-              
-              {/* Secure Payment - Always show */}
-              <div className="flex flex-col items-center text-center gap-2">
-                <Shield className="h-6 w-6 text-primary" />
-                <div className="text-xs">
-                  <p className="font-medium">Secure Payment</p>
-                  <p className="text-muted-foreground">100% secure checkout</p>
-                </div>
-              </div>
-            </div>
+            {/* Product information section removed */}
             
             {/* Description Tabs */}
             <Tabs defaultValue="description" className="mb-8">
