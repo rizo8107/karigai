@@ -398,36 +398,19 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
               <tr>
                 <td className="font-medium py-2">Subtotal</td>
                 <td className="text-right py-2">
-                  {(() => {
-                    let subtotal = Number(order.subtotal || 0);
-                    if (subtotal > 10000) subtotal = subtotal / 100;
-                    return formatCurrency(subtotal);
-                  })()}
+                  {formatCurrency(Number(order.subtotal || 0))}
                 </td>
               </tr>
               <tr>
-                <td className="font-medium py-2">Shipping</td>
-                <td className="text-right py-2">
-                  {(() => {
-                    if (order.shipping_cost === null || order.shipping_cost === 0) {
-                      return 'Free';
-                    } else {
-                      let shipping = Number(order.shipping_cost);
-                      if (shipping > 10000) shipping = shipping / 100;
-                      return formatCurrency(shipping);
-                    }
-                  })()}
-                </td>
+                <td className="font-medium py-2">Shipping cost</td>
+                <td className="text-right py-2">{order.shipping_cost ? formatCurrency(Number(order.shipping_cost)) : 'Free'}</td>
               </tr>
+              {/* Only render discount row if there is a discount */}
               {order.discount_amount && order.discount_amount > 0 && (
                 <tr>
                   <td className="font-medium py-2">Discount</td>
                   <td className="text-right py-2 text-red-600">
-                    {(() => {
-                      let discount = Number(order.discount_amount);
-                      if (discount > 10000) discount = discount / 100;
-                      return '-' + formatCurrency(discount);
-                    })()}
+                    - {formatCurrency(Number(order.discount_amount))}
                   </td>
                 </tr>
               )}
@@ -440,39 +423,7 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
               <tr className="total-row">
                 <td className="font-bold py-3 border-t border-gray-300">Total</td>
                 <td className="text-right font-bold py-3 border-t border-gray-300">
-                  {/* Add debugging to check the actual values */}
-                  {(() => {
-                    // Check if values might be in paise instead of rupees
-                    let subtotal = Number(order.subtotal || 0);
-                    let shipping = Number(order.shipping_cost || 0);
-                    let discount = Number(order.discount_amount || 0);
-                    
-                    // If total is significantly larger than expected, values might be in paise
-                    // Check if any value is suspiciously large (100x what it should be)
-                    if (subtotal > 10000 || shipping > 10000) {
-                      console.log('Values appear to be in paise, converting to rupees');
-                      subtotal = subtotal / 100;
-                      shipping = shipping / 100;
-                      discount = discount / 100;
-                    }
-                    
-                    // Check if we should use the stored total or recalculate
-                    let calculatedTotal;
-                    
-                    // If the order already has a total field, use that directly
-                    if (order.total !== undefined && order.total !== null) {
-                      calculatedTotal = Number(order.total);
-                      // Convert from paise if needed
-                      if (calculatedTotal > 10000) calculatedTotal = calculatedTotal / 100;
-                      console.log('Using stored total:', calculatedTotal);
-                    } else {
-                      // Otherwise calculate as subtotal + shipping - discount
-                      calculatedTotal = subtotal + shipping - discount;
-                      console.log('Calculated total:', calculatedTotal);
-                    }
-                    console.log('Invoice calculation:', { subtotal, shipping, discount, calculatedTotal });
-                    return formatCurrency(calculatedTotal);
-                  })()}
+                  {formatCurrency(Number(order.total || 0))}
                 </td>
               </tr>
             </tbody>

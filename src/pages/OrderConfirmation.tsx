@@ -62,6 +62,22 @@ interface Order {
 // Lazy load the OrderInvoice component
 const OrderInvoice = lazy(() => import('@/components/OrderInvoice').then(module => ({ default: module.OrderInvoice })));
 
+// Helper to construct image URL
+const getImageUrl = (product: OrderProduct['product'], productId: string | undefined): string => {
+  const baseUrl = 'https://backend-karigaibackend.7za6uc.easypanel.host';
+  const collectionId = 'products'; // Assuming 'products' is the collection name for product images
+
+  const pId = product?.id || productId;
+  const imageName = product?.images?.[0];
+
+  if (pId && imageName) {
+    return `${baseUrl}/api/files/${collectionId}/${pId}/${imageName}`;
+  }
+  
+  // Fallback if image is not available
+  return 'https://via.placeholder.com/150'; 
+};
+
 export default function OrderConfirmation() {
   const { orderId } = useParams<{ orderId: string }>();
   const [searchParams] = useSearchParams();
@@ -116,15 +132,46 @@ export default function OrderConfirmation() {
             parsedShippingAddress = JSON.parse(orderData.shipping_address_text);
             console.log('Successfully parsed shipping address:', parsedShippingAddress);
             
-            // Add the shipping address to the expanded data
             orderData.expand = orderData.expand || {};
             orderData.expand.shipping_address = parsedShippingAddress;
           } catch (addressError) {
             console.error('Failed to parse shipping address:', addressError);
           }
         }
+
+        // Enhance order data with full product details
+        let productsFromOrder: OrderProduct[] = [];
+        if (typeof orderData.products === 'string') {
+          try {
+            productsFromOrder = JSON.parse(orderData.products);
+          } catch (e) { console.error('Failed to parse products from order', e); }
+        } else if (Array.isArray(orderData.products)) {
+          productsFromOrder = orderData.products;
+        }
+
+        const productIds = productsFromOrder.map(p => p.productId || p.product?.id).filter(Boolean) as string[];
         
-        // Set the order in state
+        if (productIds.length > 0) {
+          const productRecords = await Promise.all(
+            productIds.map(id => pocketbase.collection('products').getOne(id))
+          );
+
+          const productsById = productRecords.reduce((acc, p) => {
+            acc[p.id] = p;
+            return acc;
+          }, {} as { [key: string]: Record<string, any> });
+
+          const enhancedProducts = productsFromOrder.map(item => {
+            const productId = item.productId || item.product?.id;
+            const fullProduct = productId ? productsById[productId] : null;
+            return {
+              ...item,
+              product: fullProduct ? { ...item.product, ...fullProduct } : item.product,
+            };
+          });
+          orderData.products = enhancedProducts;
+        }
+        
         setOrder(orderData as unknown as Order);
         
         // Track purchase
@@ -297,15 +344,36 @@ export default function OrderConfirmation() {
                   <div className="flex">
                     <div className="w-16 h-16 rounded-md overflow-hidden mr-4 bg-gray-100 flex-shrink-0">
                       {item.product?.images && item.product.images.length > 0 ? (
-                        <img
-                          src={`${import.meta.env.VITE_POCKETBASE_URL.replace(/\/$/, '')}/api/files/pbc_4092854851/${item.product.id}/${item.product.images[0].split('/').pop()}`}
+                        <img 
+                          src={getImageUrl(item.product, item.productId)}
+                          alt={item.product?.name || 'Product image'}
+                          className="w-20 h-20 object-cover rounded-md mr-4"
                           alt={item.product?.name || 'Product'}
                           className="w-full h-full object-cover"
                           loading="eager"
-                          crossOrigin="anonymous"
                           onError={(e) => {
                             console.error('Image load error:', e.currentTarget.src);
-                            (e.target as HTMLImageElement).src = '/placeholder-product.jpg';
+                            // Try fallback with different collection ID
+                            const target = e.target as HTMLImageElement;
+                            if (!target.src.includes('fallback')) {
+                              const baseUrl = import.meta.env.VITE_POCKETBASE_URL?.replace(/\/$/, '') || 'https://backend-karigaibackend.7za6uc.easypanel.host';
+                              const productId = item.productId || item.product?.id;
+                              
+                              if (item.product?.images && item.product.images[0]) {
+                                const firstImage = item.product.images[0];
+                                const imageName = typeof firstImage === 'string' 
+                                  ? firstImage 
+                                  : String(firstImage) || 'default.jpg';
+                                target.src = `${baseUrl}/api/files/products/${productId}/${imageName}?fallback=1`;
+                              } else {
+                                target.style.display = 'none';
+                                target.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center bg-gray-200"><svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19 7h-3V6a4 4 0 0 0-8 0v1H5a1 1 0 0 0-1 1v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8a1 1 0 0 0-1-1zM10 6a2 2 0 0 1 4 0v1h-4V6zm8 13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V9h2v1a1 1 0 0 0 2 0V9h2v10z"/></svg></div>';
+                              }
+                            } else {
+                              // Final fallback to placeholder
+                              target.style.display = 'none';
+                              target.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center bg-gray-200"><svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19 7h-3V6a4 4 0 0 0-8 0v1H5a1 1 0 0 0-1 1v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8a1 1 0 0 0-1-1zM10 6a2 2 0 0 1 4 0v1h-4V6zm8 13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V9h2v1a1 1 0 0 0 2 0V9h2v10z"/></svg></div>';
+                            }
                           }}
                         />
                       ) : (
@@ -326,28 +394,32 @@ export default function OrderConfirmation() {
               ))}
               <Separator className="my-2" />
               <div className="flex justify-between py-1">
-                <span className="text-gray-600">Subtotal</span>
-                <span className="font-medium">{formatCurrency(order.subtotal)}</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-gray-600">Shipping</span>
-                <span className="font-medium">
-                  {order.shipping_cost === null || order.shipping_cost === undefined || isNaN(parseFloat(order.shipping_cost.toString()))
-                    ? 'Free'
-                    : parseFloat(order.shipping_cost.toString()) === 0
-                      ? 'Free'
-                      : formatCurrency(order.shipping_cost)}
+                <span>Subtotal</span>
+                <span>
+                  {(() => {
+                    let subtotal = Number(order.subtotal || 0);
+                    if (subtotal > order.products.length * 1000) subtotal /= 100;
+                    return formatCurrency(subtotal);
+                  })()}
                 </span>
               </div>
-              {order.discount_amount && (
-                <div className="flex justify-between py-1">
-                  <span className="text-gray-600">Discount</span>
-                  <span className="font-medium">-{formatCurrency(order.discount_amount)}</span>
+              <div className="flex justify-between py-1">
+                <span>Shipping Cost</span>
+                <span>{order.shipping_cost ? formatCurrency(Number(order.shipping_cost)) : 'Free'}</span>
+              </div>
+              {order.discount_amount && order.discount_amount > 0 && (
+                <div className="flex justify-between py-1 text-green-600">
+                  <span>Discount</span>
+                  <span>
+                    - {formatCurrency(Number(order.discount_amount))}
+                  </span>
                 </div>
               )}
               <div className="flex justify-between py-1 font-semibold">
                 <span>Total</span>
-                <span>{formatCurrency(order.total)}</span>
+                <span>
+                  {formatCurrency(Number(order.total || 0))}
+                </span>
               </div>
             </div>
           </Card>
@@ -376,7 +448,7 @@ export default function OrderConfirmation() {
               </p>
             )}
             <div className="flex items-center mt-4 space-x-2">
-              <img src="/razorpay-logo.svg" alt="Razorpay" className="h-5" onError={(e) => (e.currentTarget.src = 'https://razorpay.com/assets/razorpay-logo.svg')} />
+              <img src="https://razorpay.com/assets/razorpay-logo.svg" alt="Razorpay" className="h-5" />
               <p className="text-sm text-gray-600">Paid via Razorpay</p>
             </div>
           </Card>
