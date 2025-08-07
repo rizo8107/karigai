@@ -429,7 +429,7 @@ export default function Shop() {
                           }}
                           variant="default"
                           size="sm"
-                          className="flex-1 h-7 text-xs sm:text-sm bg-[#219898] hover:bg-[#1a7a7a] text-white"
+                          className="flex-1 h-7 text-xs sm:text-sm bg-[#a67b5c] hover:bg-[#8a6549] text-white"
                         >
                           Add to Cart
                         </Button>
@@ -445,7 +445,7 @@ export default function Shop() {
                       <div className="flex items-center gap-2">
                         <p className={cn(
                           "text-sm sm:text-base font-medium",
-                          product.original_price && product.original_price > product.price ? "text-[#219898]" : ""
+                          product.original_price && product.original_price > product.price ? "text-[#a67b5c]" : ""
                         )}>
                           ₹{typeof product.price === 'number' ? product.price.toFixed(2) : '0.00'}
                         </p>
@@ -457,7 +457,7 @@ export default function Shop() {
                       </div>
                       {product.original_price && product.original_price > product.price && (
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs font-medium text-[#219898]">
+                          <span className="text-xs font-medium text-[#a67b5c]">
                             Save ₹{(product.original_price - product.price).toFixed(2)}
                           </span>
                           <span className="text-xs font-medium text-black">

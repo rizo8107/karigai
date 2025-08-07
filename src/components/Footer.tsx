@@ -5,7 +5,7 @@ import { Logo } from '@/components/Logo';
 
 const Footer = () => {
   return (
-    <footer className="bg-[#219898] text-white">
+    <footer className="bg-[#a67b5c] text-white">
       <div className="karigai-container py-16">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-5">

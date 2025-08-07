@@ -57,7 +57,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
             </Badge>
           )}
           {product.new && (
-            <Badge variant="secondary" className="bg-[#219898]/80 backdrop-blur-sm text-white rounded-full px-3 py-1 text-xs font-medium">
+            <Badge variant="secondary" className="bg-[#a67b5c]/80 backdrop-blur-sm text-white rounded-full px-3 py-1 text-xs font-medium">
               New
             </Badge>
           )}
@@ -106,7 +106,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               onClick={handleQuickAdd}
               variant="default"
               size="sm"
-              className="flex-1 h-7 text-xs bg-[#219898] hover:bg-[#1a7a7a] text-white"
+              className="flex-1 h-7 text-xs bg-[#a67b5c] hover:bg-[#8a6549] text-white"
             >
               Add
             </Button>
@@ -122,12 +122,12 @@ const ProductCard = ({ product }: ProductCardProps) => {
           }}
           aria-label="Add to wishlist"
         >
-          <Heart className="h-4 w-4 text-gray-700 hover:text-[#219898] transition-colors" />
+          <Heart className="h-4 w-4 text-gray-700 hover:text-[#a67b5c] transition-colors" />
         </button>
       </div>
       
       <div className="p-4">
-        <h3 className="font-medium text-base mb-2 group-hover:text-[#219898] transition-colors line-clamp-2 min-h-[2.5rem]">
+        <h3 className="font-medium text-base mb-2 group-hover:text-[#a67b5c] transition-colors line-clamp-2 min-h-[2.5rem]">
           {product.name}
         </h3>
         <div className="flex items-start justify-between">
@@ -135,7 +135,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
             <div className="flex items-center gap-2">
               <p className={cn(
                 "text-base font-semibold",
-                product.original_price && product.original_price > product.price ? "text-[#219898]" : ""
+                product.original_price && product.original_price > product.price ? "text-[#a67b5c]" : ""
               )}>
                 ₹{typeof product.price === 'number' ? product.price.toFixed(2) : '0.00'}
               </p>
@@ -147,7 +147,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
             </div>
             {product.original_price && product.original_price > product.price && (
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xs font-medium text-[#219898] px-2 py-0.5">
+                <span className="text-xs font-medium text-[#a67b5c] px-2 py-0.5">
                   Save ₹{(product.original_price - product.price).toFixed(2)}
                 </span>
                 <span className="text-xs font-medium text-black">
