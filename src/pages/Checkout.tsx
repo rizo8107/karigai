@@ -1281,6 +1281,8 @@ const removeCoupon = () => {
         razorpay_payment_id: '',
         razorpay_signature: '',
         is_guest_order: isGuestCheckout,
+        // Explicitly set the created date to ensure it's properly recorded
+        created: new Date().toISOString(),
       };
 
       console.log('Creating order with data:', {

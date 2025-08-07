@@ -203,6 +203,73 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
   const shippingAddress = order.expand?.shipping_address;
   const orderDate = formatOrderDate(order.created);
   const invoiceDate = formatOrderDate(order.updated);
+  
+  // Format order created date and time from ISO string format
+  const orderDateTime = order.created ? new Date(order.created).toLocaleString('en-IN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  }) : 'Not available';
+  
+  // Parse order date with fallback for empty fields
+  const parseOrderDate = (dateString: string | undefined) => {
+    // If date string is empty, use current date as fallback
+    if (!dateString) {
+      console.log('Order created date is empty, using current date as fallback');
+      const currentDate = new Date();
+      return currentDate.toLocaleString('en-IN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+    
+    try {
+      // Handle ISO format or custom format
+      const date = new Date(dateString);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.log('Invalid date, using current date as fallback');
+        const currentDate = new Date();
+        return currentDate.toLocaleString('en-IN', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+      }
+      
+      return date.toLocaleString('en-IN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (error) {
+      console.error('Error parsing date:', error);
+      // Use current date as fallback
+      const currentDate = new Date();
+      return currentDate.toLocaleString('en-IN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+  };
 
   return (
     <div className="mt-6">
@@ -240,6 +307,7 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
             <div className="text-sm text-gray-600">
               <p className="mb-1"><span className="font-medium">Order Date:</span> {orderDate}</p>
               <p className="mb-1"><span className="font-medium">Invoice Date:</span> {invoiceDate}</p>
+              <p className="mb-1"><span className="font-medium">Order Date & Time:</span> {parseOrderDate(order.created)}</p>
               <p className="mb-1"><span className="font-medium">Payment Status:</span> {order.payment_status === 'paid' ? 'Paid' : 'Pending'}</p>
               {order.payment_id && (
                 <p className="mb-1"><span className="font-medium">Payment ID:</span> {order.payment_id}</p>
