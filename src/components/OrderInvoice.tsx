@@ -296,7 +296,7 @@ export function OrderInvoice({ order, products }: OrderInvoiceProps) {
             <div className="text-sm text-gray-600">
               <p className="font-bold text-gray-800">Karigai</p>
               <p>Old busstand</p>
-              <p>Salem, Tamil Nadu 600073</p>
+              <p>Salem, Tamil Nadu 636001</p>
               <p>India</p>
             </div>
           </div>
