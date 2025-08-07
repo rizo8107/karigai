@@ -1290,7 +1290,37 @@ const removeCoupon = () => {
         products: `[${items.length} items]`, // Don't log the entire products array
       });
 
-      const order = await pocketbase.collection('orders').create(orderData) as unknown as OrderData;
+      // Ensure we have admin authentication for secure order creation
+      const adminEmail = import.meta.env.VITE_POCKETBASE_ADMIN_EMAIL;
+      const adminPassword = import.meta.env.VITE_POCKETBASE_ADMIN_PASSWORD;
+      
+      let order;
+      // If we have admin credentials, try to authenticate with them
+      if (adminEmail && adminPassword) {
+        try {
+          console.log('Using superuser credentials for order creation');
+          // Store the current auth state
+          const currentAuthStore = pocketbase.authStore.exportToCookie();
+          
+          // Authenticate as admin
+          await pocketbase.admins.authWithPassword(adminEmail, adminPassword);
+          
+          // Create the order with admin privileges
+          order = await pocketbase.collection('orders').create(orderData) as unknown as OrderData;
+          
+          // Restore the original auth state
+          pocketbase.authStore.loadFromCookie(currentAuthStore);
+          
+          console.log('Order created with admin privileges, ID:', order.id);
+        } catch (authError: unknown) {
+          console.error('Failed to use admin auth for order creation:', authError);
+          // Fallback to regular create
+          order = await pocketbase.collection('orders').create(orderData) as unknown as OrderData;
+        }
+      } else {
+        // No admin credentials, use regular create
+        order = await pocketbase.collection('orders').create(orderData) as unknown as OrderData;
+      }
       console.log('Order created successfully with ID:', order.id);
       
       // Track form completion

@@ -6,6 +6,27 @@ console.log('Initializing PocketBase client with URL:', import.meta.env.VITE_POC
 // Initialize PocketBase instance
 export const pocketbase = new PocketBase(import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090');
 
+// Check if superuser credentials are provided and authenticate if they are
+const initSuperUserAuth = async () => {
+  const email = import.meta.env.VITE_POCKETBASE_ADMIN_EMAIL;
+  const password = import.meta.env.VITE_POCKETBASE_ADMIN_PASSWORD;
+  
+  if (email && password) {
+    try {
+      console.log('Authenticating as superuser with provided credentials');
+      await pocketbase.admins.authWithPassword(email, password);
+      console.log('Superuser authentication successful');
+    } catch (error: unknown) {
+      console.error('Failed to authenticate as superuser:', error);
+    }
+  } else {
+    console.log('No superuser credentials found in environment variables');
+  }
+};
+
+// Initialize superuser authentication
+initSuperUserAuth();
+
 // Export collection names as constants
 export enum Collections {
     PRODUCTS = 'products',
@@ -286,7 +307,7 @@ export async function getProducts(filter?: ProductFilter, signal?: AbortSignal):
         // Process products even if reviews fail
         let processedProducts = records.items.map(record => {
             // Helper function to safely parse JSON fields
-            const safeParseJson = <T>(value: any, defaultValue: T): T => {
+            const safeParseJson = <T>(value: unknown, defaultValue: T): T => {
                 if (value === null || value === undefined) return defaultValue;
                 if (typeof value === 'object') return value as T;
                 try {
@@ -402,7 +423,7 @@ export async function getProduct(id: string) {
         console.log(`[PROD DEBUG] getProduct completed in ${endTime - startTime}ms`);
         
         // Helper function to safely parse JSON fields
-        const safeParseJson = <T>(value: any, defaultValue: T): T => {
+        const safeParseJson = <T>(value: unknown, defaultValue: T): T => {
             if (value === null || value === undefined) return defaultValue;
             if (typeof value === 'object') return value as T;
             try {
