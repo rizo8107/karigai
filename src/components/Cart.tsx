@@ -161,12 +161,7 @@ export function Cart({ children }: CartProps) {
                   <span className="text-sm">Subtotal</span>
                   <span className="font-medium">₹{(subtotal || 0).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Shipping</span>
-                  <span className="font-medium">
-                    {(subtotal || 0) >= 100 ? 'Free' : '₹10.00'}
-                  </span>
-                </div>
+                {/* Shipping will be calculated at checkout */}
                 <div className="flex justify-between font-medium">
                   <span>Total</span>
                   <span>₹{(total || 0).toFixed(2)}</span>

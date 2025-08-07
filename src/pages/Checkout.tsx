@@ -1948,71 +1948,7 @@ const removeCoupon = () => {
       </form>
           </div>
           
-          {/* Order Summary Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-gray-50 p-6 rounded-lg border sticky top-8">
-              <h3 className="text-xl font-bold mb-4">Order Summary</h3>
-              
-              <div className="max-h-80 overflow-y-auto mb-4 pr-2">
-                {items.map((item) => (
-                  <div key={`${item.productId}-${item.color}`} className="flex items-start py-3 border-b last:border-b-0">
-                    {item.product.images && item.product.images.length > 0 && (
-                      <div className="w-16 h-16 rounded overflow-hidden mr-3 flex-shrink-0 bg-white border">
-                        <img 
-                          src={`${import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090'}/api/files/pbc_4092854851/${item.product.images[0]}`}
-                          alt={item.product.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://placehold.co/100x100?text=Image';
-                          }}
-                        />
-                      </div>
-                    )}
-                    <div className="flex-grow">
-                      <p className="font-medium">{item.product.name}</p>
-                      <p className="text-sm text-gray-500">Color: {item.color} • Qty: {item.quantity}</p>
-                      <p className="font-medium mt-1">₹{(item.product.price * item.quantity).toFixed(2)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="space-y-2 py-3 border-t border-b">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">₹{subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Shipping</span>
-                  <span className="font-medium">{subtotal >= 100 ? 'Free' : `₹${10.00.toFixed(2)}`}</span>
-                </div>
-                {appliedCoupon && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Discount ({appliedCoupon.code})</span>
-                    <span>-₹{(appliedCoupon.discountAmount || 0).toFixed(2)}</span>
-                  </div>
-                )}
-                {showOffer && calculateFinalTotal()?.offerDiscountAmount > 0 && (
-                  <div className="flex justify-between text-green-600 font-medium">
-                    <span>Limited Time Offer ({offerDiscount}%)</span>
-                    <span>-₹{(calculateFinalTotal()?.offerDiscountAmount || 0).toFixed(2)}</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex justify-between py-3 text-lg font-bold">
-                <span>Total</span>
-                <span>₹{(calculateFinalTotal()?.finalTotal || 0).toFixed(2)}</span>
-              </div>
-              
-              <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                <img src="/payment-icons/visa.svg" alt="Visa" className="h-6" onError={(e) => (e.currentTarget.src = 'https://placehold.co/40x24?text=Visa')} />
-                <img src="/payment-icons/mastercard.svg" alt="Mastercard" className="h-6" onError={(e) => (e.currentTarget.src = 'https://placehold.co/40x24?text=MC')} />
-                <img src="/payment-icons/rupay.svg" alt="RuPay" className="h-6" onError={(e) => (e.currentTarget.src = 'https://placehold.co/40x24?text=RuPay')} />
-                <img src="/payment-icons/upi.svg" alt="UPI" className="h-6" onError={(e) => (e.currentTarget.src = 'https://placehold.co/40x24?text=UPI')} />
-              </div>
-            </div>
-          </div>
+          {/* Order summary removed for a cleaner checkout experience */}
         </div>
       </div>
     </div>
