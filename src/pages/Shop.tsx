@@ -191,17 +191,14 @@ export default function Shop() {
 
   const handleAddToCart = (product: Product) => {
     const quantity = productQuantities[product.id] || 1;
-    addItem({
-      productId: product.id,
-      quantity: quantity,
-      product,
-    });
+  
+    // Fix: Pass parameters correctly to match CartContext's addItem function
+    // The function expects (product: Product, quantity: number, color: string)
+    const defaultColor = product.colors && product.colors.length > 0 ? product.colors[0].value : '';
+    addItem(product, quantity, defaultColor);
 
-    toast({
-      title: "Added to cart",
-      description: `${product.name} has been added to your cart.`,
-    });
-    
+    // Toast is already shown by the CartContext's addItem function
+  
     // Reset quantity after adding to cart
     setProductQuantities(prev => ({
       ...prev,
