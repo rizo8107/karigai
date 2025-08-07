@@ -1,6 +1,6 @@
 import { useState, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Minus, Plus, Loader2, Trash2 } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
@@ -172,7 +172,19 @@ export function Cart({ children }: CartProps) {
                   <span>₹{(total || 0).toFixed(2)}</span>
                 </div>
               </div>
-              <Button asChild className="w-full" disabled={items.length === 0}>
+              
+              {(total || 0) < 150 && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-md mb-3">
+                  <div className="flex items-center">
+                    <AlertTriangle className="h-4 w-4 text-amber-500 mr-2" />
+                    <p className="text-sm font-medium text-amber-800">
+                      Minimum order value is ₹150 (Current: ₹{(total || 0).toFixed(2)})
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              <Button asChild className="w-full" disabled={items.length === 0 || (total || 0) < 150}>
                 <Link to="/checkout" onClick={handleCheckout}>
                   Proceed to Checkout (₹{(total || 0).toFixed(2)})
                 </Link>

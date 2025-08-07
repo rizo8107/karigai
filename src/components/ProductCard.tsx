@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Plus, Heart } from 'lucide-react';
+import { ShoppingBag, Plus, Heart, Minus } from 'lucide-react';
 import { Product } from '@/lib/pocketbase';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
@@ -13,17 +14,25 @@ type ProductCardProps = {
 
 const ProductCard = ({ product }: ProductCardProps) => {
   const { addItem } = useCart();
+  const [quantity, setQuantity] = useState(1);
   
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
     if (!product.colors || !Array.isArray(product.colors) || product.colors.length === 0) {
-      addItem(product, 1, '');
+      addItem(product, quantity, '');
       return;
     }
     
-    addItem(product, 1, product.colors[0].value);
+    addItem(product, quantity, product.colors[0].value);
+    setQuantity(1); // Reset quantity after adding to cart
+  };
+  
+  const handleQuantityChange = (e: React.MouseEvent, change: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setQuantity((prev: number) => Math.max(1, prev + change));
   };
   
   return (
@@ -54,7 +63,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
           )}
         </div>
 
-        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-all duration-300">
+        {/* Desktop hover overlay */}
+        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-all duration-300 hidden md:block">
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
             <Button
               onClick={handleQuickAdd}
@@ -64,6 +74,41 @@ const ProductCard = ({ product }: ProductCardProps) => {
             >
               <Plus className="mr-2 h-4 w-4" />
               Quick Add
+            </Button>
+          </div>
+        </div>
+        
+        {/* Mobile always visible controls */}
+        <div className="absolute bottom-0 left-0 right-0 p-2 bg-white md:hidden">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center border rounded-md overflow-hidden bg-white">
+              <Button
+                onClick={(e) => handleQuantityChange(e, -1)}
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 rounded-none hover:bg-gray-100"
+              >
+                <Minus className="h-3 w-3" />
+              </Button>
+              <span className="w-7 text-center text-sm font-medium">
+                {quantity}
+              </span>
+              <Button
+                onClick={(e) => handleQuantityChange(e, 1)}
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 rounded-none hover:bg-gray-100"
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
+            <Button
+              onClick={handleQuickAdd}
+              variant="default"
+              size="sm"
+              className="flex-1 h-7 text-xs bg-[#219898] hover:bg-[#1a7a7a] text-white"
+            >
+              Add
             </Button>
           </div>
         </div>

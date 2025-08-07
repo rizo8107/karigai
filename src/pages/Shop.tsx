@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
-import { Heart, Star, ImageIcon, Loader2, ShoppingBag, Search, SlidersHorizontal, Plus } from 'lucide-react';
+import { Heart, Star, ImageIcon, Loader2, ShoppingBag, Search, SlidersHorizontal, Plus, Minus } from 'lucide-react';
 import { ProductImage } from '@/components/ProductImage';
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
@@ -29,6 +29,7 @@ export default function Shop() {
   const { addItem } = useCart();
   const { toast } = useToast();
   const [wishlistedItems, setWishlistedItems] = useState<Set<string>>(new Set());
+  const [productQuantities, setProductQuantities] = useState<Record<string, number>>({});
   const productGridRef = useRef<HTMLDivElement>(null);
   const observersRef = useRef<Map<string, IntersectionObserver>>(new Map());
   
@@ -189,12 +190,36 @@ export default function Shop() {
   }, [loading, products, filteredProducts]);
 
   const handleAddToCart = (product: Product) => {
-    addItem(product, 1, product.colors && product.colors.length > 0 ? product.colors[0].value : '');
-    
+    const quantity = productQuantities[product.id] || 1;
+    addItem({
+      productId: product.id,
+      quantity: quantity,
+      product,
+    });
+
     toast({
-      variant: "success",
-      title: 'Added to cart',
+      title: "Added to cart",
       description: `${product.name} has been added to your cart.`,
+    });
+    
+    // Reset quantity after adding to cart
+    setProductQuantities(prev => ({
+      ...prev,
+      [product.id]: 1
+    }));
+  };
+  
+  const handleQuantityChange = (e: React.MouseEvent, productId: string, change: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setProductQuantities(prev => {
+      const currentQty = prev[productId] || 1;
+      const newQty = Math.max(1, currentQty + change);
+      return {
+        ...prev,
+        [productId]: newQty
+      };
     });
   };
 
@@ -372,20 +397,43 @@ export default function Shop() {
                       )}
                     </div>
 
-                    {/* Add to Cart button at bottom */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-white p-2 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
-                      <Button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleAddToCart(product);
-                        }}
-                        variant="ghost"
-                        className="w-full bg-transparent hover:bg-transparent text-black flex items-center justify-center gap-2 text-sm sm:text-base"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add to Cart
-                      </Button>
+                    {/* Add to Cart button - always visible on mobile, with quantity controls */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-white p-2 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-200">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center border rounded-md overflow-hidden bg-white">
+                          <Button
+                            onClick={(e) => handleQuantityChange(e, product.id, -1)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 rounded-none hover:bg-gray-100"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-7 text-center text-sm font-medium">
+                            {productQuantities[product.id] || 1}
+                          </span>
+                          <Button
+                            onClick={(e) => handleQuantityChange(e, product.id, 1)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 rounded-none hover:bg-gray-100"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <Button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleAddToCart(product);
+                          }}
+                          variant="default"
+                          size="sm"
+                          className="flex-1 h-7 text-xs sm:text-sm bg-[#219898] hover:bg-[#1a7a7a] text-white"
+                        >
+                          Add to Cart
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   

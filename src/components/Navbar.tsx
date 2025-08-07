@@ -33,10 +33,14 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
+      <div className="container flex h-14 items-center relative">
+        {/* Mobile menu button (left side) */}
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 lg:hidden">
+            <Button 
+              variant="ghost" 
+              className="px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 lg:hidden"
+            >
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle menu</span>
             </Button>
@@ -161,10 +165,19 @@ export default function Navbar() {
           </SheetContent>
         </Sheet>
 
+        {/* Mobile centered logo */}
+        <div className="absolute left-1/2 transform -translate-x-1/2 lg:hidden">
+          <Link to="/" className="flex items-center">
+            <Logo className="h-6" />
+          </Link>
+        </div>
+        
+        {/* Desktop logo - left aligned */}
         <Link to="/" className="mr-6 hidden lg:flex items-center space-x-2">
           <Logo />
         </Link>
 
+        {/* Desktop navigation */}
         <nav className="hidden lg:flex items-center space-x-6 justify-center mx-auto">
           {navConfig?.showShop && (
             <Link
@@ -220,6 +233,7 @@ export default function Navbar() {
           )}
         </nav>
 
+        {/* Cart and user menu */}
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-2">
             <Cart>
