@@ -905,13 +905,18 @@ const removeCoupon = () => {
     }
   };
 
-  // State to store shipping configuration (loaded from PocketBase)
+  // State to store shipping configuration
   const [shippingConfig, setShippingConfig] = useState<{
     tnShippingCost: number;
     otherStatesShippingCost: number;
     tnDeliveryDays: string;
     otherStatesDeliveryDays: string;
-  } | null>(null);
+  }>({ 
+    tnShippingCost: 50,
+    otherStatesShippingCost: 60,
+    tnDeliveryDays: '2 days',
+    otherStatesDeliveryDays: '3-4 days'
+  });
   
   // State to store calculated shipping cost and delivery time
   const [shippingCost, setShippingCost] = useState<number>(0);
@@ -1243,8 +1248,6 @@ const removeCoupon = () => {
       console.log(`${isGuestCheckout ? 'Guest checkout: No address ID' : `Using shipping address ID for order creation: ${addressId}`}`);
 
       // Create order in PocketBase
-      // Compute final totals once to keep UI, DB, and Razorpay in sync
-      const totals = calculateFinalTotal();
       const orderData = {
         // Only include user reference if user is logged in
         ...(user ? { user: user.id } : {}),
@@ -1266,13 +1269,12 @@ const removeCoupon = () => {
           quantity: item.quantity,
           color: item.color
         }))),
-        subtotal: Number(totals.finalSubtotal),
-        // Shipping and discount come directly from calculateFinalTotal() which uses PocketBase config
-        shipping_cost: Number(totals.shippingCost || 0),
-        // discount_amount should include coupon + offer discounts used in total
-        discount_amount: Number(totals.finalDiscount || 0),
-        // Total from the same calculation for consistency
-        total: Number(totals.finalTotal),
+        subtotal: Number(subtotal),
+        // CRITICAL FIX: Ensure shipping_cost is explicitly a number for PocketBase
+        shipping_cost: Number(shippingCost || 0),
+        discount_amount: Number(appliedCoupon?.discountAmount || 0),
+        // Calculate total consistently as: subtotal + shipping - discount
+        total: Number(subtotal) + Number(shippingCost || 0) - (Number(appliedCoupon?.discountAmount || 0) + Number(offerDiscount || 0)),
         status: 'pending',
         payment_status: 'pending',
         coupon_code: appliedCoupon?.code || null,
@@ -1367,9 +1369,8 @@ const removeCoupon = () => {
     console.log('- Raw total from order:', order.total);
     
     // SUPER IMPORTANT: If we detect our shipping cost disappeared, we need to fix it
-    const lastTotals = calculateFinalTotal();
-    const lastCalculatedShipping = lastTotals.shippingCost || 0;
-    console.log(`Last calculated shipping cost from form state (via calculateFinalTotal): ₹${lastCalculatedShipping}`);
+    const lastCalculatedShipping = formData.state ? calculateShippingCost(formData.state) : 0;
+    console.log(`Last calculated shipping cost from form state: ₹${lastCalculatedShipping}`);
     
     // If no shipping cost in order but we have a state, force the shipping cost
     if (formData.state && (!order.shipping_cost || Number(order.shipping_cost) === 0)) {
@@ -1400,9 +1401,9 @@ const removeCoupon = () => {
     const discountAmount = Number(order.discount_amount || 0);
     
     // CRITICAL SAFETY NET: If we still don't have shipping cost but have address,
-    // calculate it one last time before payment processing using calculateFinalTotal
+    // calculate it one last time before payment processing
     if (formData.state && shippingAmount === 0) {
-      const finalShippingCost = calculateFinalTotal().shippingCost || 0;
+      const finalShippingCost = calculateShippingCost(formData.state);
       console.log(`🛡️ FINAL SAFETY CHECK: Address exists but shipping is still 0. Forcing shipping cost: ₹${finalShippingCost}`);
       shippingAmount = finalShippingCost;
       order.shipping_cost = finalShippingCost;

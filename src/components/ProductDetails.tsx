@@ -454,4 +454,4 @@ export const ProductDetails = ({ product }: ProductDetailsProps) => {
       )}
     </div>
   );
-}; 
+};
