@@ -1,3 +1,4 @@
+
 import { Link } from 'react-router-dom';
 
 const About = () => {
@@ -11,7 +12,7 @@ const About = () => {
           that don't compromise on quality or sustainability.
         </p>
         <p className="text-lg mb-6">
-          Our journey began when we couldn't find natural soaps that were both 
+          Our journey began when our founder, Priya, couldn't find natural soaps that were both 
           gentle on sensitive skin and environmentally friendly. After months of research 
           and experimentation with traditional recipes, Karigai was born.
         </p>
@@ -24,6 +25,13 @@ const About = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
         <div>
+          <img 
+            src="/placeholder.svg" 
+            alt="Karigai soap workshop"
+            className="w-full h-auto"
+          />
+        </div>
+        <div className="flex flex-col justify-center">
           <h2 className="text-2xl font-bold mb-4">Handcrafted with Care</h2>
           <p className="mb-4">
             Each Karigai soap is made by skilled artisans who take pride in their craft. 
@@ -48,6 +56,13 @@ const About = () => {
             Our packaging is minimal, plastic-free, and made from biodegradable materials, because we believe 
             responsibility extends beyond the product itself.
           </p>
+        </div>
+        <div className="md:order-2">
+          <img 
+            src="/placeholder.svg" 
+            alt="Natural soap ingredients"
+            className="w-full h-auto"
+          />
         </div>
       </div>
       
