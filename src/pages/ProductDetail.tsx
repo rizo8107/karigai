@@ -862,32 +862,22 @@ const ProductDetail = () => {
         
         {/* Product Details - Moved above reviews */}
         {product && (
-        <>
           <ProductDetails product={product} />
-          
-          {/* Builder.io editable product description section */}
-          <div className="mt-12 border-t pt-10">
-            <h2 className="text-2xl font-bold mb-4">Product Description</h2>
-            {productDescription ? (
-              <BuilderComponent 
-                model="product-description" 
-                content={productDescription} 
-              />
-            ) : (
-              <div className="prose max-w-none">
-                <p>{product.description}</p>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-        
+        )}
+
         {/* Reviews Section */}
-        {id && orderConfig.showReviews && (
-          <ProductReviews 
-            productId={id} 
-            initialReviewCount={product.reviews} 
-            onReviewAdded={async () => {
+        {product && id && orderConfig?.showReviews && (
+          <section id="reviews" className="mt-12 border-t pt-10">
+            <div className="flex items-baseline justify-between mb-4">
+              <h2 className="text-2xl font-bold">Customer Reviews</h2>
+              <span className="text-sm text-muted-foreground">
+                {product.reviews || 0} review{(product.reviews || 0) === 1 ? '' : 's'}
+              </span>
+            </div>
+            <ProductReviews 
+              productId={id} 
+              initialReviewCount={product.reviews} 
+              onReviewAdded={async () => {
               console.log("[PROD DEBUG] Review added callback triggered");
               // Refresh product data to get updated review count
               if (id) {
@@ -913,8 +903,9 @@ const ProductDetail = () => {
                   console.error("[PROD DEBUG] Error refreshing product after review:", err);
                 }
               }
-            }} 
-          />
+              }} 
+            />
+          </section>
         )}
         
         {/* Related Products */}
@@ -986,6 +977,24 @@ const ProductDetail = () => {
           </div>
         )}
         
+        {/* Floating WhatsApp Order Button */}
+        {product && (
+          <a
+            href={`https://wa.me/919486054899?text=${encodeURIComponent(`Hi Karigai, I'd like to order: ${product.name}`)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="fixed bottom-24 right-4 z-50"
+            aria-label="Order via WhatsApp"
+          >
+            <div className="h-14 w-14 rounded-full bg-green-500 hover:bg-green-600 shadow-lg flex items-center justify-center text-white">
+              {/* WhatsApp Icon (inline SVG) */}
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="h-7 w-7 fill-current">
+                <path d="M27.1 4.9A13.9 13.9 0 0 0 16 .1C7.3.1.2 7.2.2 15.9c0 2.8.8 5.5 2.2 7.8L.1 32l8.5-2.2c2.2 1.2 4.7 1.9 7.3 1.9 8.7 0 15.8-7.1 15.8-15.8 0-4.2-1.7-8.2-4.6-11zm-11.1 24c-2.3 0-4.6-.6-6.6-1.8l-.5-.3-5.1 1.3 1.4-5-.3-.5c-1.3-2.1-2-4.5-2-7 0-7.3 6-13.3 13.3-13.3 3.6 0 6.9 1.4 9.4 3.9 2.5 2.5 3.9 5.8 3.9 9.4 0 7.3-6 13.3-13.3 13.3zm7.3-9.9c-.4-.2-2.3-1.1-2.6-1.2-.4-.1-.6-.2-.9.2-.3.4-1 1.2-1.2 1.4-.2.2-.4.3-.8.1-.4-.2-1.6-.6-3-1.9-1.1-1-1.9-2.3-2.1-2.7-.2-.4 0-.6.2-.8.2-.2.4-.4.5-.6.2-.2.3-.4.4-.6.1-.2 0-.5 0-.7s-.9-2.1-1.2-2.9c-.3-.7-.6-.6-.9-.6h-.8c-.3 0-.7.1-1 .5-.3.4-1.3 1.3-1.3 3.2s1.4 3.7 1.6 4 .3.6.6 1c.8 1.1 1.8 2.1 3 2.8 1 .6 2 .8 2.7 1 .9.3 1.8.2 2.5.1.8-.1 2.3-.9 2.6-1.8.3-.9.3-1.6.2-1.8-.1-.2-.3-.3-.7-.5z"/>
+              </svg>
+            </div>
+          </a>
+        )}
+
         {/* Floating Add to Cart Button */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t py-5 shadow-lg z-50">
           <div className="konipai-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

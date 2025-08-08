@@ -15,6 +15,11 @@ export interface OrderDetailsConfig {
   showReviews: boolean;
   showDeliveryInformation: boolean;
   
+  // Product page section toggles
+  showCareInstructions: boolean; // controls Care Instructions section
+  showFeaturesAndBenefits: boolean; // controls Features & Benefits section
+  showProductSpecifications: boolean; // controls Product Specifications section
+  
   // Home page display options
   showHero: boolean;
   showNewArrivals: boolean;
@@ -44,11 +49,16 @@ export const DEFAULT_CONFIG: OrderDetailsConfig = {
   showFreeShipping: false,
   showStarRating: false,
   showDimensions: false,
-  showUsageGuidelines: false,
+  showUsageGuidelines: true, // default to showing Usage Guidelines
   showReturnOption: false,
   showReviewComments: true,
   showReviews: true,
   showDeliveryInformation: true,
+  
+  // Product page section toggles (defaults ON)
+  showCareInstructions: true,
+  showFeaturesAndBenefits: true,
+  showProductSpecifications: true,
   
   // Home page display options - all enabled by default
   showHero: true,
@@ -82,15 +92,27 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
  * Map PocketBase record to our TypeScript interface
  */
 const mapRecordToConfig = (record: RecordModel): OrderDetailsConfig => {
+  type OptionalToggles = {
+    show_usage_guidelines?: boolean;
+    show_care_instructions?: boolean;
+    show_features_and_benefits?: boolean;
+    show_product_specifications?: boolean;
+  };
+  const r = record as RecordModel & OptionalToggles;
   return {
     showFreeShipping: record.show_free_shipping,
     showStarRating: record.show_star_rating,
     showDimensions: record.show_dimensions,
-    showUsageGuidelines: record.show_usage_guidelines,
+    showUsageGuidelines: r.show_usage_guidelines ?? true,
     showReturnOption: record.show_return_option,
     showReviewComments: record.show_review_comments ?? true,
     showReviews: record.show_reviews ?? true,
     showDeliveryInformation: record.show_delivery_information ?? true,
+    
+    // Product page toggles
+    showCareInstructions: r.show_care_instructions ?? true,
+    showFeaturesAndBenefits: r.show_features_and_benefits ?? true,
+    showProductSpecifications: r.show_product_specifications ?? true,
     
     // Home page display options
     showHero: record.show_hero ?? true,
@@ -112,10 +134,11 @@ const mapRecordToConfig = (record: RecordModel): OrderDetailsConfig => {
  * Get the active configuration from PocketBase
  * Falls back to default config if no active config exists or if there's an error
  */
-export const getOrderConfig = async (): Promise<OrderDetailsConfig> => {
+export const getOrderConfig = async (options?: { forceRefresh?: boolean }): Promise<OrderDetailsConfig> => {
   // Return cached config if it's still valid
   const now = Date.now();
-  if (cachedConfig && now - cacheTimestamp < CACHE_DURATION) {
+  const force = options?.forceRefresh === true;
+  if (!force && cachedConfig && now - cacheTimestamp < CACHE_DURATION) {
     console.log('Using cached order configuration');
     return cachedConfig;
   }
@@ -141,6 +164,9 @@ export const getOrderConfig = async (): Promise<OrderDetailsConfig> => {
         show_star_rating: DEFAULT_CONFIG.showStarRating,
         show_dimensions: DEFAULT_CONFIG.showDimensions,
         show_usage_guidelines: DEFAULT_CONFIG.showUsageGuidelines,
+        show_care_instructions: DEFAULT_CONFIG.showCareInstructions,
+        show_features_and_benefits: DEFAULT_CONFIG.showFeaturesAndBenefits,
+        show_product_specifications: DEFAULT_CONFIG.showProductSpecifications,
         show_return_option: DEFAULT_CONFIG.showReturnOption,
         show_delivery_information: DEFAULT_CONFIG.showDeliveryInformation,
         default_weight: DEFAULT_CONFIG.defaultWeight,

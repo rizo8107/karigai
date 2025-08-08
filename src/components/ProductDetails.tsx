@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { VideoPlayerFallback } from '@/components/ui/video-player-fallback';
 import { VideoPlayer } from '@/components/ui/video-player';
 import { pocketbase, Collections } from '@/lib/pocketbase';
+import { getOrderConfig, type OrderDetailsConfig } from '@/lib/order-config-service';
+
 import { getPocketBaseImageUrl } from '@/utils/imageOptimizer';
 
 // Helper function to extract YouTube video ID from URL
@@ -104,6 +106,24 @@ export const ProductDetails = ({ product }: ProductDetailsProps) => {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [thumbnailLoading, setThumbnailLoading] = useState(true);
   const [thumbnailError, setThumbnailError] = useState(false);
+  const [orderConfig, setOrderConfig] = useState<OrderDetailsConfig | null>(null);
+
+  // Load backend-driven toggles for product sections
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const cfg = await getOrderConfig({ forceRefresh: true });
+        if (mounted) setOrderConfig(cfg);
+      } catch (e) {
+        // ignore; defaults will show sections
+        if (mounted) setOrderConfig(null);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Generate or fetch thumbnail for the video
   useEffect(() => {
@@ -273,10 +293,19 @@ export const ProductDetails = ({ product }: ProductDetailsProps) => {
               )
             )}
           </div>
-          {/* Video description removed */}
         </div>
       )}
+      {/* Show a minimal placeholder while config loads to avoid flashing sections */}
+      {orderConfig === null && (
+        <div className="bg-gray-50 rounded-lg p-6 animate-pulse mb-4">
+          <div className="h-5 w-48 bg-gray-200 rounded mb-4"></div>
+          <div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
+          <div className="h-4 w-5/6 bg-gray-200 rounded"></div>
+        </div>
+      )}
+
       {/* Product Specifications */}
+      {orderConfig && orderConfig.showProductSpecifications !== false && (
       <div className="bg-gray-50 rounded-lg p-6">
         <h3 className="text-lg font-semibold mb-4">Product Specifications</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -318,104 +347,111 @@ export const ProductDetails = ({ product }: ProductDetailsProps) => {
           </div>
         </div>
       </div>
+      )}
 
       {/* Care Instructions */}
-      <div className="bg-gray-50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold mb-4">Care Instructions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="font-medium mb-2">Cleaning</h4>
-            <ul className="space-y-2 text-muted-foreground">
-              {(product.care_instructions?.cleaning || product.care || [
-                'Spot clean with mild soap and water',
-                'Do not machine wash',
-                'Air dry in shade',
-                'Do not bleach'
-              ]).map((instruction, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <Check className="h-4 w-4 mt-1 text-green-600 shrink-0" />
-                  <span>{instruction}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium mb-2">Storage</h4>
-            <ul className="space-y-2 text-muted-foreground">
-              {(product.care_instructions?.storage || [
-                'Store in a cool, dry place',
-                'Avoid direct sunlight',
-                'Keep away from moisture',
-                'Use dust bag when not in use'
-              ]).map((instruction, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <Check className="h-4 w-4 mt-1 text-green-600 shrink-0" />
-                  <span>{instruction}</span>
-                </li>
-              ))}
-            </ul>
+      {orderConfig && orderConfig.showCareInstructions !== false && (
+        <div className="bg-gray-50 rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4">Care Instructions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-medium mb-2">Cleaning</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                {(product.care_instructions?.cleaning || product.care || [
+                  'Spot clean with mild soap and water',
+                  'Do not machine wash',
+                  'Air dry in shade',
+                  'Do not bleach'
+                ]).map((instruction, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <Check className="h-4 w-4 mt-1 text-green-600 shrink-0" />
+                    <span>{instruction}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-medium mb-2">Storage</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                {(product.care_instructions?.storage || [
+                  'Store in a cool, dry place',
+                  'Avoid direct sunlight',
+                  'Keep away from moisture',
+                  'Use dust bag when not in use'
+                ]).map((instruction, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <Check className="h-4 w-4 mt-1 text-green-600 shrink-0" />
+                    <span>{instruction}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Features and Benefits */}
-      <div className="bg-gray-50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold mb-4">Features & Benefits</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="font-medium mb-3">Key Features</h4>
-            <ul className="space-y-3">
-              {product.features.map((feature, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <Check className="h-4 w-4 text-primary" />
-                  </div>
-                  <span className="text-muted-foreground">{feature}</span>
-                </li>
-              ))}
-            </ul>
+      {orderConfig && orderConfig.showFeaturesAndBenefits !== false && (
+        <div className="bg-gray-50 rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4">Features & Benefits</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-medium mb-3">Key Features</h4>
+              <ul className="space-y-3">
+                {(product.features || []).map((feature, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Check className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="text-muted-foreground">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Usage Guidelines */}
-      <div className="bg-gray-50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold mb-4">Usage Guidelines</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="font-medium mb-3">Recommended Use</h4>
-            <ul className="space-y-2 text-muted-foreground">
-              {(product.usage_guidelines?.recommended_use || [
-                'Distribute weight evenly for better durability',
-                'Clean spills immediately to prevent staining',
-                'Use internal pockets for organization',
-                'Avoid overloading beyond capacity'
-              ]).map((guideline, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <Check className="h-4 w-4 mt-1 text-green-600 shrink-0" />
-                  <span>{guideline}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium mb-3">Pro Tips</h4>
-            <ul className="space-y-2 text-muted-foreground">
-              {(product.usage_guidelines?.pro_tips || [
-                'Use bag hooks when placing on floors',
-                'Rotate usage to maintain shape',
-                'Store stuffed to maintain structure',
-                'Apply water repellent spray for protection'
-              ]).map((tip, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <Check className="h-4 w-4 mt-1 text-green-600 shrink-0" />
-                  <span>{tip}</span>
-                </li>
-              ))}
-            </ul>
+      {orderConfig && orderConfig.showUsageGuidelines !== false && (
+        <div className="bg-gray-50 rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4">Usage Guidelines</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-medium mb-3">Recommended Use</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                {(product.usage_guidelines?.recommended_use || [
+                  'Distribute weight evenly for better durability',
+                  'Clean spills immediately to prevent staining',
+                  'Use internal pockets for organization',
+                  'Avoid overloading beyond capacity'
+                ]).map((guideline, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <Check className="h-4 w-4 mt-1 text-green-600 shrink-0" />
+                    <span>{guideline}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-medium mb-3">Pro Tips</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                {(product.usage_guidelines?.pro_tips || [
+                  'Use bag hooks when placing on floors',
+                  'Rotate usage to maintain shape',
+                  'Store stuffed to maintain structure',
+                  'Apply water repellent spray for protection'
+                ]).map((tip, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <Check className="h-4 w-4 mt-1 text-green-600 shrink-0" />
+                    <span>{tip}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }; 
