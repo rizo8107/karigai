@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { memo, useState } from 'react';
 import ProductCard from './ProductCard';
 import { Product } from '@/lib/pocketbase';
 import { Button } from '@/components/ui/button';
@@ -40,8 +40,8 @@ const ProductGrid = ({ products, title, loading = false }: ProductGridProps) => 
       )}
       
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {products.slice(0, displayCount).map(product => (
-          <ProductCard key={product.id} product={product} />
+        {products.slice(0, displayCount).map((product, index) => (
+          <ProductCard key={product.id} product={product} priority={index < 4} />
         ))}
       </div>
       
@@ -61,4 +61,4 @@ const ProductGrid = ({ products, title, loading = false }: ProductGridProps) => 
   );
 };
 
-export default ProductGrid;
+export default memo(ProductGrid);

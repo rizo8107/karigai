@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Plus, Heart, Minus } from 'lucide-react';
 import { Product } from '@/lib/pocketbase';
@@ -10,9 +10,10 @@ import { ProductImage } from '@/components/ProductImage';
 
 type ProductCardProps = {
   product: Product;
+  priority?: boolean; // above-the-fold image priority
 };
 
-const ProductCard = ({ product }: ProductCardProps) => {
+const ProductCard = ({ product, priority = false }: ProductCardProps) => {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   
@@ -46,7 +47,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           aspectRatio="portrait"
-          priority={false}
+          priority={priority}
           size="small"
         />
         
@@ -174,4 +175,4 @@ const ProductCard = ({ product }: ProductCardProps) => {
   );
 };
 
-export default ProductCard;
+export default memo(ProductCard);

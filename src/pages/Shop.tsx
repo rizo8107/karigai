@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getProducts, type Product } from '@/lib/pocketbase';
 import { useCart } from '@/contexts/CartContext';
@@ -33,17 +33,21 @@ export default function Shop() {
   const productGridRef = useRef<HTMLDivElement>(null);
   const observersRef = useRef<Map<string, IntersectionObserver>>(new Map());
   
-  // Calculate the filtered products
-  const categories = ['all', ...new Set(products.map((product) => product.category).filter(Boolean))];
-  
-  const filteredProducts = products
-    .filter((product) => {
-      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchTerm.toLowerCase());
+  // Calculate the filtered products (memoized)
+  const categories = useMemo(
+    () => ['all', ...new Set(products.map((product) => product.category).filter(Boolean))],
+    [products]
+  );
+
+  const filteredProducts = useMemo(() => {
+    const lower = searchTerm.toLowerCase();
+    const list = products.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(lower) ||
+        product.description.toLowerCase().includes(lower);
       const matchesCategory = category === 'all' || product.category === category;
       return matchesSearch && matchesCategory;
-    })
-    .sort((a, b) => {
+    });
+    return list.sort((a, b) => {
       switch (sortBy) {
         case 'name':
           return a.name.localeCompare(b.name);
@@ -55,6 +59,7 @@ export default function Shop() {
           return 0;
       }
     });
+  }, [products, searchTerm, category, sortBy]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -189,7 +194,7 @@ export default function Shop() {
     };
   }, [loading, products, filteredProducts]);
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = useCallback((product: Product) => {
     const quantity = productQuantities[product.id] || 1;
   
     // Fix: Pass parameters correctly to match CartContext's addItem function
@@ -204,7 +209,7 @@ export default function Shop() {
       ...prev,
       [product.id]: 1
     }));
-  };
+  }, [addItem, productQuantities]);
   
   const handleQuantityChange = (e: React.MouseEvent, productId: string, change: number) => {
     e.preventDefault();
