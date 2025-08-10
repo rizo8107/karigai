@@ -21,15 +21,22 @@ const initializeGA = (): void => {
   script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
   document.head.appendChild(script);
   
-  // Initialize gtag
+  // Initialize gtag using the official stub
   window.dataLayer = window.dataLayer || [];
-  function gtag(...args: unknown[]) {
-    window.dataLayer.push({ event: 'gtag', args });
-  }
-  
-  window.gtag = gtag;
-  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Use function declaration to access the built-in 'arguments' object per GA snippet
+  // This mirrors: function gtag(){dataLayer.push(arguments);}
+  // @ts-expect-error - arguments typed as any for GA compatibility
+  function gtag() { (window.dataLayer as any).push(arguments); }
+
+  // Expose on window
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  window.gtag = gtag as any;
+
+  // Queue initial commands
+  // @ts-expect-error - GA expects Date, arguments marshalled by snippet
   gtag('js', new Date());
+  // @ts-expect-error - config signature managed by GA
   gtag('config', measurementId, {
     send_page_view: true,
     anonymize_ip: true
