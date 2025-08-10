@@ -41,6 +41,10 @@ export const ProductImage = memo(function ProductImage({
     const imgRef = useRef<HTMLImageElement>(null);
     const observerRef = useRef<IntersectionObserver | null>(null);
 
+    // Resolve dimensions to avoid layout shift
+    const resolvedWidth = width ?? defaultDimensions[aspectRatio].width;
+    const resolvedHeight = height ?? defaultDimensions[aspectRatio].height;
+
     // Define aspect ratio styles
     const aspectRatioStyles = {
         square: "aspect-square",
@@ -113,6 +117,11 @@ export const ProductImage = memo(function ProductImage({
         setIsLoading(false);
     };
 
+    // Build responsive sources definition for <picture>
+    const responsiveSources = useResponsive && url
+        ? getResponsiveImageSources(url, Collections.PRODUCTS)
+        : [];
+
     if (error || !imageUrl) {
         return (
             <div 
@@ -122,8 +131,8 @@ export const ProductImage = memo(function ProductImage({
                     className
                 )}
                 style={{
-                    width: width ? `${width}px` : '100%',
-                    height: height ? `${height}px` : 'auto'
+                    width: resolvedWidth,
+                    height: resolvedHeight
                 }}
             >
                 <ImageIcon className="h-6 w-6 text-muted-foreground" />
@@ -147,6 +156,8 @@ export const ProductImage = memo(function ProductImage({
                         alt=""
                         className="w-full h-full object-cover blur-xl scale-110"
                         aria-hidden="true"
+                        width={resolvedWidth}
+                        height={resolvedHeight}
                     />
                 </div>
             )}
@@ -156,20 +167,45 @@ export const ProductImage = memo(function ProductImage({
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
             )}
-            
-            <img
-                ref={imgRef}
-                src={priority ? imageUrl : undefined}
-                alt={alt}
-                className={cn(
-                    "w-full h-full object-cover transition-opacity duration-500",
-                    isLoading ? "opacity-0" : "opacity-100"
-                )}
-                loading={priority ? "eager" : "lazy"}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-                decoding={priority ? "sync" : "async"}
-            />
+            {/* Use picture for responsive formats when available */}
+            {useResponsive && responsiveSources.length > 0 ? (
+                <picture>
+                    {responsiveSources.map((source, idx) => (
+                        <source key={idx} type={source.type} media={source.media} srcSet={source.srcSet} />
+                    ))}
+                    <img
+                        ref={imgRef}
+                        src={priority ? imageUrl ?? undefined : undefined}
+                        alt={alt}
+                        className={cn(
+                            "w-full h-full object-cover transition-opacity duration-500",
+                            isLoading ? "opacity-0" : "opacity-100"
+                        )}
+                        loading={priority ? "eager" : "lazy"}
+                        onLoad={handleImageLoad}
+                        onError={handleImageError}
+                        decoding={priority ? "sync" : "async"}
+                        width={resolvedWidth}
+                        height={resolvedHeight}
+                    />
+                </picture>
+            ) : (
+                <img
+                    ref={imgRef}
+                    src={priority ? imageUrl ?? undefined : undefined}
+                    alt={alt}
+                    className={cn(
+                        "w-full h-full object-cover transition-opacity duration-500",
+                        isLoading ? "opacity-0" : "opacity-100"
+                    )}
+                    loading={priority ? "eager" : "lazy"}
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
+                    decoding={priority ? "sync" : "async"}
+                    width={resolvedWidth}
+                    height={resolvedHeight}
+                />
+            )}
         </div>
     );
-}); 
+});
