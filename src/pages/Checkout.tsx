@@ -743,21 +743,25 @@ const removeCoupon = () => {
           }
         };
 
-        // Send to the n8n webhook
+        // Send to the n8n webhook using env URL only (no hardcoded fallback)
         console.log('Sending order details to n8n webhook:', n8nWebhookData);
-        const n8nWebhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://backend-n8n.7za6uc.easypanel.host/webhook/';
-        const n8nWebhookResponse = await fetch(n8nWebhookUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(n8nWebhookData)
-        });
-
-        if (n8nWebhookResponse.ok) {
-          console.log('Successfully sent order details to n8n webhook');
+        const n8nWebhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL as string | undefined;
+        if (!n8nWebhookUrl) {
+          console.error('VITE_N8N_WEBHOOK_URL is not set. Skipping order webhook send.');
         } else {
-          console.error('Failed to send order details to n8n webhook:', await n8nWebhookResponse.text());
+          const n8nWebhookResponse = await fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(n8nWebhookData)
+          });
+
+          if (n8nWebhookResponse.ok) {
+            console.log('Successfully sent order details to n8n webhook');
+          } else {
+            console.error('Failed to send order details to n8n webhook:', await n8nWebhookResponse.text());
+          }
         }
         
         // Original webhook code continues below
