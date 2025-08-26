@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/lib/utils';
 import { calculateOrderTotal } from '@/utils/orderUtils';
 import { pocketbase } from '@/lib/pocketbase';
-import { CountdownTimer } from '@/components/ui/countdown-timer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,15 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, ShoppingBag, LockIcon, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { 
-  initializeCheckoutOptimizations,
-  cacheShippingConfig,
-  getCachedShippingConfig,
-  cacheUserAddress,
-  getCachedUserAddress,
-  preloadCartItemImages,
-  trackCheckoutStep
-} from '@/utils/checkoutPerformance';
+import { OfferBanner } from '@/components/OfferBanner';
 import { 
   getRazorpayKeyId,
   RazorpayResponse
@@ -63,6 +54,7 @@ interface CouponData {
   max_uses?: number;
   current_uses?: number;
   discountAmount?: number;
+  description?: string;
 }
 
 interface CheckoutFormData {
@@ -117,8 +109,11 @@ export default function CheckoutPage() {
   const [showOffer, setShowOffer] = useState(false);
   const [offerDiscount, setOfferDiscount] = useState(0);
   const [offerTitle, setOfferTitle] = useState('');
+  const [offerDescription, setOfferDescription] = useState('');
+  const [offerMinOrder, setOfferMinOrder] = useState<number | null>(null);
   const [offerLoading, setOfferLoading] = useState(true);
   const [hideOfferBanner, setHideOfferBanner] = useState(false);
+  const [offerImageUrl, setOfferImageUrl] = useState<string | undefined>(undefined);
   
   const [formData, setFormData] = useState<CheckoutFormData>({
     name: user?.name || '',
@@ -173,7 +168,8 @@ export default function CheckoutPage() {
           });
           
           if (isMounted && coupons && coupons.items.length > 0) {
-            setSuggestedCoupons(coupons.items);
+            // Cast RecordModel[] to CouponData[] for UI suggestions
+            setSuggestedCoupons(coupons.items as unknown as CouponData[]);
             console.log('Suggested coupons found:', coupons.items.length);
           }
         } catch (collectionError) {
@@ -203,24 +199,59 @@ export default function CheckoutPage() {
       try {
         // Only set loading state if component is still mounted
         if (isMounted) setOfferLoading(true);
-        
-        // Get current date/time for comparison
-        const now = new Date();
+        console.log('[special_offers] Fetch started. PB URL set:', !!import.meta.env.VITE_POCKETBASE_URL);
         
         // Check if collection exists before fetching
         try {
           // Fetch active offers from PocketBase
           const offers = await pocketbase.collection('special_offers').getList(1, 1, {
-            filter: `active = true && start_date <= "${now.toISOString()}" && end_date >= "${now.toISOString()}"`,
-            sort: '-created'
+            // Use @now to avoid timezone/format issues
+            filter: 'active = true && start_date <= @now && end_date >= @now',
+            sort: '-created',
+            expand: 'product'
           });
           
           // Only update state if component is still mounted
           if (isMounted) {
             if (offers && offers.items.length > 0) {
               const offer = offers.items[0];
+              console.log('[special_offers] Offer fetched:', offer);
               setOfferDiscount(offer.discount_percentage || 0);
               setOfferTitle(offer.title || '');
+              setOfferDescription(offer.description || '');
+              setOfferMinOrder(typeof offer.min_order_value === 'number' ? offer.min_order_value : null);
+              // Try to resolve related product image via expand
+              try {
+                const expanded: any = (offer as any).expand;
+                const prod = expanded?.product;
+                const firstImage = Array.isArray(prod?.images) && prod.images.length > 0 ? prod.images[0] : undefined;
+                if (prod && typeof firstImage === 'string') {
+                  const url = pocketbase.files.getURL(prod, firstImage);
+                  setOfferImageUrl(url);
+                } else {
+                  setOfferImageUrl(undefined);
+                }
+              } catch (e) {
+                console.warn('[special_offers] Failed to build product image URL from relation:', e);
+                setOfferImageUrl(undefined);
+              }
+
+              // Fallback: if offer is a free_gift and has gift_product_id, fetch that product to resolve image
+              try {
+                const offerType = (offer as any).offer_type as string | undefined;
+                const giftProductId = (offer as any).gift_product_id as string | undefined;
+                if (!offerImageUrl && offerType === 'free_gift' && giftProductId) {
+                  console.log('[special_offers] Fetching gift product for image:', giftProductId);
+                  const giftProduct = await pocketbase.collection('products').getOne(giftProductId, { $autoCancel: false });
+                  const images: unknown = (giftProduct as any).images;
+                  if (Array.isArray(images) && images.length > 0 && typeof images[0] === 'string') {
+                    const url = pocketbase.files.getURL(giftProduct, images[0]);
+                    setOfferImageUrl(url);
+                  }
+                }
+              } catch (giftErr) {
+                console.warn('[special_offers] Could not resolve gift product image:', giftErr);
+              }
               
               // Always set to 30 minutes from now regardless of database end_date
               const expiryTime = new Date();
@@ -230,8 +261,23 @@ export default function CheckoutPage() {
               setShowOffer(true);
               console.log('Active offer found:', offer.title, offer.discount_percentage + '%');
             } else {
-              setShowOffer(false);
-              console.log('No active offers found');
+              console.warn('[special_offers] No items returned by query. Check active flag, date window, and permissions.');
+              // Optional dev fallback to visualize banner while setting up backend
+              const enableFallback = import.meta.env.VITE_ENABLE_OFFER_FALLBACK === 'true';
+              if (enableFallback) {
+                console.log('[special_offers] Fallback enabled. Showing default test offer.');
+                setOfferDiscount(5);
+                setOfferTitle('Limited Time Offer');
+                setOfferDescription('Complete your purchase to save now.');
+                setOfferMinOrder(0);
+                const expiryTime = new Date();
+                expiryTime.setMinutes(expiryTime.getMinutes() + 30);
+                setOfferExpiryTime(expiryTime);
+                setShowOffer(true);
+              } else {
+                setShowOffer(false);
+                console.log('No active offers found');
+              }
             }
           }
         } catch (collectionError) {
@@ -242,6 +288,8 @@ export default function CheckoutPage() {
             // Set default offer values
             setOfferDiscount(5); // 5% discount
             setOfferTitle('Limited Time Offer');
+            setOfferDescription('Complete your purchase to save now.');
+            setOfferMinOrder(0);
             
             // Set expiry to 30 minutes from now
             const defaultExpiry = new Date();
@@ -964,9 +1012,10 @@ const removeCoupon = () => {
       console.log(`Applying coupon discount: ${couponDiscountAmount}`);
     }
     
-    // Apply limited time offer discount if active
+    // Apply limited time offer discount if active and eligible by min_order_value
     let offerDiscountAmount = 0;
-    if (showOffer && offerDiscount > 0) {
+    const isOfferEligible = showOffer && offerDiscount > 0 && (offerMinOrder == null || finalSubtotal >= offerMinOrder);
+    if (isOfferEligible) {
       offerDiscountAmount = parseFloat(((finalSubtotal * offerDiscount) / 100).toFixed(2));
       finalDiscount += offerDiscountAmount;
       console.log(`Applying offer discount: ${offerDiscountAmount}`);
@@ -1728,47 +1777,19 @@ const removeCoupon = () => {
               <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
               <span>Loading offers...</span>
             </div>
-          ) : showOffer && offerExpiryTime && !hideOfferBanner && (
-            <div className="relative overflow-hidden bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 md:p-6 rounded-lg mb-8 shadow-lg">
-              <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 opacity-20">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"/>
-                </svg>
-                <svg className="absolute left-0 bottom-0 h-full transform rotate-180" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <polygon fill="currentColor" points="0,0 100,0 100,100" />
-                </svg>
-              </div>
-              
-              <div className="relative z-10 flex flex-col md:flex-row justify-between items-center">
-                <div className="mb-4 md:mb-0 md:mr-8">
-                  <span className="inline-block px-3 py-1 bg-indigo-600 text-white text-xs font-medium rounded-full mb-2">EXCLUSIVE</span>
-                  <h3 className="font-bold text-xl md:text-2xl tracking-tight mb-1">{offerTitle || 'Limited Time Offer'}</h3>
-                  <p className="text-slate-300 text-sm md:text-base">Complete your purchase in the next:</p>
-                </div>
-                
-                <div className="flex flex-col items-center">
-                  <CountdownTimer 
-                    expiryTime={offerExpiryTime} 
-                    onExpire={() => {
-                      console.log('Offer expired, hiding offer section');
-                      setShowOffer(false);
-                    }} 
-                    className="mb-3 text-lg font-mono"
-                  />
-                  <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/20">
-                    <p className="text-base md:text-lg font-bold">Save <span className="text-amber-400">{offerDiscount}%</span> on your order</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="absolute -right-2 -top-2 w-16 h-16 md:w-20 md:h-20 flex items-center justify-center">
-                <div className="absolute inset-0 bg-amber-500 rounded-full transform rotate-45"></div>
-                <span className="relative z-10 text-white font-bold text-sm md:text-base transform -rotate-45">{offerDiscount}%</span>
-              </div>
-              
-              <button 
-                onClick={() => setHideOfferBanner(true)} 
-                className="absolute top-2 right-2 text-white/80 hover:text-white focus:outline-none"
+          ) : showOffer && !hideOfferBanner && (
+            <div className="relative">
+              <OfferBanner
+                title={offerTitle || 'Special Offer'}
+                description={offerDescription}
+                imageUrl={offerImageUrl}
+                active={offerMinOrder == null || subtotal >= (offerMinOrder || 0)}
+                minValue={offerMinOrder}
+                currentAmount={subtotal}
+              />
+              <button
+                onClick={() => setHideOfferBanner(true)}
+                className="absolute top-3 right-3 text-current/80 hover:text-current focus:outline-none"
                 aria-label="Close offer banner"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
