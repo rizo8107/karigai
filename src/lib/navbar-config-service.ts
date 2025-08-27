@@ -7,6 +7,8 @@ export interface NavbarConfig {
   showContact: boolean;
   showGifting: boolean;
   showBlog: boolean;
+  showBestsellers: boolean;
+  showNewArrivals: boolean;
   isActive: boolean;
 }
 
@@ -17,6 +19,8 @@ const DEFAULT_NAVBAR_CONFIG: NavbarConfig = {
   showContact: true,
   showGifting: true,
   showBlog: true,
+  showBestsellers: true,
+  showNewArrivals: true,
   isActive: true,
 };
 
@@ -30,6 +34,8 @@ const mapRecordToConfig = (record: RecordModel): NavbarConfig => {
     showContact: record.show_contact ?? true,
     showGifting: record.show_gifting ?? true,
     showBlog: record.show_blog ?? true,
+    showBestsellers: (record as any).show_bestsellers ?? true,
+    showNewArrivals: (record as any).show_new_arrivals ?? true,
     isActive: record.is_active ?? true,
   };
 };

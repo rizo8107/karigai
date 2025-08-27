@@ -46,6 +46,7 @@ export interface ProductRecord {
     description: string;
     price: number;
     images: string[];
+    list_order?: number;
     colors: Array<{
         name: string;
         value: string;
@@ -117,6 +118,7 @@ export interface Product extends RecordModel {
     price: number;
     original_price?: number;
     images: string[];
+    list_order?: number;
     colors: ProductColor[];
     features: string[];
     dimensions: string;
@@ -333,6 +335,7 @@ export async function getProducts(filter?: ProductFilter, signal?: AbortSignal):
                 images: Array.isArray(record.images) 
                     ? record.images.map((image: string) => `${record.id}/${image}`)
                     : [],
+                list_order: typeof (record as any).list_order === 'number' ? (record as any).list_order : undefined,
                 colors: safeParseJson(record.colors, []),
                 features: safeParseJson(record.features, []),
                 care: safeParseJson(record.care, []),
@@ -382,6 +385,16 @@ export async function getProducts(filter?: ProductFilter, signal?: AbortSignal):
             console.warn('Failed to fetch review counts:', reviewError);
             // Continue with products that have default review count of 0
         }
+
+        // Ordering: first by positive list_order (ascending), then random for items with list_order <= 0 or undefined
+        const withOrder = processedProducts
+            .filter(p => typeof (p as any).list_order === 'number' && ((p as any).list_order as number) > 0)
+            .sort((a, b) => ((a as any).list_order as number) - ((b as any).list_order as number));
+        const withoutOrder = processedProducts
+            .filter(p => (p as any).list_order === undefined || ((p as any).list_order as number) <= 0)
+            .sort(() => Math.random() - 0.5);
+
+        processedProducts = [...withOrder, ...withoutOrder];
 
         return processedProducts;
     } catch (e: unknown) {

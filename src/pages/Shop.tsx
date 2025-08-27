@@ -23,7 +23,7 @@ export default function Shop() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<"name" | "price" | "bestseller">('name');
+  const [sortBy, setSortBy] = useState<"default" | "name" | "price" | "bestseller">('default');
   const [category, setCategory] = useState<string>('all');
   const [visibleProducts, setVisibleProducts] = useState<Set<string>>(new Set());
   const { addItem } = useCart();
@@ -47,7 +47,10 @@ export default function Shop() {
       const matchesCategory = category === 'all' || product.category === category;
       return matchesSearch && matchesCategory;
     });
-    return list.sort((a, b) => {
+    // Preserve backend order when sortBy is 'default'
+    if (sortBy === 'default') return list;
+    // Otherwise, apply the chosen sort
+    return [...list].sort((a, b) => {
       switch (sortBy) {
         case 'name':
           return a.name.localeCompare(b.name);
@@ -306,11 +309,12 @@ export default function Shop() {
               />
             </div>
             <div className="flex gap-4">
-              <Select value={sortBy} onValueChange={(value: 'name' | 'price' | 'bestseller') => setSortBy(value)}>
+              <Select value={sortBy} onValueChange={(value: 'default' | 'name' | 'price' | 'bestseller') => setSortBy(value)}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="default">Default</SelectItem>
                   <SelectItem value="name">Name</SelectItem>
                   <SelectItem value="price">Price</SelectItem>
                   <SelectItem value="bestseller">Bestseller</SelectItem>

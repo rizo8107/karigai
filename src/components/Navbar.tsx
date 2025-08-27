@@ -70,24 +70,28 @@ export default function Navbar() {
                       </Link>
                     </SheetClose>
                   )}
-                  <SheetClose asChild>
-                    <Link 
-                      to="/bestsellers" 
-                      className="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-gray-100"
-                    >
-                      <Award className="h-5 w-5 text-gray-500" />
-                      Bestsellers
-                    </Link>
-                  </SheetClose>
-                  <SheetClose asChild>
-                    <Link 
-                      to="/new-arrivals" 
-                      className="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-gray-100"
-                    >
-                      <Sparkles className="h-5 w-5 text-gray-500" />
-                      New Arrivals
-                    </Link>
-                  </SheetClose>
+                  {navConfig?.showBestsellers && (
+                    <SheetClose asChild>
+                      <Link 
+                        to="/bestsellers" 
+                        className="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-gray-100"
+                      >
+                        <Award className="h-5 w-5 text-gray-500" />
+                        Bestsellers
+                      </Link>
+                    </SheetClose>
+                  )}
+                  {navConfig?.showNewArrivals && (
+                    <SheetClose asChild>
+                      <Link 
+                        to="/new-arrivals" 
+                        className="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-gray-100"
+                      >
+                        <Sparkles className="h-5 w-5 text-gray-500" />
+                        New Arrivals
+                      </Link>
+                    </SheetClose>
+                  )}
                   {navConfig?.showAbout && (
                     <SheetClose asChild>
                       <Link 
@@ -187,18 +191,22 @@ export default function Navbar() {
               Shop
             </Link>
           )}
-          <Link
-            to="/bestsellers"
-            className="text-sm font-medium transition-colors hover:text-primary"
-          >
-            Bestsellers
-          </Link>
-          <Link
-            to="/new-arrivals"
-            className="text-sm font-medium transition-colors hover:text-primary"
-          >
-            New Arrivals
-          </Link>
+          {navConfig?.showBestsellers && (
+            <Link
+              to="/bestsellers"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              Bestsellers
+            </Link>
+          )}
+          {navConfig?.showNewArrivals && (
+            <Link
+              to="/new-arrivals"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              New Arrivals
+            </Link>
+          )}
           {navConfig?.showAbout && (
             <Link
               to="/about"

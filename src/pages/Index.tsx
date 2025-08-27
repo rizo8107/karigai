@@ -18,6 +18,8 @@ import UtmLink from '@/components/UtmLink';
 import { BuilderComponent } from "@/components/BuilderComponent";
 import { builder } from "@/lib/builder";
 import { DEFAULT_HOMEPAGE_CONFIG, getHomepageConfig, type HomepageConfig } from '@/lib/homepage-config-service';
+import { OfferBanner } from '@/components/OfferBanner';
+import { pocketbase } from '@/lib/pocketbase';
 
 const FeatureItem = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
   <div className="flex flex-col items-center text-center p-6 transition-all rounded-lg">
@@ -68,6 +70,13 @@ const Index = () => {
   
   const [heroContent, setHeroContent] = useState<BuilderContent | null>(null);
   const [featuresContent, setFeaturesContent] = useState<BuilderContent | null>(null);
+  // Offer banner state (homepage)
+  const [offerLoading, setOfferLoading] = useState(false);
+  const [showOffer, setShowOffer] = useState(false);
+  const [offerTitle, setOfferTitle] = useState<string>('');
+  const [offerDescription, setOfferDescription] = useState<string>('');
+  const [offerMinOrder, setOfferMinOrder] = useState<number | null>(null);
+  const [offerImageUrl, setOfferImageUrl] = useState<string | undefined>(undefined);
   
   // Simple refs without animation dependency
   const heroRef = useRef<HTMLDivElement>(null);
@@ -214,6 +223,58 @@ const Index = () => {
     fetchProducts();
     fetchBuilderContent();
 
+    // Fetch active special offer for homepage banner
+    const fetchOffer = async () => {
+      try {
+        setOfferLoading(true);
+        const offers = await pocketbase.collection('special_offers').getList(1, 1, {
+          filter: 'active = true && start_date <= @now && end_date >= @now',
+          sort: '-created',
+          expand: 'product'
+        });
+        if (offers.items && offers.items.length > 0) {
+          const offer: any = offers.items[0];
+          setOfferTitle(offer.title || 'Special Offer');
+          setOfferDescription(offer.description || '');
+          setOfferMinOrder(typeof offer.min_order_value === 'number' ? offer.min_order_value : null);
+
+          // Try resolve image from expanded product
+          let resolvedImage: string | undefined = undefined;
+          try {
+            const expanded: any = offer.expand;
+            const prod = expanded?.product;
+            const firstImage = Array.isArray(prod?.images) && prod.images.length > 0 ? prod.images[0] : undefined;
+            if (prod && typeof firstImage === 'string') {
+              resolvedImage = pocketbase.files.getURL(prod, firstImage);
+            }
+          } catch {}
+
+          // Fallback: free_gift gift_product_id
+          if (!resolvedImage && offer.offer_type === 'free_gift' && offer.gift_product_id) {
+            try {
+              const giftProduct = await pocketbase.collection('products').getOne(offer.gift_product_id, { $autoCancel: false });
+              const imgs: unknown = (giftProduct as any).images;
+              if (Array.isArray(imgs) && imgs.length > 0 && typeof imgs[0] === 'string') {
+                resolvedImage = pocketbase.files.getURL(giftProduct, imgs[0]);
+              }
+            } catch {}
+          }
+
+          setOfferImageUrl(resolvedImage);
+          setShowOffer(true);
+        } else {
+          setShowOffer(false);
+        }
+      } catch (e) {
+        console.warn('[homepage] Failed to fetch special offer:', e);
+        setShowOffer(false);
+      } finally {
+        setOfferLoading(false);
+      }
+    };
+
+    fetchOffer();
+
     return () => {
       controller.abort();
     };
@@ -267,6 +328,24 @@ const Index = () => {
                 ) : (
                   <Hero />
                 )}
+                {/* Offer banner below hero */}
+                {offerLoading ? (
+                  <div className="konipai-container py-4 flex items-center gap-2">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <span>Loading offer...</span>
+                  </div>
+                ) : showOffer ? (
+                  <div className="konipai-container mt-4">
+                    <OfferBanner
+                      title={offerTitle}
+                      description={offerDescription}
+                      imageUrl={offerImageUrl}
+                      active={true}
+                      minValue={offerMinOrder ?? undefined}
+                      currentAmount={0}
+                    />
+                  </div>
+                ) : null}
               </div>
             )
           });
