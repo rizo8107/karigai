@@ -121,27 +121,33 @@ const Index = () => {
         // Log the product fetching attempt
         console.log('Attempting to fetch products...');
         
-        // First try to get products with bestseller/new flags
-        let [bestsellersData, newArrivalsData] = await Promise.all([
-          getProducts({ bestseller: true }, controller.signal),
-          getProducts({ new: true }, controller.signal)
-        ]);
-        
-        // If no bestsellers were found, fallback to getting some general products
-        if (bestsellersData.length === 0) {
-          console.log('No bestsellers found, fetching general products as fallback...');
-          const fallbackProducts = await getProducts({}, controller.signal);
-          bestsellersData = fallbackProducts.slice(0, 4); // Take first 4 as bestsellers
-          
-          if (newArrivalsData.length === 0) {
-            // If no new arrivals either, use the rest as new arrivals
-            newArrivalsData = fallbackProducts.slice(4, 8);
-          }
+        // Fetch all products once (already ordered by list_order first in getProducts)
+        const allProducts = await getProducts({}, controller.signal);
+
+        // Build Bestsellers: show list_ordered products first (even if not bestseller),
+        // then append remaining bestsellers without positive list_order, preserving their order
+        const ordered = allProducts
+          .filter(p => typeof (p as any).list_order === 'number' && ((p as any).list_order as number) > 0)
+          .sort((a, b) => ((a as any).list_order as number) - ((b as any).list_order as number));
+
+        const bestsellersRest = allProducts.filter(p => p.bestseller && !((p as any).list_order as number > 0));
+
+        let bestsellersData = [...ordered, ...bestsellersRest];
+
+        // New Arrivals keeps existing behavior: take flagged items in the incoming order
+        let newArrivalsData = allProducts.filter(p => p.new);
+
+        // If both lists are empty, fallback to first items
+        if (bestsellersData.length === 0 && allProducts.length > 0) {
+          bestsellersData = allProducts.slice(0, 4);
         }
-        
+        if (newArrivalsData.length === 0 && allProducts.length > 0) {
+          newArrivalsData = allProducts.slice(0, 4);
+        }
+
         // Debug log the product data
-        console.log('Bestsellers data:', bestsellersData);
-        console.log('New arrivals data:', newArrivalsData);
+        console.log('Bestsellers data (ordered-first):', bestsellersData.map(p => ({ name: p.name, list_order: (p as any).list_order, bestseller: p.bestseller })));
+        console.log('New arrivals data:', newArrivalsData.map(p => ({ name: p.name, list_order: (p as any).list_order, new: p.new })));
         
         // Get featured products - prioritize actual bestsellers, but fallback if needed
         let featuredOnes = bestsellersData.length > 0 ? [bestsellersData[0]] : [];
