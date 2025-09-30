@@ -1055,9 +1055,8 @@ const removeCoupon = () => {
           }
         } else {
           // It's a state name
-          const isTamilNadu = formData.state.toLowerCase() === 'tamil nadu' || 
-                            formData.state.toLowerCase() === 'tamilnadu' || 
-                            formData.state.toLowerCase() === 'tn';
+          const normalizedState = formData.state.trim().toLowerCase().replace(/\s+/g, '');
+          const isTamilNadu = normalizedState === 'tamilnadu' || normalizedState === 'tn';
           
           shippingCost = isTamilNadu ? shippingConfig.tnShippingCost : shippingConfig.otherStatesShippingCost;
           estimatedDelivery = isTamilNadu ? shippingConfig.tnDeliveryDays : shippingConfig.otherStatesDeliveryDays;

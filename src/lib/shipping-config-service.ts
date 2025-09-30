@@ -75,21 +75,21 @@ export const getShippingConfig = async (): Promise<ShippingConfig> => {
  */
 export const calculateShippingCostFromConfig = async (stateOrPincode: string): Promise<number> => {
   const config = await getShippingConfig();
+  const raw = (stateOrPincode ?? '').toString().trim();
   
   // First check if it's a pincode
-  if (/^\d{6}$/.test(stateOrPincode)) {
+  if (/^\d{6}$/.test(raw)) {
     // Import dynamically to avoid circular dependencies
     const { isTamilNaduPincode } = await import('./utils/tn-pincodes');
-    if (await isTamilNaduPincode(stateOrPincode)) {
+    if (await isTamilNaduPincode(raw)) {
       return config.tnShippingCost;
     }
     return config.otherStatesShippingCost;
   }
   
-  // If not a pincode, check if the state is Tamil Nadu (case insensitive)
-  if (stateOrPincode.toLowerCase() === 'tamil nadu' || 
-      stateOrPincode.toLowerCase() === 'tamilnadu' || 
-      stateOrPincode.toLowerCase() === 'tn') {
+  // If not a pincode, check if the state is Tamil Nadu (case insensitive, ignore spaces)
+  const normalized = raw.toLowerCase().replace(/\s+/g, '');
+  if (normalized === 'tamilnadu' || normalized === 'tn') {
     return config.tnShippingCost;
   }
   
@@ -104,21 +104,21 @@ export const calculateShippingCostFromConfig = async (stateOrPincode: string): P
  */
 export const getDeliveryTimeFromConfig = async (stateOrPincode: string): Promise<string> => {
   const config = await getShippingConfig();
+  const raw = (stateOrPincode ?? '').toString().trim();
   
   // First check if it's a pincode
-  if (/^\d{6}$/.test(stateOrPincode)) {
+  if (/^\d{6}$/.test(raw)) {
     // Import dynamically to avoid circular dependencies
     const { isTamilNaduPincode } = await import('./utils/tn-pincodes');
-    if (await isTamilNaduPincode(stateOrPincode)) {
+    if (await isTamilNaduPincode(raw)) {
       return config.tnDeliveryDays;
     }
     return config.otherStatesDeliveryDays;
   }
   
-  // If not a pincode, check if the state is Tamil Nadu (case insensitive)
-  if (stateOrPincode.toLowerCase() === 'tamil nadu' || 
-      stateOrPincode.toLowerCase() === 'tamilnadu' || 
-      stateOrPincode.toLowerCase() === 'tn') {
+  // If not a pincode, check if the state is Tamil Nadu (case insensitive, ignore spaces)
+  const normalized = raw.toLowerCase().replace(/\s+/g, '');
+  if (normalized === 'tamilnadu' || normalized === 'tn') {
     return config.tnDeliveryDays;
   }
   

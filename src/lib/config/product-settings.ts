@@ -74,19 +74,19 @@ export const getProductSettings = (): ProductDisplaySettings => {
  */
 export const calculateShippingCost = (stateOrPincode: string): number => {
   const settings = getProductSettings();
+  const raw = (stateOrPincode ?? '').toString().trim();
   
   // First check if it's a pincode
-  if (/^\d{6}$/.test(stateOrPincode)) {
-    if (isTamilNaduPincode(stateOrPincode)) {
+  if (/^\d{6}$/.test(raw)) {
+    if (isTamilNaduPincode(raw)) {
       return settings.tnShippingCost;
     }
     return settings.otherStatesShippingCost;
   }
   
-  // If not a pincode, check if the state is Tamil Nadu (case insensitive)
-  if (stateOrPincode.toLowerCase() === 'tamil nadu' || 
-      stateOrPincode.toLowerCase() === 'tamilnadu' || 
-      stateOrPincode.toLowerCase() === 'tn') {
+  // Normalize state name: case-insensitive, collapse/remove spaces
+  const normalized = raw.toLowerCase().replace(/\s+/g, '');
+  if (normalized === 'tamilnadu' || normalized === 'tn') {
     return settings.tnShippingCost;
   }
   
@@ -101,19 +101,19 @@ export const calculateShippingCost = (stateOrPincode: string): number => {
  */
 export const getDeliveryTime = (stateOrPincode: string): string => {
   const settings = getProductSettings();
+  const raw = (stateOrPincode ?? '').toString().trim();
   
   // First check if it's a pincode
-  if (/^\d{6}$/.test(stateOrPincode)) {
-    if (isTamilNaduPincode(stateOrPincode)) {
+  if (/^\d{6}$/.test(raw)) {
+    if (isTamilNaduPincode(raw)) {
       return settings.tnDeliveryDays;
     }
     return settings.otherStatesDeliveryDays;
   }
   
-  // If not a pincode, check if the state is Tamil Nadu (case insensitive)
-  if (stateOrPincode.toLowerCase() === 'tamil nadu' || 
-      stateOrPincode.toLowerCase() === 'tamilnadu' || 
-      stateOrPincode.toLowerCase() === 'tn') {
+  // Normalize state name: case-insensitive, collapse/remove spaces
+  const normalized = raw.toLowerCase().replace(/\s+/g, '');
+  if (normalized === 'tamilnadu' || normalized === 'tn') {
     return settings.tnDeliveryDays;
   }
   
