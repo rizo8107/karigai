@@ -208,17 +208,17 @@ const Index = () => {
         // Fetch hero section content
         const heroData = await builder
           .get('home-hero', {
-            cachebust: true
+            cachebust: false
           })
           .promise();
-          
+
         // Fetch features section content
         const featuresData = await builder
           .get('home-features', {
-            cachebust: true
+            cachebust: false
           })
           .promise();
-          
+
         setHeroContent(heroData);
         setFeaturesContent(featuresData);
       } catch (error) {
@@ -475,11 +475,11 @@ const Index = () => {
                         <p className="text-gray-500">No bestseller products found</p>
                       </div>
                     )}
-                    <div className="mt-10 text-center">
-                      <Button 
-                        asChild 
-                        variant="outline" 
-                        size="lg" 
+                    <div className="mt-10 text-center hidden">
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="lg"
                         className="rounded-full border-[#219898] text-[#219898] hover:bg-[#219898] hover:text-white px-8"
                         onClick={() => trackButtonClick('view_bestsellers_button', 'View All Bestsellers', window.location.pathname)}
                       >
@@ -537,12 +537,12 @@ const Index = () => {
         return (
           <>
             {/* Loading state handled by skeleton components */}
-            
+
             {/* Render sorted sections */}
             {sections.sort((a, b) => a.order - b.order).map((section) => (
-              <React.Fragment key={section.id}>
+              <div key={section.id}>
                 {section.component}
-              </React.Fragment>
+              </div>
             ))}
 
             {/* Floating WhatsApp Order Button (Homepage) */}

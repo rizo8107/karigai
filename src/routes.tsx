@@ -46,6 +46,11 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"))
 // Add the webhook test page to the import
 const WebhookTest = lazy(() => import("./pages/WebhookTest"))
 
+// Puck CMS pages
+const PuckEditor = lazy(() => import("./pages/PuckEditor"))
+const PuckRenderer = lazy(() => import("./pages/PuckRenderer"))
+const PagesManager = lazy(() => import("./pages/PagesManager"))
+
 // Import Builder.io initialization
 import "@/lib/builder"
 
@@ -164,6 +169,11 @@ export function Routes() {
                   }
                 />
                 <Route path="/webhook-test" element={<WebhookTest />} />
+                
+                {/* Puck CMS routes */}
+                <Route path="/admin/pages" element={<PagesManager />} />
+                <Route path="/admin/pages/:pageId/edit" element={<PuckEditor />} />
+                <Route path="/page/:slug" element={<PuckRenderer />} />
                 
                 {/* Builder.io routes */}
                 <Route path="/builder/*" element={<BuilderPage />} />

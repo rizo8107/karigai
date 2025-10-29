@@ -1,0 +1,275 @@
+// =========================
+// 🔧 Shared Advanced UI API
+// =========================
+
+type Unit = "px" | "%" | "em" | "rem";
+
+type SectionUI = {
+  // Layout
+  layout?: {
+    contentWidth?: "boxed" | "full";
+    contentHeight?: "auto" | "min-60vh" | "full";
+    columnGap?: number;
+    alignItems?: "start" | "center" | "end" | "stretch";
+    justify?: "start" | "center" | "end" | "between";
+    stretchSection?: boolean;
+    overflowHidden?: boolean;
+  };
+  // Design
+  design?: {
+    background?: string;            // color or image URL
+    backgroundSize?: "cover" | "contain" | "auto";
+    backgroundPosition?: "center" | "top" | "bottom" | "left" | "right";
+    filterBlur?: number;            // px
+    filterBrightness?: number;      // %
+    filterContrast?: number;        // %
+    overlayColor?: string;
+    overlayOpacity?: number;        // 0-1
+    borderColor?: string;
+    borderWidth?: number;
+    borderRadius?: number;
+    typography?: {
+      fontSize?: number;            // px
+      lineHeight?: number;          // unitless
+      color?: string;
+      align?: "left" | "center" | "right";
+    };
+  };
+  // Advanced
+  advanced?: {
+    spacing?: {
+      unit?: Unit;
+      marginTop?: number; marginRight?: number; marginBottom?: number; marginLeft?: number;
+      paddingTop?: number; paddingRight?: number; paddingBottom?: number; paddingLeft?: number;
+    };
+    position?: {
+      type?: "static" | "relative" | "absolute" | "sticky";
+      top?: number | null; right?: number | null; bottom?: number | null; left?: number | null;
+      zIndex?: number | "auto";
+    };
+    transform?: {
+      translateX?: number; translateY?: number; // px
+      scale?: number; rotate?: number;          // deg
+      origin?: "center" | "top" | "bottom" | "left" | "right";
+    };
+    visibility?: {
+      hideOnMobile?: boolean; hideOnTablet?: boolean; hideOnDesktop?: boolean;
+    };
+    animation?: {
+      entrance?: "none" | "fade" | "slide-up" | "slide-right" | "zoom-in";
+    };
+    attributes?: { id?: string; className?: string; dataAttrs?: string }; // e.g. "data-test=hero;data-foo=bar"
+    conditions?: { enabled?: boolean; js?: string }; // return truthy to render
+  };
+};
+
+const SectionUIFields = {
+  // ——— Layout tab
+  layout: {
+    type: "object", label: "Layout",
+    fields: [
+      { type: "select", name: "contentWidth", label: "Content Width", options: ["boxed","full"], default: "full" },
+      { type: "select", name: "contentHeight", label: "Content Height", options: ["auto","min-60vh","full"], default: "auto" },
+      { type: "number", name: "columnGap", label: "Column gap (px)", default: 16, min: 0, max: 96, step: 1 },
+      { type: "select", name: "alignItems", label: "Align items", options: ["start","center","end","stretch"], default: "stretch" },
+      { type: "select", name: "justify", label: "Horizontal align", options: ["start","center","end","between"], default: "start" },
+      { type: "boolean", name: "stretchSection", label: "Stretch section", default: false },
+      { type: "boolean", name: "overflowHidden", label: "Overflow hidden", default: false },
+    ]
+  },
+  // ——— Design tab
+  design: {
+    type: "object", label: "Design",
+    fields: [
+      { type: "text",   name: "background",        label: "Background (color or image URL)", default: "" },
+      { type: "select", name: "backgroundSize",    label: "Background Size", options: ["cover","contain","auto"], default: "cover" },
+      { type: "select", name: "backgroundPosition",label: "Background Position", options: ["center","top","bottom","left","right"], default: "center" },
+      { type: "number", name: "filterBlur",        label: "Blur (px)", default: 0, min: 0, max: 30 },
+      { type: "number", name: "filterBrightness",  label: "Brightness (%)", default: 100, min: 50, max: 200 },
+      { type: "number", name: "filterContrast",    label: "Contrast (%)", default: 100, min: 50, max: 200 },
+      { type: "text",   name: "overlayColor",      label: "Background Overlay Color", default: "" },
+      { type: "number", name: "overlayOpacity",    label: "Overlay Opacity (0-1)", default: 0.0, min: 0, max: 1, step: 0.05 },
+      { type: "text",   name: "borderColor",       label: "Border Color", default: "" },
+      { type: "number", name: "borderWidth",       label: "Border Width (px)", default: 0, min: 0, max: 12 },
+      { type: "number", name: "borderRadius",      label: "Border Radius (px)", default: 0, min: 0, max: 64 },
+      { type: "object", name: "typography",        label: "Typography", fields: [
+        { type: "number", name: "fontSize",   label: "Base Font Size (px)", default: 16, min: 10, max: 48 },
+        { type: "number", name: "lineHeight", label: "Line Height", default: 1.5, min: 1, max: 2, step: 0.05 },
+        { type: "text",   name: "color",      label: "Text Color", default: "" },
+        { type: "select", name: "align",      label: "Text Align", options: ["left","center","right"], default: "left" },
+      ]},
+    ]
+  },
+  // ——— Advanced tab
+  advanced: {
+    type: "object", label: "Advanced",
+    fields: [
+      { type: "object", name: "spacing", label: "Spacing", fields: [
+        { type: "select", name: "unit", label: "Unit", options: ["px","%","em","rem"], default: "px" },
+        { type: "number", name: "marginTop",    label: "Margin Top", default: 0 },
+        { type: "number", name: "marginRight",  label: "Margin Right", default: 0 },
+        { type: "number", name: "marginBottom", label: "Margin Bottom", default: 0 },
+        { type: "number", name: "marginLeft",   label: "Margin Left", default: 0 },
+        { type: "number", name: "paddingTop",    label: "Padding Top", default: 0 },
+        { type: "number", name: "paddingRight",  label: "Padding Right", default: 0 },
+        { type: "number", name: "paddingBottom", label: "Padding Bottom", default: 0 },
+        { type: "number", name: "paddingLeft",   label: "Padding Left", default: 0 },
+      ]},
+      { type: "object", name: "position", label: "Position", fields: [
+        { type: "select", name: "type", label: "Type", options: ["static","relative","absolute","sticky"], default: "static" },
+        { type: "number", name: "top",    label: "Top", default: null },
+        { type: "number", name: "right",  label: "Right", default: null },
+        { type: "number", name: "bottom", label: "Bottom", default: null },
+        { type: "number", name: "left",   label: "Left", default: null },
+        { type: "number", name: "zIndex", label: "z-index", default: 1 },
+      ]},
+      { type: "object", name: "transform", label: "Transform", fields: [
+        { type: "number", name: "translateX", label: "Translate X (px)", default: 0 },
+        { type: "number", name: "translateY", label: "Translate Y (px)", default: 0 },
+        { type: "number", name: "scale",      label: "Scale", default: 1, step: 0.05, min: 0.5, max: 2 },
+        { type: "number", name: "rotate",     label: "Rotate (deg)", default: 0 },
+        { type: "select", name: "origin",     label: "Transform Origin", options: ["center","top","bottom","left","right"], default: "center" },
+      ]},
+      { type: "object", name: "visibility", label: "Visibility", fields: [
+        { type: "boolean", name: "hideOnMobile",  label: "Hide on Mobile", default: false },
+        { type: "boolean", name: "hideOnTablet",  label: "Hide on Tablet", default: false },
+        { type: "boolean", name: "hideOnDesktop", label: "Hide on Desktop", default: false },
+      ]},
+      { type: "object", name: "animation", label: "Entrance Animation", fields: [
+        { type: "select", name: "entrance", label: "Type", options: ["none","fade","slide-up","slide-right","zoom-in"], default: "none" },
+      ]},
+      { type: "object", name: "attributes", label: "Attributes", fields: [
+        { type: "text", name: "id",        label: "id", default: "" },
+        { type: "text", name: "className", label: "class", default: "" },
+        { type: "text", name: "dataAttrs", label: "data-* (a=b;c=d)", default: "" },
+      ]},
+      { type: "object", name: "conditions", label: "Conditions", fields: [
+        { type: "boolean", name: "enabled", label: "Enable condition", default: false },
+        { type: "text",     name: "js",      label: "JS expression (truthy to render)", default: "" },
+      ]},
+    ]
+  }
+} as const;
+
+// ——— runtime helpers
+function parseDataAttrs(s?: string) {
+  const attrs: Record<string,string> = {};
+  if (!s) return attrs;
+  s.split(";").map(x => x.trim()).filter(Boolean).forEach(pair => {
+    const [k,v] = pair.split("=").map(y => (y ?? "").trim());
+    if (k) attrs[k] = v ?? "";
+  });
+  return attrs;
+}
+
+function sectionWrapperProps(ui?: SectionUI): {
+  style: CSSProperties;
+  className: string;
+  attrs: Record<string, any>;
+  shouldRender: boolean;
+} {
+  const style: CSSProperties = {};
+  const cls: string[] = [];
+  const attrs: Record<string, any> = {};
+
+  // Layout
+  const L = ui?.layout;
+  if (L?.contentHeight === "min-60vh") style.minHeight = "60vh";
+  if (L?.contentHeight === "full") style.minHeight = "100vh";
+  if (L?.columnGap != null) style.gap = `${L.columnGap}px`;
+  if (L?.alignItems) style.alignItems = L.alignItems === "start" ? "flex-start" : L.alignItems === "end" ? "flex-end" : L.alignItems;
+  if (L?.justify) style.justifyContent = ({start:"flex-start",center:"center",end:"flex-end",between:"space-between"} as any)[L.justify];
+  if (L?.stretchSection) style.width = "100%";
+  if (L?.overflowHidden) style.overflow = "hidden";
+
+  // Design
+  const D = ui?.design;
+  if (D?.background) {
+    if (D.background.startsWith("#") || D.background.startsWith("rgb")) {
+      style.background = D.background;
+    } else {
+      style.backgroundImage = `url(${D.background})`;
+    }
+  }
+  if (D?.backgroundSize) style.backgroundSize = D.backgroundSize;
+  if (D?.backgroundPosition) style.backgroundPosition = D.backgroundPosition;
+  if (D?.borderColor) style.borderColor = D.borderColor, style.borderStyle = "solid";
+  if (D?.borderWidth != null) style.borderWidth = `${D.borderWidth}px`;
+  if (D?.borderRadius != null) style.borderRadius = `${D.borderRadius}px`;
+  if (D?.typography?.fontSize) style.fontSize = `${D.typography.fontSize}px`;
+  if (D?.typography?.lineHeight) style.lineHeight = D.typography.lineHeight as number;
+  if (D?.typography?.color) style.color = D.typography.color;
+  if (D?.typography?.align) style.textAlign = D.typography.align as any;
+
+  // Filters
+  const filters: string[] = [];
+  if (D?.filterBlur) filters.push(`blur(${D.filterBlur}px)`);
+  if (D?.filterBrightness && D.filterBrightness !== 100) filters.push(`brightness(${D.filterBrightness}%)`);
+  if (D?.filterContrast && D.filterContrast !== 100) filters.push(`contrast(${D.filterContrast}%)`);
+  if (filters.length) style.filter = filters.join(" ");
+
+  // Advanced
+  const A = ui?.advanced;
+
+  // spacing
+  const U = A?.spacing?.unit ?? "px";
+  const u = (n?: number) => (n == null ? undefined : `${n}${U}`);
+  if (A?.spacing) {
+    style.marginTop = u(A.spacing.marginTop);
+    style.marginRight = u(A.spacing.marginRight);
+    style.marginBottom = u(A.spacing.marginBottom);
+    style.marginLeft = u(A.spacing.marginLeft);
+    style.paddingTop = u(A.spacing.paddingTop);
+    style.paddingRight = u(A.spacing.paddingRight);
+    style.paddingBottom = u(A.spacing.paddingBottom);
+    style.paddingLeft = u(A.spacing.paddingLeft);
+  }
+
+  // position
+  if (A?.position?.type) style.position = A.position.type as any;
+  const has = (v: any) => v !== null && v !== undefined;
+  if (has(A?.position?.top))    style.top = `${A?.position?.top}px`;
+  if (has(A?.position?.right))  style.right = `${A?.position?.right}px`;
+  if (has(A?.position?.bottom)) style.bottom = `${A?.position?.bottom}px`;
+  if (has(A?.position?.left))   style.left = `${A?.position?.left}px`;
+  if (A?.position?.zIndex !== undefined) style.zIndex = A.position.zIndex as any;
+
+  // transform
+  const tr: string[] = [];
+  if (A?.transform?.translateX) tr.push(`translateX(${A.transform.translateX}px)`);
+  if (A?.transform?.translateY) tr.push(`translateY(${A.transform.translateY}px)`);
+  if (A?.transform?.scale && A.transform.scale !== 1) tr.push(`scale(${A.transform.scale})`);
+  if (A?.transform?.rotate) tr.push(`rotate(${A.transform.rotate}deg)`);
+  if (tr.length) style.transform = tr.join(" ");
+  if (A?.transform?.origin) style.transformOrigin = A.transform.origin;
+
+  // visibility
+  if (A?.visibility?.hideOnMobile)  cls.push("hidden", "sm:block");
+  if (A?.visibility?.hideOnTablet)  cls.push("sm:hidden", "lg:block");
+  if (A?.visibility?.hideOnDesktop) cls.push("lg:hidden");
+
+  // animation (basic utility classes — replace with your own)
+  switch (A?.animation?.entrance) {
+    case "fade":      cls.push("animate-fade-in"); break;
+    case "slide-up":  cls.push("animate-slide-up"); break;
+    case "slide-right": cls.push("animate-slide-right"); break;
+    case "zoom-in":   cls.push("animate-zoom-in"); break;
+  }
+
+  // attributes
+  if (A?.attributes?.id) attrs.id = A.attributes.id;
+  if (A?.attributes?.className) cls.push(A.attributes.className);
+  Object.assign(attrs, parseDataAttrs(A?.attributes?.dataAttrs));
+
+  // conditions
+  const shouldRender = A?.conditions?.enabled
+    ? !!(function() { try { return eval(A?.conditions?.js || "true"); } catch { return false; } })()
+    : true;
+
+  // container (boxed vs full)
+  if ((ui?.layout?.contentWidth ?? "full") === "boxed") {
+    cls.push("konipai-container");
+  }
+
+  return { style, className: cls.join(" "), attrs, shouldRender };
+}
