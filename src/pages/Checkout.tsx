@@ -383,7 +383,7 @@ export default function CheckoutPage() {
   // Validate all required fields
   const validateForm = (data: CheckoutFormData) => {
     const requiredFields = ['name', 'email', 'address', 'city', 'state', 'zipCode', 'phone'];
-    const isValid = requiredFields.every(field => 
+    const isAllFilled = requiredFields.every(field => 
       data[field as keyof CheckoutFormData] && data[field as keyof CheckoutFormData].trim() !== ''
     );
     
@@ -396,8 +396,12 @@ export default function CheckoutPage() {
     const cleanPhone = data.phone.replace(/\D/g, '');
     const formattedPhone = cleanPhone.replace(/^(\+?91)/, '');
     const isPhoneValid = phoneRegex.test(formattedPhone);
+
+    // ZIP validation: exactly 6 digits (IN PIN code)
+    const zipRegex = /^\d{6}$/;
+    const isZipValid = zipRegex.test(data.zipCode.trim());
     
-    setIsFormValid(isValid && isEmailValid && isPhoneValid);
+    setIsFormValid(isAllFilled && isEmailValid && isPhoneValid && isZipValid);
   };
   
   // Function to validate coupons directly in frontend
@@ -1000,6 +1004,15 @@ const removeCoupon = () => {
     loadTnPincodeUtil();
   }, []);
 
+  // Normalize and validate state input reliably (handles spaces, dashes, punctuation, case)
+  const isTamilNaduState = (value: string) => {
+    if (!value) return false;
+    const normalized = value.toLowerCase().replace(/[^a-z]/g, ''); // keep letters only
+    // Accept common variants
+    const variants = new Set(['tamilnadu', 'tamilnad', 'tn']);
+    return variants.has(normalized);
+  };
+
   const calculateFinalTotal = () => {
     const finalSubtotal = subtotal;
     let finalDiscount = 0;
@@ -1055,9 +1068,7 @@ const removeCoupon = () => {
           }
         } else {
           // It's a state name
-          const normalizedState = formData.state.trim().toLowerCase().replace(/\s+/g, '');
-          const isTamilNadu = normalizedState === 'tamilnadu' || normalizedState === 'tn';
-          
+          const isTamilNadu = isTamilNaduState(formData.state);
           shippingCost = isTamilNadu ? shippingConfig.tnShippingCost : shippingConfig.otherStatesShippingCost;
           estimatedDelivery = isTamilNadu ? shippingConfig.tnDeliveryDays : shippingConfig.otherStatesDeliveryDays;
         }
@@ -1591,51 +1602,57 @@ const removeCoupon = () => {
           `⚠️ AMOUNT MISMATCH: Razorpay order amount (${razorpayOrderResponse.amount} paise) ` +
           `doesn't match our calculated total (${expectedAmountInPaise} paise)`
         );
-        // Use our correct amount instead of the response amount
-        console.log(`Using our calculated amount (${expectedAmountInPaise} paise) for Razorpay checkout`); 
+        // We'll force our expected amount in `openRazorpayCheckout` below
+        console.log(`Using our calculated amount for checkout: ${expectedAmountInPaise} paise`);
       }
-      
       // Open Razorpay payment form with explicit key from environment
       console.log('Opening Razorpay checkout with key:', razorpayKeyId.substring(0, 4) + '...');
-      openRazorpayCheckout({
-        key: razorpayKeyId, // Use the validated key directly
-        order_id: razorpayOrderResponse.id,
-        // CRITICAL FIX: Always use our calculated amount that includes shipping
-        // This ensures the amount shown in Razorpay matches our checkout total
-        amount: expectedAmountInPaise, // Force our calculated amount in paise
-        currency: 'INR',
-        name: 'Karigai',
-        description: `Order #${order.id} - Total ₹${orderAmount}`,
-        image: import.meta.env.VITE_SITE_LOGO || 'https://karigai.in/assets/logo.png',
-        handler: (response) => handlePaymentSuccess(response, order.id),
-        prefill: {
-          name: formData.name,
-          email: formData.email,
-          contact: order.customer_phone, // Use the validated phone number from the order
-        },
-        notes: {
-          order_id: order.id,
-          address: `${formData.address}, ${formData.city}, ${formData.state} - ${formData.zipCode}`,
-          is_guest_checkout: isGuestCheckout ? 'true' : 'false',
-          user_id: user?.id || 'guest'
-        },
-        theme: {
-          color: '#4F46E5', // Indigo color that matches Konipai theme
-        }
-      });
-
-      // NOTE: After this point, the payment flow is handled by Razorpay's modal
-      // The handlePaymentSuccess function will be called when payment is completedss
+      try {
+        await openRazorpayCheckout({
+          key: razorpayKeyId,
+          order_id: razorpayOrderResponse.id,
+          amount: expectedAmountInPaise,
+          currency: 'INR',
+          name: 'Karigai',
+          description: `Order #${order.id} - Total ₹${orderAmount}`,
+          image: import.meta.env.VITE_SITE_LOGO || 'https://karigai.in/assets/logo.png',
+          handler: (response) => handlePaymentSuccess(response, order.id),
+          prefill: {
+            name: formData.name,
+            email: formData.email,
+            contact: order.customer_phone,
+          },
+          notes: {
+            order_id: order.id,
+            address: `${formData.address}, ${formData.city}, ${formData.state} - ${formData.zipCode}`,
+            is_guest_checkout: isGuestCheckout ? 'true' : 'false',
+            user_id: user?.id || 'guest',
+          },
+          theme: { color: '#4F46E5' },
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Payment cancelled or failed';
+        console.warn('Razorpay closed/failed:', msg);
+        trackPaymentFailure(order.id, order.total, 'Razorpay', msg);
+        toast({
+          variant: 'destructive',
+          title: 'Payment Cancelled',
+          description: 'Your Razorpay payment was cancelled or failed. No charges were made.',
+        });
+        navigate(`/order-confirmation/${order.id}?status=payment_cancelled`);
+        return;
+      }
     } catch (error) {
-      console.error('Error creating Razorpay order:', error);
+      console.error('Error creating Razorpay order or initializing payment:', error);
       trackPaymentFailure(order.id, order.total, 'Razorpay', error instanceof Error ? error.message : 'Unknown error');
       toast({
-        variant: "destructive",
-        title: "Payment Error",
-        description: "There was an issue processing your payment. Please contact support.",
+        variant: 'destructive',
+        title: 'Payment Error',
+        description: 'There was an issue processing your payment. Please contact support.',
       });
       navigate(`/order-confirmation/${order.id}?status=payment_error`);
     }
+
   };
 
   const handleAddressSelect = (address: {
@@ -1950,6 +1967,7 @@ const removeCoupon = () => {
                   value={formData.zipCode}
                   onChange={handleInputChange}
                   required
+                  data-testid="zip-input"
                   className={errors?.zipCode || !formData.zipCode ? "border-red-500" : ""}
                 />
                 {errors?.zipCode ? (
@@ -2051,6 +2069,7 @@ const removeCoupon = () => {
               value={couponCode}
               onChange={(e) => setCouponCode(e.target.value)}
               placeholder="Enter coupon code"
+              data-testid="coupon-input"
             />
             {couponLoading ? (
               <Button disabled className="w-24">
@@ -2058,7 +2077,7 @@ const removeCoupon = () => {
                 Applying...
               </Button>
             ) : (
-              <Button type="button" onClick={applyCoupon} className="w-24">
+              <Button type="button" onClick={applyCoupon} className="w-24" data-testid="apply-coupon-btn">
                 Apply
               </Button>
             )}

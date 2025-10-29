@@ -1,0 +1,413 @@
+[
+  {
+    "id": "TC001",
+    "title": "Product Listing Load and Display",
+    "description": "Verify product listing page loads correctly and all product details including images, names, prices, and availability are displayed accurately.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the product listing page."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify product cards are displayed with correct product name, price, image, and availability."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify product list updates dynamically as products change."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Product Detail Page Display and Reviews",
+    "description": "Ensure product detail page loads with complete information and user reviews are displayed correctly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Select a product from listing and navigate to product detail page."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify product name, description, price, images, and specifications are displayed."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that user reviews load and display with correct user ratings and comments."
+      },
+      {
+        "type": "assertion",
+        "description": "Test behavior for products with no reviews (display appropriate message)."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Add Products to Cart and Manage Quantities",
+    "description": "Verify user can add products to cart, update quantities, and cart updates reflect immediately.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "From product detail or listing page, add a product to the cart."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify product appears in shopping cart with correct quantity and price."
+      },
+      {
+        "type": "action",
+        "description": "Increase and decrease product quantity in cart."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify cart UI updates totals and quantity consistently without errors."
+      },
+      {
+        "type": "action",
+        "description": "Remove product from cart."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify product is removed and cart updates appropriately."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Checkout Flow with Razorpay Integration - Successful Payment",
+    "description": "Test complete checkout flow with valid payment through Razorpay including order creation and payment verification.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Proceed to checkout with valid cart items."
+      },
+      {
+        "type": "action",
+        "description": "Fill in required payment and shipping information."
+      },
+      {
+        "type": "action",
+        "description": "Submit payment and complete Razorpay payment flow."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify order is created successfully and payment verification confirms success."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm order confirmation page is displayed with correct order summary."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Checkout Flow - Payment Failure and Error Handling",
+    "description": "Verify error handling when Razorpay payment fails or is cancelled.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Proceed to checkout with items in cart."
+      },
+      {
+        "type": "action",
+        "description": "Initiate payment and simulate Razorpay payment failure or cancellation."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify appropriate error message is displayed to user."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure order is not created or saved in the system."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "User Profile Personal Info Update",
+    "description": "Verify user can update personal information in profile and changes persist and display immediately.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to user profile personal info section."
+      },
+      {
+        "type": "action",
+        "description": "Modify user data such as name, email, contact number."
+      },
+      {
+        "type": "action",
+        "description": "Save changes."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify changes are reflected immediately in UI."
+      },
+      {
+        "type": "assertion",
+        "description": "Reload profile page and confirm data persistence."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "User Address Book Management",
+    "description": "Verify user can add, edit, and delete addresses in address book section.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access user address book."
+      },
+      {
+        "type": "action",
+        "description": "Add a new address with all required fields."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new address appears correctly."
+      },
+      {
+        "type": "action",
+        "description": "Edit an existing address and save changes."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify edited changes are displayed correctly."
+      },
+      {
+        "type": "action",
+        "description": "Delete an address."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm address is removed from list."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Order History Display and Details",
+    "description": "Ensure user can view order list and detailed order information including invoices and tracking links.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to user order history page."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify list of orders is displayed with correct statuses and summaries."
+      },
+      {
+        "type": "action",
+        "description": "Click on an order to view detailed order information."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify order details include product list, prices, shipment tracking, and invoice."
+      },
+      {
+        "type": "action",
+        "description": "Generate or download invoice."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify invoice data is accurate and downloadable."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Order Tracking Interface Functionality",
+    "description": "Validate that the order tracking page shows current order status updates correctly.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to order tracking page."
+      },
+      {
+        "type": "action",
+        "description": "Select an order with active shipment."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify shipment status and tracking updates are displayed and updated dynamically."
+      },
+      {
+        "type": "assertion",
+        "description": "Test tracking display for delivered, in transit, and cancelled orders."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Security Settings Update and Validation",
+    "description": "Verify user can update password, enable two-factor authentication and changes take effect securely.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access security settings section in user profile."
+      },
+      {
+        "type": "action",
+        "description": "Change password providing current and new valid passwords."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify password update success message appears and login with new password works."
+      },
+      {
+        "type": "action",
+        "description": "Enable two-factor authentication using available method."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify two-factor authentication is enforced on next login."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Dynamic Homepage Content Update via PocketBase",
+    "description": "Test that admin updates to homepage content via PocketBase reflect correctly on user homepage with caching handled properly.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as admin or content manager."
+      },
+      {
+        "type": "action",
+        "description": "Update homepage sections/content using PocketBase management interface."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify new content appears on user homepage without downtime."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm caching service updates cache correctly and users receive updated content."
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "SPA Navigation and Routing Responsiveness",
+    "description": "Verify all SPA routes and navigation menus load views instantly without full page reloads and navigation is responsive on multiple devices.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Use navigation menu to access different app sections/pages."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm pages load without full reload and route URL changes accordingly."
+      },
+      {
+        "type": "assertion",
+        "description": "Test navigation responsiveness on desktop, tablet, and mobile sizes."
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Analytics Data Capture and Accuracy",
+    "description": "Confirm analytics events and page views are tracked correctly and available for review.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Trigger user actions like navigation, product views, add to cart, checkout."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify analytics events are sent and data matches user actions."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm analytics dashboard or logs reflect accurate, timely data."
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Local Express Server API Proxy Functionality",
+    "description": "Test that local Express server endpoints correctly proxy API calls to Razorpay and other external services during development.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Make API calls to Razorpay endpoints via local Express server proxy."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify requests are forwarded correctly and response data is as expected."
+      },
+      {
+        "type": "action",
+        "description": "Trigger error responses from Razorpay through proxy."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm errors are handled gracefully and informative messages returned."
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "UI Components Rendering Consistency",
+    "description": "Verify reusable UI components such as carousel, calendar, toast notifications, and image optimizer render consistently and function correctly across supported browsers and devices.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to pages containing carousel, calendar, toast notifications, and images."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify carousel cycles through images smoothly and controls work."
+      },
+      {
+        "type": "assertion",
+        "description": "Check calendar supports date selection and displays events correctly."
+      },
+      {
+        "type": "action",
+        "description": "Trigger toast notifications and verify appearance and dismissal."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify images load optimized sizes and resolutions."
+      },
+      {
+        "type": "assertion",
+        "description": "Test all components on multiple browsers (Chrome, Firefox, Safari, Edge) and devices (desktop, mobile)."
+      }
+    ]
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "cascade.mcpServers": {
+    "TestSprite": {
+      "command": "npx",
+      "args": [
+        "@testsprite/testsprite-mcp@latest"
+      ],
+      "env": {
+        "API_KEY": "sk-user-LIeX3HoMOrh3jcp_ugYiHdKuoka6xhJdw0emwZdxLNAFi3lvHs6P8jUW8DkAhOVlVn6vCARYneeg-3EblXqH8qUb5_S_pgVG5auvyDf-eHjs7soAz39V8bUpkwrw-D84q5s"
+      }
+    }
+  }
+}

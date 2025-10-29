@@ -1,0 +1,16 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:8080",
+  "executionArgs": {
+    "projectName": "karigai",
+    "projectPath": "d:\\Nirmal\\Zenthra\\ecom\\zenthra crm\\frontend\\karigai",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-LIeX3HoMOrh3jcp_ugYiHdKuoka6xhJdw0emwZdxLNAFi3lvHs6P8jUW8DkAhOVlVn6vCARYneeg-3EblXqH8qUb5_S_pgVG5auvyDf-eHjs7soAz39V8bUpkwrw-D84q5s"
+    }
+  },
+  "proxy": "http://f1681a6c-a257-47a4-aa74-71ab189b7ad7:YgNHrFCN6cMRob2vBdcNgMA17gncdhxo@tun.testsprite.com:8080"
+}

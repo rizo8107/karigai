@@ -1,0 +1,110 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "React",
+    "Vite",
+    "React Router",
+    "TailwindCSS",
+    "Radix UI",
+    "TanStack Query",
+    "Express (Node.js)",
+    "PocketBase",
+    "Appwrite",
+    "Razorpay"
+  ],
+  "features": [
+    {
+      "name": "Checkout and Payments",
+      "description": "Checkout flow with Razorpay order creation and payment verification using environment-specific endpoints.",
+      "files": [
+        "src/pages/Checkout.tsx",
+        "src/lib/razorpay-client.ts",
+        "src/lib/razorpay.ts",
+        "src/pages/OrderConfirmation.tsx",
+        "src/pages/order-confirmation.tsx"
+      ]
+    },
+    {
+      "name": "Product Listing and Detail",
+      "description": "Product list, details, and related UI components.",
+      "files": [
+        "src/pages/Shop.tsx",
+        "src/pages/ProductDetail.tsx",
+        "src/components/ProductCard.tsx",
+        "src/components/ProductReviews.tsx"
+      ]
+    },
+    {
+      "name": "Cart",
+      "description": "Shopping cart UI and interactions.",
+      "files": [
+        "src/components/Cart.tsx"
+      ]
+    },
+    {
+      "name": "Orders",
+      "description": "Order list, details, invoice, and tracking.",
+      "files": [
+        "src/pages/Orders.tsx",
+        "src/pages/OrderDetail.tsx",
+        "src/components/OrderInvoice.tsx",
+        "src/pages/OrderTracking.tsx"
+      ]
+    },
+    {
+      "name": "User Profile",
+      "description": "Profile pages including personal info, address book, and security settings.",
+      "files": [
+        "src/pages/profile/index.tsx",
+        "src/components/profile/PersonalInfo.tsx",
+        "src/components/profile/AddressBook.tsx",
+        "src/components/profile/OrderHistory.tsx",
+        "src/components/profile/SecuritySettings.tsx"
+      ]
+    },
+    {
+      "name": "Homepage Configuration",
+      "description": "Dynamic homepage sections controlled via PocketBase with caching service.",
+      "files": [
+        "src/pages/Index.tsx",
+        "src/lib/homepage-config-service.ts"
+      ]
+    },
+    {
+      "name": "Routing",
+      "description": "SPA routes and navigation menu.",
+      "files": [
+        "src/routes.tsx",
+        "src/components/ui/navigation-menu.tsx",
+        "src/components/Navbar.tsx"
+      ]
+    },
+    {
+      "name": "Analytics",
+      "description": "Analytics initialization and config.",
+      "files": [
+        "src/lib/analytics.ts",
+        "src/utils/initializeAnalytics.ts",
+        "src/config/analytics-config.ts"
+      ]
+    },
+    {
+      "name": "Server (Local API/Proxy)",
+      "description": "Express server used for local API/proxy (e.g., Razorpay).",
+      "files": [
+        "src/server/index.ts",
+        "vite.config.ts"
+      ]
+    },
+    {
+      "name": "Utilities and UI",
+      "description": "Shared UI components and utilities (Carousel, Calendar, Toast, Image optimizer).",
+      "files": [
+        "src/components/ui/carousel.tsx",
+        "src/components/ui/calendar.tsx",
+        "src/components/ui/sonner.tsx",
+        "src/utils/imageOptimizer.ts"
+      ]
+    }
+  ]
+}

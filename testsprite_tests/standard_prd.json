@@ -1,0 +1,160 @@
+{
+  "meta": {
+    "project": "E-Commerce Web Application",
+    "date": "2025-10-29",
+    "prepared_by": "Software Development Manager"
+  },
+  "product_overview": "A scalable, modern single-page e-commerce platform built with React and TypeScript that offers seamless shopping, payment, and user profile management experience.",
+  "core_goals": [
+    "Enable users to browse and explore products with detailed information and reviews.",
+    "Provide a smooth and secure checkout process with Razorpay payment integration.",
+    "Offer comprehensive order management including order tracking and invoicing.",
+    "Allow users to manage their profiles, addresses, and security settings.",
+    "Deliver dynamic homepage content managed via PocketBase for easy updates.",
+    "Ensure responsive and intuitive navigation throughout the site."
+  ],
+  "key_features": [
+    "Product listing with detailed product pages including reviews.",
+    "Shopping cart management with real-time updates.",
+    "Checkout flow integrated with Razorpay for order creation and payment verification.",
+    "User profile management with sections for personal info, address book, order history, and security settings.",
+    "Order management system supporting order list, detail views, invoice generation, and tracking.",
+    "Dynamic homepage configuration controlled through PocketBase and cached for performance.",
+    "SPA routing with React Router and responsive navigation menu.",
+    "Analytics integration for usage tracking and insights.",
+    "Local Express server setup to proxy API calls such as Razorpay endpoints.",
+    "Reusable UI components including carousel, calendar, toast notifications, and image optimization utilities."
+  ],
+  "user_flow_summary": [
+    "User visits homepage and browses products through the product listing page.",
+    "User selects a product to view detailed information and reviews.",
+    "User adds desired products to the shopping cart and manages quantities.",
+    "User proceeds to checkout, where Razorpay processes payment with order creation and verification.",
+    "Upon successful payment, user receives order confirmation and can view order details.",
+    "Users can access their profile to update personal info, manage addresses, review past orders, and update security settings.",
+    "Users can track their orders via the order tracking interface.",
+    "Admins or content managers update homepage content dynamically via PocketBase management interface."
+  ],
+  "validation_criteria": [
+    "All product details and reviews display correctly and update dynamically.",
+    "Checkout flow correctly creates orders and verifies payments through Razorpay endpoints.",
+    "Shopping cart maintains accurate contents during user session.",
+    "User profile changes persist and are immediately visible.",
+    "Order lists and detail views load without errors and show accurate information.",
+    "Homepage content updates reflect without downtime or caching issues.",
+    "Navigation routes respond instantly without page reloads.",
+    "Analytics data is accurately captured and available for review.",
+    "All local server endpoints, including Razorpay proxy, respond correctly during development testing.",
+    "UI components render consistently across supported browsers and devices."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "TypeScript",
+      "React",
+      "Vite",
+      "React Router",
+      "TailwindCSS",
+      "Radix UI",
+      "TanStack Query",
+      "Express (Node.js)",
+      "PocketBase",
+      "Appwrite",
+      "Razorpay"
+    ],
+    "features": [
+      {
+        "name": "Checkout and Payments",
+        "description": "Checkout flow with Razorpay order creation and payment verification using environment-specific endpoints.",
+        "files": [
+          "src/pages/Checkout.tsx",
+          "src/lib/razorpay-client.ts",
+          "src/lib/razorpay.ts",
+          "src/pages/OrderConfirmation.tsx",
+          "src/pages/order-confirmation.tsx"
+        ]
+      },
+      {
+        "name": "Product Listing and Detail",
+        "description": "Product list, details, and related UI components.",
+        "files": [
+          "src/pages/Shop.tsx",
+          "src/pages/ProductDetail.tsx",
+          "src/components/ProductCard.tsx",
+          "src/components/ProductReviews.tsx"
+        ]
+      },
+      {
+        "name": "Cart",
+        "description": "Shopping cart UI and interactions.",
+        "files": [
+          "src/components/Cart.tsx"
+        ]
+      },
+      {
+        "name": "Orders",
+        "description": "Order list, details, invoice, and tracking.",
+        "files": [
+          "src/pages/Orders.tsx",
+          "src/pages/OrderDetail.tsx",
+          "src/components/OrderInvoice.tsx",
+          "src/pages/OrderTracking.tsx"
+        ]
+      },
+      {
+        "name": "User Profile",
+        "description": "Profile pages including personal info, address book, and security settings.",
+        "files": [
+          "src/pages/profile/index.tsx",
+          "src/components/profile/PersonalInfo.tsx",
+          "src/components/profile/AddressBook.tsx",
+          "src/components/profile/OrderHistory.tsx",
+          "src/components/profile/SecuritySettings.tsx"
+        ]
+      },
+      {
+        "name": "Homepage Configuration",
+        "description": "Dynamic homepage sections controlled via PocketBase with caching service.",
+        "files": [
+          "src/pages/Index.tsx",
+          "src/lib/homepage-config-service.ts"
+        ]
+      },
+      {
+        "name": "Routing",
+        "description": "SPA routes and navigation menu.",
+        "files": [
+          "src/routes.tsx",
+          "src/components/ui/navigation-menu.tsx",
+          "src/components/Navbar.tsx"
+        ]
+      },
+      {
+        "name": "Analytics",
+        "description": "Analytics initialization and config.",
+        "files": [
+          "src/lib/analytics.ts",
+          "src/utils/initializeAnalytics.ts",
+          "src/config/analytics-config.ts"
+        ]
+      },
+      {
+        "name": "Server (Local API/Proxy)",
+        "description": "Express server used for local API/proxy (e.g., Razorpay).",
+        "files": [
+          "src/server/index.ts",
+          "vite.config.ts"
+        ]
+      },
+      {
+        "name": "Utilities and UI",
+        "description": "Shared UI components and utilities (Carousel, Calendar, Toast, Image optimizer).",
+        "files": [
+          "src/components/ui/carousel.tsx",
+          "src/components/ui/calendar.tsx",
+          "src/components/ui/sonner.tsx",
+          "src/utils/imageOptimizer.ts"
+        ]
+      }
+    ]
+  }
+}

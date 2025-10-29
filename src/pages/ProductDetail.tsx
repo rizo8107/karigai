@@ -705,6 +705,7 @@ const ProductDetail = () => {
             <div className="grid grid-cols-4 gap-4">
               {product?.images?.map((image, index) => (
                 <button 
+                  key={image || index}
                   type="button" 
                   onClick={() => handleImageSelect(image)}
                   className={cn(
