@@ -146,10 +146,40 @@ const PopupBanner: React.FC<{ config: PopupBannerConfig }> = ({ config }) => {
   if (!config.enabled || !open) return null;
   const z = config.zIndex ?? 70;
   const maxW = Math.max(600, Math.min(1100, config.width ?? 880));
+  const pos = config.position || "center";
+  const ox = typeof config.offsetX === 'number' ? config.offsetX : 24;
+  const oy = typeof config.offsetY === 'number' ? config.offsetY : 24;
+  const modalStyle: React.CSSProperties = (() => {
+    switch (pos) {
+      case 'top-left':
+        return { position: 'fixed', top: oy, left: ox };
+      case 'top-right':
+        return { position: 'fixed', top: oy, right: ox };
+      case 'bottom-left':
+        return { position: 'fixed', bottom: oy, left: ox };
+      case 'bottom-right':
+        return { position: 'fixed', bottom: oy, right: ox };
+      case 'top-center':
+        return { position: 'fixed', top: oy, left: '50%', transform: 'translateX(-50%)' };
+      case 'bottom-center':
+        return { position: 'fixed', bottom: oy, left: '50%', transform: 'translateX(-50%)' };
+      case 'center':
+      default:
+        return { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+    }
+  })();
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: z }} aria-modal="true" role="dialog">
       <div className="absolute inset-0 bg-black/50" onClick={close} />
-      <div className="relative mx-auto mt-10 bg-white rounded-xl shadow-xl overflow-hidden" style={{ maxWidth: maxW }}>
+      <div className="bg-white rounded-xl shadow-xl overflow-hidden" style={{ ...modalStyle, maxWidth: maxW }}>
+        {/* Mobile image on top */}
+        <div className="block md:hidden">
+          {config.imageUrl ? (
+            <img src={config.imageUrl} alt={config.title || "Offer"} className="w-full h-48 object-cover" />
+          ) : (
+            <div className="w-full h-40 bg-muted" />
+          )}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2">
           {/* Left image */}
           <div className="hidden md:block">
@@ -160,7 +190,7 @@ const PopupBanner: React.FC<{ config: PopupBannerConfig }> = ({ config }) => {
             )}
           </div>
           {/* Right content */}
-          <div className="p-6 md:p-8">
+          <div className="p-6 md:p-8 relative">
             {config.showClose !== false && (
               <button aria-label="Close" title="Close" onClick={close} className="absolute top-3 right-3 h-8 w-8 rounded-full bg-black/70 text-white flex items-center justify-center">×</button>
             )}
@@ -355,6 +385,7 @@ export const pluginRegistry = {
       width: 880,
       showClose: true,
       saveToPocketBase: false,
+      position: "center",
       visibility: { mode: "all", include: [], exclude: [] },
     } as PopupBannerConfig,
     Component: PopupBanner,

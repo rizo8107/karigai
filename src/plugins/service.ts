@@ -145,6 +145,16 @@ export function parseConfigForKey(key: PluginKey, raw: unknown): WhatsAppPluginC
     const mode = ["all", "homepage", "include", "exclude"].includes(v.mode)
       ? (v.mode as "all" | "homepage" | "include" | "exclude")
       : "all";
+    const allowedPositions = [
+      "center",
+      "top-left",
+      "top-right",
+      "bottom-left",
+      "bottom-right",
+      "top-center",
+      "bottom-center",
+    ] as const;
+    const position = allowedPositions.includes(obj.position) ? obj.position : "center";
     return {
       enabled: Boolean(obj.enabled),
       zIndex: typeof obj.zIndex === "number" ? obj.zIndex : 70,
@@ -167,6 +177,7 @@ export function parseConfigForKey(key: PluginKey, raw: unknown): WhatsAppPluginC
       saveToPocketBase: obj.saveToPocketBase === true,
       offsetX: typeof obj.offsetX === "number" ? obj.offsetX : undefined,
       offsetY: typeof obj.offsetY === "number" ? obj.offsetY : undefined,
+      position,
       autoClose: obj.autoClose === true,
       autoCloseAfterMs: typeof obj.autoCloseAfterMs === "number" ? obj.autoCloseAfterMs : 0,
       visibility: {

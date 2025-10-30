@@ -63,6 +63,7 @@ export interface PopupBannerConfig extends BasePluginConfig {
   width?: number; // px of modal max width
   showClose?: boolean;
   saveToPocketBase?: boolean; // save phone/consent to 'leads' collection
+  position?: "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right" | "top-center" | "bottom-center";
 }
 
 export type AnyPluginConfig =
