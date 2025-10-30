@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { PluginDefinition, WhatsAppPluginConfig, VideoPluginConfig } from "./types";
+import { PluginDefinition, WhatsAppPluginConfig, VideoPluginConfig, PopupBannerConfig } from "./types";
 
 function cx(...classes: (string | false | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -79,6 +79,141 @@ const WhatsAppFloating: React.FC<{ config: WhatsAppPluginConfig }> = ({ config }
             <span className="text-sm font-medium">{config.label || "Chat on WhatsApp"}</span>
           </a>
         )}
+      </div>
+    </div>
+  );
+};
+
+const PopupBanner: React.FC<{ config: PopupBannerConfig }> = ({ config }) => {
+  const [open, setOpen] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [consent, setConsent] = useState(Boolean(config.consentDefault));
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (!config.enabled) return;
+    if (config.showOnMobile === false && typeof window !== "undefined" && window.innerWidth < 768) return;
+    const key = "pbanner_seen";
+    const now = Date.now();
+    const show = () => setOpen(true);
+    const freq = config.frequency || "session";
+    if (freq === "session") {
+      if (!sessionStorage.getItem(key)) {
+        setTimeout(show, Math.max(0, config.initialDelayMs ?? 0));
+      }
+    } else if (freq === "days") {
+      try {
+        const raw = localStorage.getItem(key) || "0";
+        const last = Number(raw) || 0;
+        const days = Math.max(1, config.daysInterval ?? 7);
+        if (now - last > days * 86400000) {
+          setTimeout(show, Math.max(0, config.initialDelayMs ?? 0));
+        }
+      } catch {}
+    } else {
+      setTimeout(show, Math.max(0, config.initialDelayMs ?? 0));
+    }
+  }, [config.enabled, config.showOnMobile, config.frequency, config.initialDelayMs, config.daysInterval]);
+
+  const close = () => {
+    setOpen(false);
+    try {
+      const key = "pbanner_seen";
+      if ((config.frequency || "session") === "session") sessionStorage.setItem(key, "1");
+      else if (config.frequency === "days") localStorage.setItem(key, String(Date.now()));
+    } catch {}
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (config.requirePhone && !/^\+?\d{7,15}$/.test(phone.replace(/\s|-/g, ""))) return;
+    setSubmitted(true);
+    if (config.couponCode) {
+      try {
+        await navigator.clipboard.writeText(config.couponCode);
+      } catch {}
+    }
+    if (config.saveToPocketBase) {
+      try {
+        // Best-effort lead capture; schema must exist { phone, consent, source, coupon }
+        const body: Record<string, unknown> = { phone, consent: Boolean(consent), source: "popup_banner" };
+        if (config.couponCode) body.coupon = config.couponCode;
+        (await import("@/lib/pocketbase")).pocketbase.collection("leads").create(body);
+      } catch {}
+    }
+  };
+
+  if (!config.enabled || !open) return null;
+  const z = config.zIndex ?? 70;
+  const maxW = Math.max(600, Math.min(1100, config.width ?? 880));
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: z }} aria-modal="true" role="dialog">
+      <div className="absolute inset-0 bg-black/50" onClick={close} />
+      <div className="relative mx-auto mt-10 bg-white rounded-xl shadow-xl overflow-hidden" style={{ maxWidth: maxW }}>
+        <div className="grid grid-cols-1 md:grid-cols-2">
+          {/* Left image */}
+          <div className="hidden md:block">
+            {config.imageUrl ? (
+              <img src={config.imageUrl} alt={config.title || "Offer"} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-muted" />
+            )}
+          </div>
+          {/* Right content */}
+          <div className="p-6 md:p-8">
+            {config.showClose !== false && (
+              <button aria-label="Close" title="Close" onClick={close} className="absolute top-3 right-3 h-8 w-8 rounded-full bg-black/70 text-white flex items-center justify-center">×</button>
+            )}
+            <div className="space-y-4">
+              <div>
+                {config.title && <h3 className="text-xl md:text-2xl font-semibold">{config.title}</h3>}
+                {config.subtitle && <p className="text-sm text-muted-foreground mt-1">{config.subtitle}</p>}
+              </div>
+              {!submitted ? (
+                <form className="space-y-3" onSubmit={onSubmit}>
+                  <div>
+                    <input
+                      type="tel"
+                      inputMode="tel"
+                      placeholder="Enter Mobile Number"
+                      className="w-full border rounded-md h-11 px-3 focus:outline-none focus:ring-2 focus:ring-primary"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      aria-label="Phone number"
+                    />
+                    {config.requirePhone && <p className="text-xs text-muted-foreground mt-1">We'll send exclusive offers occasionally.</p>}
+                  </div>
+                  {config.showConsent !== false && (
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+                      <span>Be first to get notified of updates & offers</span>
+                    </label>
+                  )}
+                  <button type="submit" className="w-full h-11 rounded-md bg-primary text-primary-foreground font-medium">
+                    {config.ctaLabel || "Submit"}
+                  </button>
+                  {(config.privacyLink || config.termsLink) && (
+                    <p className="text-xs text-muted-foreground">
+                      By logging in, you're agreeing to our {config.privacyLink && (<a className="underline" href={config.privacyLink}>Privacy Policy</a>)}{config.privacyLink && config.termsLink && ' and '} {config.termsLink && (<a className="underline" href={config.termsLink}>Terms of Service</a>)}
+                    </p>
+                  )}
+                </form>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm">Thank you!</p>
+                  {config.couponCode && (
+                    <div className="p-3 rounded-md border bg-muted">
+                      <span className="text-sm">Your coupon:</span>
+                      <div className="font-mono text-lg">{config.couponCode}</div>
+                      <p className="text-xs text-muted-foreground">Copied to clipboard</p>
+                    </div>
+                  )}
+                  <button className="w-full h-11 rounded-md border" onClick={close}>Close</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -196,6 +331,34 @@ export const pluginRegistry = {
     } as VideoPluginConfig,
     Component: VideoFloating,
   } as PluginDefinition<VideoPluginConfig>,
+  popup_banner: {
+    key: "popup_banner",
+    name: "Popup Banner",
+    description: "Promotional popup with optional phone capture and coupon.",
+    defaultConfig: {
+      enabled: false,
+      zIndex: 70,
+      title: "Welcome!",
+      subtitle: "Get 10% Off on your first purchase",
+      imageUrl: "",
+      couponCode: "",
+      ctaLabel: "Submit",
+      requirePhone: true,
+      showConsent: true,
+      consentDefault: true,
+      privacyLink: "/privacy-policy",
+      termsLink: "/terms-and-conditions",
+      initialDelayMs: 1200,
+      frequency: "session",
+      daysInterval: 7,
+      showOnMobile: true,
+      width: 880,
+      showClose: true,
+      saveToPocketBase: false,
+      visibility: { mode: "all", include: [], exclude: [] },
+    } as PopupBannerConfig,
+    Component: PopupBanner,
+  } as PluginDefinition<PopupBannerConfig>,
 };
 
 export type PluginRegistry = typeof pluginRegistry;

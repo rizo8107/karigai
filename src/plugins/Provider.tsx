@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { pluginRegistry } from "./registry";
 import { parseConfigForKey, getAllPlugins } from "./service";
-import type { PluginKey, WhatsAppPluginConfig, VideoPluginConfig } from "./types";
+import type { PluginKey, WhatsAppPluginConfig, VideoPluginConfig, PopupBannerConfig } from "./types";
 import Portal from "./Portal";
 import { useLocation } from "react-router-dom";
 
 type PluginState = {
   enabled: Record<PluginKey, boolean>;
-  configs: Record<PluginKey, WhatsAppPluginConfig | VideoPluginConfig>;
+  configs: Record<PluginKey, WhatsAppPluginConfig | VideoPluginConfig | PopupBannerConfig>;
   loading: boolean;
   reload: () => Promise<void>;
 };
@@ -25,10 +25,12 @@ export const PluginProvider: React.FC<{ children: React.ReactNode }>= ({ childre
   const [enabled, setEnabled] = useState<Record<PluginKey, boolean>>({
     whatsapp_floating: false,
     video_floating: false,
+    popup_banner: false,
   });
-  const [configs, setConfigs] = useState<Record<PluginKey, WhatsAppPluginConfig | VideoPluginConfig>>({
+  const [configs, setConfigs] = useState<Record<PluginKey, WhatsAppPluginConfig | VideoPluginConfig | PopupBannerConfig>>({
     whatsapp_floating: pluginRegistry.whatsapp_floating.defaultConfig,
     video_floating: pluginRegistry.video_floating.defaultConfig,
+    popup_banner: pluginRegistry.popup_banner.defaultConfig,
   });
   const { pathname } = useLocation();
 
@@ -36,10 +38,11 @@ export const PluginProvider: React.FC<{ children: React.ReactNode }>= ({ childre
     try {
       setLoading(true);
       const items = await getAllPlugins();
-      const nextEnabled: Record<PluginKey, boolean> = { whatsapp_floating: false, video_floating: false };
-      const nextConfigs: Record<PluginKey, WhatsAppPluginConfig | VideoPluginConfig> = {
+      const nextEnabled: Record<PluginKey, boolean> = { whatsapp_floating: false, video_floating: false, popup_banner: false };
+      const nextConfigs: Record<PluginKey, WhatsAppPluginConfig | VideoPluginConfig | PopupBannerConfig> = {
         whatsapp_floating: pluginRegistry.whatsapp_floating.defaultConfig,
         video_floating: pluginRegistry.video_floating.defaultConfig,
+        popup_banner: pluginRegistry.popup_banner.defaultConfig,
       };
 
       (Object.keys(pluginRegistry) as PluginKey[]).forEach((key) => {
@@ -89,7 +92,7 @@ export const PluginProvider: React.FC<{ children: React.ReactNode }>= ({ childre
     return path === pattern;
   };
 
-  const isVisibleOnPath = (visibility: (WhatsAppPluginConfig | VideoPluginConfig)["visibility"], path: string) => {
+  const isVisibleOnPath = (visibility: (WhatsAppPluginConfig | VideoPluginConfig | PopupBannerConfig)["visibility"], path: string) => {
     const v = visibility || { mode: "all", include: [], exclude: [] };
     if (v.mode === "all") return true;
     if (v.mode === "homepage") return path === "/";
@@ -116,6 +119,13 @@ export const PluginProvider: React.FC<{ children: React.ReactNode }>= ({ childre
             const merged: VideoPluginConfig = { ...cfg, enabled: enabled.video_floating };
             return enabled.video_floating && isVisibleOnPath(merged.visibility, pathname) ? (
               <pluginRegistry.video_floating.Component config={merged} />
+            ) : null;
+          })()}
+          {(() => {
+            const cfg = configs.popup_banner as PopupBannerConfig;
+            const merged: PopupBannerConfig = { ...cfg, enabled: enabled.popup_banner };
+            return enabled.popup_banner && isVisibleOnPath(merged.visibility, pathname) ? (
+              <pluginRegistry.popup_banner.Component config={merged} />
             ) : null;
           })()}
         </Portal>

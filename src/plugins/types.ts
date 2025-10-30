@@ -1,4 +1,4 @@
-export type PluginKey = "whatsapp_floating" | "video_floating";
+export type PluginKey = "whatsapp_floating" | "video_floating" | "popup_banner";
 
 export interface BasePluginConfig {
   enabled: boolean;
@@ -43,9 +43,32 @@ export interface VideoPluginConfig extends BasePluginConfig {
   showClose?: boolean;
 }
 
+export interface PopupBannerConfig extends BasePluginConfig {
+  // Modal content
+  title?: string;
+  subtitle?: string;
+  imageUrl?: string;
+  couponCode?: string;
+  ctaLabel?: string; // Submit button label
+  requirePhone?: boolean; // if true, phone is required to submit
+  showConsent?: boolean; // show marketing consent checkbox
+  consentDefault?: boolean;
+  privacyLink?: string;
+  termsLink?: string;
+  // Behavior
+  initialDelayMs?: number; // delay before first show
+  frequency?: "every" | "session" | "days"; // show strategy
+  daysInterval?: number; // used when frequency === 'days'
+  showOnMobile?: boolean;
+  width?: number; // px of modal max width
+  showClose?: boolean;
+  saveToPocketBase?: boolean; // save phone/consent to 'leads' collection
+}
+
 export type AnyPluginConfig =
   | { key: "whatsapp_floating"; config: WhatsAppPluginConfig }
-  | { key: "video_floating"; config: VideoPluginConfig };
+  | { key: "video_floating"; config: VideoPluginConfig }
+  | { key: "popup_banner"; config: PopupBannerConfig };
 
 export interface PluginDefinition<T extends BasePluginConfig> {
   key: PluginKey;

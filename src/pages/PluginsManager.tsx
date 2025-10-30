@@ -9,8 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { pluginRegistry } from "@/plugins/registry";
 import { usePlugins } from "@/plugins/Provider";
 import { savePluginConfig, togglePlugin } from "@/plugins/service";
-import type { PluginKey, WhatsAppPluginConfig, VideoPluginConfig } from "@/plugins/types";
-import { getContentItems, uploadVideo, getContentVideoUrl, type ContentItem } from "@/lib/content-service";
+import type { PluginKey, WhatsAppPluginConfig, VideoPluginConfig, PopupBannerConfig } from "@/plugins/types";
+import { getContentItems, uploadVideo, getContentVideoUrl, type ContentItem, getContentImageUrl, uploadImage } from "@/lib/content-service";
 
 export default function PluginsManager() {
   const { enabled, configs, loading, reload } = usePlugins();
@@ -21,11 +21,17 @@ export default function PluginsManager() {
   const [videoPickerOpen, setVideoPickerOpen] = useState(false);
   const [videos, setVideos] = useState<ContentItem[]>([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
+  const [popupConfig, setPopupConfig] = useState<PopupBannerConfig | null>(null);
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
+  const [images, setImages] = useState<ContentItem[]>([]);
+  const [loadingImages, setLoadingImages] = useState(false);
+  const [selected, setSelected] = useState<PluginKey>("whatsapp_floating");
 
   useEffect(() => {
     if (!loading) {
       setWaConfig(configs.whatsapp_floating as WhatsAppPluginConfig);
       setVidConfig(configs.video_floating as VideoPluginConfig);
+      setPopupConfig(configs.popup_banner as PopupBannerConfig);
     }
   }, [configs, loading]);
 
@@ -43,6 +49,9 @@ export default function PluginsManager() {
       if (key === "video_floating" && vidConfig) {
         await savePluginConfig(key, vidConfig);
       }
+      if (key === "popup_banner" && popupConfig) {
+        await savePluginConfig(key, popupConfig);
+      }
       await reload();
     } finally {
       setSaving(false);
@@ -50,9 +59,9 @@ export default function PluginsManager() {
   };
 
   const resetToDefault = (key: PluginKey) => {
-    const def = (pluginRegistry as any)[key].defaultConfig;
-    if (key === "whatsapp_floating") setWaConfig(def);
-    if (key === "video_floating") setVidConfig(def);
+    if (key === "whatsapp_floating") setWaConfig(pluginRegistry.whatsapp_floating.defaultConfig);
+    if (key === "video_floating") setVidConfig(pluginRegistry.video_floating.defaultConfig);
+    if (key === "popup_banner") setPopupConfig(pluginRegistry.popup_banner.defaultConfig);
   };
 
   const origin = useMemo(() => (typeof window !== "undefined" ? window.location.origin : ""), []);
@@ -78,6 +87,26 @@ export default function PluginsManager() {
     }
   };
 
+  const loadImages = async () => {
+    try {
+      setLoadingImages(true);
+      const items = await getContentItems();
+      const onlyImages = items.filter((it) => Boolean(it.Images));
+      setImages(onlyImages);
+    } finally {
+      setLoadingImages(false);
+    }
+  };
+
+  const handleUploadImage = async (file: File) => {
+    const created = await uploadImage(file);
+    if (created) {
+      await loadImages();
+      const url = getContentImageUrl(created);
+      if (popupConfig) setPopupConfig({ ...popupConfig, imageUrl: url });
+    }
+  };
+
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
@@ -85,8 +114,46 @@ export default function PluginsManager() {
         <p className="text-muted-foreground mt-2">Enable and configure global floating plugins.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* WhatsApp Floating */}
+      <div className="flex gap-6">
+        {/* Sidebar */}
+        <aside className="w-64 shrink-0">
+          <div className="rounded-md border bg-card">
+            <div className="p-3 border-b text-sm font-medium">Plugins</div>
+            <nav className="p-2 space-y-1">
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-accent ${selected === 'whatsapp_floating' ? 'bg-accent' : ''}`}
+                onClick={() => setSelected('whatsapp_floating')}
+                title="WhatsApp Floating settings"
+              >
+                <span>WhatsApp Floating</span>
+                <Switch checked={enabled.whatsapp_floating} onCheckedChange={(v) => onToggle('whatsapp_floating', v)} />
+              </button>
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-accent ${selected === 'video_floating' ? 'bg-accent' : ''}`}
+                onClick={() => setSelected('video_floating')}
+                title="Video Floating settings"
+              >
+                <span>Video Floating</span>
+                <Switch checked={enabled.video_floating} onCheckedChange={(v) => onToggle('video_floating', v)} />
+              </button>
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-accent ${selected === 'popup_banner' ? 'bg-accent' : ''}`}
+                onClick={() => setSelected('popup_banner')}
+                title="Popup Banner settings"
+              >
+                <span>Popup Banner</span>
+                <Switch checked={enabled.popup_banner} onCheckedChange={(v) => onToggle('popup_banner', v)} />
+              </button>
+            </nav>
+          </div>
+        </aside>
+
+        {/* Details panel */}
+        <section className="flex-1 space-y-6">
+        {selected === 'whatsapp_floating' && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>WhatsApp Floating Button</CardTitle>
@@ -358,8 +425,9 @@ export default function PluginsManager() {
             )}
           </CardContent>
         </Card>
+        )}
 
-        {/* Video Floating */}
+        {selected === 'video_floating' && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Video Floating</CardTitle>
@@ -594,6 +662,128 @@ export default function PluginsManager() {
             )}
           </CardContent>
         </Card>
+        )}
+        {selected === 'popup_banner' && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Popup Banner</CardTitle>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm">Enabled</Label>
+              <Switch
+                checked={enabled.popup_banner}
+                onCheckedChange={(v) => onToggle("popup_banner", v)}
+              />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {popupConfig && (
+              <>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label htmlFor="pb-title">Title</Label>
+                    <Input id="pb-title" value={popupConfig.title || ""} onChange={(e) => setPopupConfig({ ...popupConfig, title: e.target.value })} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pb-sub">Subtitle</Label>
+                    <Input id="pb-sub" value={popupConfig.subtitle || ""} onChange={(e) => setPopupConfig({ ...popupConfig, subtitle: e.target.value })} />
+                  </div>
+                </div>
+                <div className="grid gap-2 md:grid-cols-3">
+                  <div className="grid gap-2 md:col-span-2">
+                    <Label htmlFor="pb-image">Image URL</Label>
+                    <Input id="pb-image" value={popupConfig.imageUrl || ""} onChange={(e) => setPopupConfig({ ...popupConfig, imageUrl: e.target.value })} placeholder="https://..." />
+                    <div className="flex items-center gap-2">
+                      <Button type="button" variant="outline" onClick={async () => { setImagePickerOpen(true); await loadImages(); }}>Select / Upload from Content</Button>
+                      {popupConfig.imageUrl && (
+                        <a href={popupConfig.imageUrl} className="text-sm underline" target="_blank" rel="noreferrer">Open image</a>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pb-coupon">Coupon Code</Label>
+                    <Input id="pb-coupon" value={popupConfig.couponCode || ""} onChange={(e) => setPopupConfig({ ...popupConfig, couponCode: e.target.value })} placeholder="WELCOME10" />
+                  </div>
+                </div>
+                <div className="grid gap-2 md:grid-cols-3">
+                  <div className="grid gap-2">
+                    <Label htmlFor="pb-cta">CTA Label</Label>
+                    <Input id="pb-cta" value={popupConfig.ctaLabel || ""} onChange={(e) => setPopupConfig({ ...popupConfig, ctaLabel: e.target.value })} placeholder="Submit" />
+                  </div>
+                  <div className="flex items-center gap-2 mt-6">
+                    <Switch checked={popupConfig.requirePhone !== false} onCheckedChange={(v) => setPopupConfig({ ...popupConfig, requirePhone: v })} />
+                    <Label>Require Phone</Label>
+                  </div>
+                  <div className="flex items-center gap-2 mt-6">
+                    <Switch checked={popupConfig.showConsent !== false} onCheckedChange={(v) => setPopupConfig({ ...popupConfig, showConsent: v })} />
+                    <Label>Show Consent</Label>
+                  </div>
+                </div>
+                <div className="grid gap-2 md:grid-cols-3">
+                  <div className="grid gap-2">
+                    <Label htmlFor="pb-delay">Initial Delay (ms)</Label>
+                    <Input id="pb-delay" type="number" value={popupConfig.initialDelayMs ?? 1200} onChange={(e) => setPopupConfig({ ...popupConfig, initialDelayMs: Number(e.target.value) })} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Frequency</Label>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button type="button" variant={popupConfig.frequency === "every" ? "default" : "outline"} onClick={() => setPopupConfig({ ...popupConfig, frequency: "every" })}>Every load</Button>
+                      <Button type="button" variant={popupConfig.frequency === "session" || !popupConfig.frequency ? "default" : "outline"} onClick={() => setPopupConfig({ ...popupConfig, frequency: "session" })}>Per session</Button>
+                      <Button type="button" variant={popupConfig.frequency === "days" ? "default" : "outline"} onClick={() => setPopupConfig({ ...popupConfig, frequency: "days" })}>Every N days</Button>
+                    </div>
+                  </div>
+                  {popupConfig.frequency === "days" && (
+                    <div className="grid gap-2">
+                      <Label htmlFor="pb-days">Days Interval</Label>
+                      <Input id="pb-days" type="number" value={popupConfig.daysInterval ?? 7} onChange={(e) => setPopupConfig({ ...popupConfig, daysInterval: Number(e.target.value) })} />
+                    </div>
+                  )}
+                </div>
+                <div className="grid gap-2 md:grid-cols-3">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={popupConfig.showOnMobile !== false} onCheckedChange={(v) => setPopupConfig({ ...popupConfig, showOnMobile: v })} />
+                    <Label>Show on Mobile</Label>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pb-width">Max Width (px)</Label>
+                    <Input id="pb-width" type="number" value={popupConfig.width ?? 880} onChange={(e) => setPopupConfig({ ...popupConfig, width: Number(e.target.value) })} />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={popupConfig.saveToPocketBase === true} onCheckedChange={(v) => setPopupConfig({ ...popupConfig, saveToPocketBase: v })} />
+                    <Label>Save to PocketBase (leads)</Label>
+                  </div>
+                </div>
+                {/* Visibility */}
+                <div className="space-y-2">
+                  <Label>Visibility</Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant={popupConfig.visibility?.mode === "all" || !popupConfig.visibility ? "default" : "outline"} onClick={() => setPopupConfig({ ...popupConfig, visibility: { mode: "all", include: [], exclude: [] } })}>All pages</Button>
+                    <Button type="button" variant={popupConfig.visibility?.mode === "homepage" ? "default" : "outline"} onClick={() => setPopupConfig({ ...popupConfig, visibility: { mode: "homepage", include: [], exclude: [] } })}>Homepage only</Button>
+                    <Button type="button" variant={popupConfig.visibility?.mode === "include" ? "default" : "outline"} onClick={() => setPopupConfig({ ...popupConfig, visibility: { mode: "include", include: ["/"], exclude: [] } })}>Include paths</Button>
+                    <Button type="button" variant={popupConfig.visibility?.mode === "exclude" ? "default" : "outline"} onClick={() => setPopupConfig({ ...popupConfig, visibility: { mode: "exclude", include: [], exclude: ["/checkout"] } })}>Exclude paths</Button>
+                  </div>
+                  {popupConfig.visibility?.mode === "include" && (
+                    <div className="grid gap-2">
+                      <Label>Include these paths (one per line, supports trailing * wildcard)</Label>
+                      <Textarea value={(popupConfig.visibility?.include || []).join("\n")} onChange={(e) => setPopupConfig({ ...popupConfig, visibility: { mode: "include", include: e.target.value.split("\n").map(s => s.trim()).filter(Boolean), exclude: [] } })} placeholder={"/\n/shop\n/product/*"} />
+                    </div>
+                  )}
+                  {popupConfig.visibility?.mode === "exclude" && (
+                    <div className="grid gap-2">
+                      <Label>Exclude these paths (one per line, supports trailing * wildcard)</Label>
+                      <Textarea value={(popupConfig.visibility?.exclude || []).join("\n")} onChange={(e) => setPopupConfig({ ...popupConfig, visibility: { mode: "exclude", include: [], exclude: e.target.value.split("\n").map(s => s.trim()).filter(Boolean) } })} placeholder={"/checkout\n/cart"} />
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => onSave("popup_banner")} disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
+                  <Button variant="outline" onClick={() => resetToDefault("popup_banner")}>Reset</Button>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+        )}
+        </section>
       </div>
 
       {/* Video Picker Dialog */}
@@ -638,6 +828,37 @@ export default function PluginsManager() {
               })}
               {!loadingVideos && videos.length === 0 && (
                 <div className="text-sm text-muted-foreground">No videos found. Upload one above.</div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Picker Dialog */}
+      <Dialog open={imagePickerOpen} onOpenChange={setImagePickerOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Select or Upload Image</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                {loadingImages ? "Loading images..." : `${images.length} image(s)`}
+              </div>
+              <Input type="file" accept="image/*" onChange={async (e) => { const f = e.target.files?.[0]; if (f) await handleUploadImage(f); }} />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[420px] overflow-auto">
+              {images.map((img) => {
+                const url = getContentImageUrl(img);
+                return (
+                  <button key={img.id} type="button" onClick={() => { if (popupConfig) setPopupConfig({ ...popupConfig, imageUrl: url }); setImagePickerOpen(false); }} className="rounded-md border hover:ring-2 hover:ring-primary p-1 text-left" title="Select this image">
+                    <img src={url} alt="Content image" className="w-full h-40 object-cover rounded" />
+                    <div className="px-1 py-2 text-xs truncate">{img.Images as any}</div>
+                  </button>
+                );
+              })}
+              {!loadingImages && images.length === 0 && (
+                <div className="text-sm text-muted-foreground">No images found. Upload one above.</div>
               )}
             </div>
           </div>

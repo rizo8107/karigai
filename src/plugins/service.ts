@@ -1,5 +1,5 @@
 import { pocketbase } from "@/lib/pocketbase";
-import type { PluginKey, PluginRecord, WhatsAppPluginConfig, VideoPluginConfig } from "./types";
+import type { PluginKey, PluginRecord, WhatsAppPluginConfig, VideoPluginConfig, PopupBannerConfig } from "./types";
 
 export type StoredPlugin = PluginRecord;
 
@@ -75,7 +75,7 @@ export async function savePluginConfig<T extends object>(key: PluginKey, config:
   return created as unknown as StoredPlugin;
 }
 
-export function parseConfigForKey(key: PluginKey, raw: unknown): WhatsAppPluginConfig | VideoPluginConfig | null {
+export function parseConfigForKey(key: PluginKey, raw: unknown): WhatsAppPluginConfig | VideoPluginConfig | PopupBannerConfig | null {
   const obj = safeParse<Record<string, any>>(raw, {});
   if (key === "whatsapp_floating") {
     const v = obj.visibility || {};
@@ -139,6 +139,42 @@ export function parseConfigForKey(key: PluginKey, raw: unknown): WhatsAppPluginC
         exclude: Array.isArray(v.exclude) ? v.exclude.map((s: unknown) => String(s)) : [],
       },
     } as VideoPluginConfig;
+  }
+  if (key === "popup_banner") {
+    const v = obj.visibility || {};
+    const mode = ["all", "homepage", "include", "exclude"].includes(v.mode)
+      ? (v.mode as "all" | "homepage" | "include" | "exclude")
+      : "all";
+    return {
+      enabled: Boolean(obj.enabled),
+      zIndex: typeof obj.zIndex === "number" ? obj.zIndex : 70,
+      title: typeof obj.title === "string" ? obj.title : "Welcome!",
+      subtitle: typeof obj.subtitle === "string" ? obj.subtitle : "Get 10% off on your first purchase",
+      imageUrl: typeof obj.imageUrl === "string" ? obj.imageUrl : "",
+      couponCode: typeof obj.couponCode === "string" ? obj.couponCode : "",
+      ctaLabel: typeof obj.ctaLabel === "string" ? obj.ctaLabel : "Submit",
+      requirePhone: obj.requirePhone !== false,
+      showConsent: obj.showConsent !== false,
+      consentDefault: obj.consentDefault === true,
+      privacyLink: typeof obj.privacyLink === "string" ? obj.privacyLink : "/privacy-policy",
+      termsLink: typeof obj.termsLink === "string" ? obj.termsLink : "/terms-and-conditions",
+      initialDelayMs: typeof obj.initialDelayMs === "number" ? obj.initialDelayMs : 1000,
+      frequency: ["every", "session", "days"].includes(obj.frequency) ? obj.frequency : "session",
+      daysInterval: typeof obj.daysInterval === "number" ? obj.daysInterval : 7,
+      showOnMobile: obj.showOnMobile !== false,
+      width: typeof obj.width === "number" ? obj.width : 880,
+      showClose: obj.showClose !== false,
+      saveToPocketBase: obj.saveToPocketBase === true,
+      offsetX: typeof obj.offsetX === "number" ? obj.offsetX : undefined,
+      offsetY: typeof obj.offsetY === "number" ? obj.offsetY : undefined,
+      autoClose: obj.autoClose === true,
+      autoCloseAfterMs: typeof obj.autoCloseAfterMs === "number" ? obj.autoCloseAfterMs : 0,
+      visibility: {
+        mode,
+        include: Array.isArray(v.include) ? v.include.map((s: unknown) => String(s)) : [],
+        exclude: Array.isArray(v.exclude) ? v.exclude.map((s: unknown) => String(s)) : [],
+      },
+    } as PopupBannerConfig;
   }
   return null;
 }
