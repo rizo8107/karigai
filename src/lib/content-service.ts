@@ -4,8 +4,8 @@ export interface ContentItem {
   id: string;
   collectionId: string;
   collectionName: string;
-  Images?: string;
-  Videos?: string;
+  Images?: string | string[];
+  Videos?: string | string[];
   created: string;
   updated: string;
 }
@@ -60,21 +60,23 @@ export async function uploadVideo(file: File): Promise<ContentItem | null> {
 /**
  * Get the full URL for an image from the content collection
  */
-export function getContentImageUrl(record: ContentItem, filename?: string): string {
-  if (!filename && !record.Images) return '';
-  
-  const imageFile = filename || record.Images || '';
-  return pocketbase.files.getUrl(record, imageFile);
+export function getContentImageUrl(record: ContentItem, filename?: string | string[]): string {
+  const f = filename !== undefined ? filename : record.Images;
+  if (!f) return '';
+  const file = Array.isArray(f) ? (f[0] || '') : f;
+  if (!file) return '';
+  return pocketbase.files.getURL(record as any, file as string) as unknown as string;
 }
 
 /**
  * Get the full URL for a video from the content collection
  */
-export function getContentVideoUrl(record: ContentItem, filename?: string): string {
-  if (!filename && !record.Videos) return '';
-  
-  const videoFile = filename || record.Videos || '';
-  return pocketbase.files.getUrl(record, videoFile);
+export function getContentVideoUrl(record: ContentItem, filename?: string | string[]): string {
+  const f = filename !== undefined ? filename : record.Videos;
+  if (!f) return '';
+  const file = Array.isArray(f) ? (f[0] || '') : f;
+  if (!file) return '';
+  return pocketbase.files.getURL(record as any, file as string) as unknown as string;
 }
 
 /**
@@ -102,7 +104,8 @@ export function getOptimizedContentImageUrl(
   format: 'avif' | 'webp' | 'jpeg' = 'webp'
 ): string {
   if (!record.Images) return '';
-  
+  const first = Array.isArray(record.Images) ? (record.Images[0] || '') : record.Images;
+  if (!first) return '';
   const sizeMap = {
     thumbnail: 100,
     small: 300,
@@ -110,7 +113,7 @@ export function getOptimizedContentImageUrl(
     large: 1200,
   };
   
-  const baseUrl = pocketbase.files.getUrl(record, record.Images);
+  const baseUrl = pocketbase.files.getURL(record as any, first as string) as unknown as string;
   const width = sizeMap[size];
   
   // Add optimization parameters

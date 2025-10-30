@@ -22,11 +22,11 @@ import { SplitScreen } from "./blocks/SplitScreen";
 import { Asymmetrical } from "./blocks/Asymmetrical";
 import { FeaturedMedia } from "./blocks/FeaturedMedia";
 import { CardGrid } from "./blocks/CardGrid";
-import { Masonry } from "./blocks/Masonry";
 import { ZShape } from "./blocks/ZShape";
 import { FShape } from "./blocks/FShape";
 import { Magazine } from "./blocks/Magazine";
 import { InteractiveHero } from "./blocks/InteractiveHero";
+import { CollectionsCarousel } from "./blocks/CollectionsCarousel";
 
 // Root component configuration
 const Root = {
@@ -50,7 +50,7 @@ export const completePuckConfig: Config = {
   categories: {
     ecommerce: {
       title: "E-commerce",
-      components: ["Hero", "ProductGrid", "KarigaiProductGrid", "CategorySection", "OfferBanner", "BrandShowcase"],
+      components: ["Hero", "ProductGrid", "KarigaiProductGrid", "poructgrind", "CategorySection", "OfferBanner", "BrandShowcase", "CollectionsCarousel"],
     },
     marketing: {
       title: "Marketing",
@@ -62,7 +62,7 @@ export const completePuckConfig: Config = {
     },
     layout: {
       title: "Layout",
-      components: ["Container", "Grid", "TwoColumn", "SplitScreen", "Asymmetrical", "Masonry", "ZShape", "FShape"],
+      components: ["Container", "Grid", "TwoColumn", "SplitScreen", "Asymmetrical", "ZShape", "FShape", "CollectionsCarousel"],
     },
   },
   components: {
@@ -73,6 +73,7 @@ export const completePuckConfig: Config = {
     CategorySection,
     OfferBanner,
     BrandShowcase,
+    CollectionsCarousel,
     
     // Marketing Components
     FeatureSection,
@@ -95,7 +96,6 @@ export const completePuckConfig: Config = {
     TwoColumn,
     SplitScreen,
     Asymmetrical,
-    Masonry,
     ZShape,
     FShape,
   },

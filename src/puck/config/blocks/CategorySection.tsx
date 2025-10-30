@@ -2,6 +2,8 @@ import { ComponentConfig } from "@measured/puck";
 import { Button as UIButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ImageSelector } from "@/puck/fields/ImageSelector";
+import { useEffect, useState } from "react";
+import { pocketbase } from "@/lib/pocketbase";
 
 export interface CategorySectionProps {
   title?: string;
@@ -14,6 +16,15 @@ export interface CategorySectionProps {
   }[];
   columns?: 2 | 3 | 4;
   showDescription?: boolean;
+  // data source
+  source?: "manual" | "pocketbase";
+  pbCollection?: string;
+  pbLimit?: number;
+  pbNameField?: string;
+  pbImageField?: string;
+  pbSlugField?: string;
+  pbHrefPrefix?: string;
+  pbDescriptionField?: string;
 }
 
 export const CategorySection: ComponentConfig<CategorySectionProps> = {
@@ -25,6 +36,14 @@ export const CategorySection: ComponentConfig<CategorySectionProps> = {
     subtitle: {
       type: "textarea",
       label: "Section Subtitle",
+    },
+    source: {
+      type: "select",
+      label: "Data Source",
+      options: [
+        { label: "Manual", value: "manual" },
+        { label: "PocketBase", value: "pocketbase" },
+      ],
     },
     columns: {
       type: "select",
@@ -41,6 +60,13 @@ export const CategorySection: ComponentConfig<CategorySectionProps> = {
         { label: "No", value: false },
       ],
     },
+    pbCollection: { type: "text", label: "PB Collection" },
+    pbLimit: { type: "number", label: "Limit" },
+    pbNameField: { type: "text", label: "Name field" },
+    pbImageField: { type: "text", label: "Image field" },
+    pbSlugField: { type: "text", label: "Slug field" },
+    pbHrefPrefix: { type: "text", label: "Href prefix" },
+    pbDescriptionField: { type: "text", label: "Description field" },
     categories: {
       type: "array",
       arrayFields: {
@@ -63,6 +89,14 @@ export const CategorySection: ComponentConfig<CategorySectionProps> = {
     subtitle: "Discover our carefully curated collections",
     columns: 3,
     showDescription: true,
+    source: "manual",
+    pbCollection: "categories",
+    pbLimit: 12,
+    pbNameField: "name",
+    pbImageField: "image",
+    pbSlugField: "slug",
+    pbHrefPrefix: "/category/",
+    pbDescriptionField: "description",
     categories: [
       {
         name: "Electronics",
@@ -84,15 +118,57 @@ export const CategorySection: ComponentConfig<CategorySectionProps> = {
       },
     ],
   },
-  render: ({ title, subtitle, categories, columns, showDescription, puck }) => {
-    const columnClasses = {
+  render: (props) => {
+    const View: React.FC<typeof props> = ({ title, subtitle, categories, columns, showDescription, source, pbCollection, pbLimit, pbNameField, pbImageField, pbSlugField, pbHrefPrefix, pbDescriptionField, puck }) => {
+      const [displayCategories, setDisplayCategories] = useState(categories || []);
+
+      useEffect(() => {
+        if (source === "pocketbase") {
+          (async () => {
+            try {
+              const list = await pocketbase
+                .collection(pbCollection || "categories")
+                .getList(1, pbLimit || 12, {});
+              const mapped = list.items.map((r: any) => {
+                const name = r[pbNameField || "name"] ?? "Category";
+                const slug = r[pbSlugField || "slug"] ?? r.id;
+                const description = r[pbDescriptionField || "description"] ?? "";
+                const imgVal = r[pbImageField || "image"];
+                let image = "";
+                if (imgVal) {
+                  if (typeof imgVal === "string") {
+                    image = pocketbase.files.getURL(r, imgVal) as unknown as string;
+                  } else if (Array.isArray(imgVal) && imgVal.length) {
+                    image = pocketbase.files.getURL(r, imgVal[0]) as unknown as string;
+                  }
+                }
+                if (!image) image = "https://via.placeholder.com/300x200";
+                return {
+                  name,
+                  image,
+                  href: (pbHrefPrefix || "/category/") + String(slug),
+                  description,
+                };
+              });
+              setDisplayCategories(mapped);
+            } catch (err) {
+              console.warn("[CategorySection] Failed to load categories from PocketBase", err);
+              setDisplayCategories(categories || []);
+            }
+          })();
+        } else {
+          setDisplayCategories(categories || []);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [source, pbCollection, pbLimit, pbNameField, pbImageField, pbSlugField, pbHrefPrefix, pbDescriptionField, JSON.stringify(categories)]);
+      const columnClasses = {
       2: "grid-cols-1 md:grid-cols-2",
       3: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
       4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
     };
 
-    return (
-      <section className="py-16">
+      return (
+        <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {(title || subtitle) && (
             <div className="text-center mb-12">
@@ -108,7 +184,7 @@ export const CategorySection: ComponentConfig<CategorySectionProps> = {
           )}
 
           <div className={cn("grid gap-8", columnClasses[columns || 3])}>
-            {categories.map((category, index) => (
+            {displayCategories.map((category, index) => (
               <div
                 key={index}
                 className="group cursor-pointer"
@@ -120,7 +196,7 @@ export const CategorySection: ComponentConfig<CategorySectionProps> = {
               >
                 <div className="relative overflow-hidden rounded-lg bg-gray-100 aspect-[4/3] mb-4">
                   <img
-                    src={category.image}
+                    src={category.image || "https://via.placeholder.com/300x200"}
                     alt={category.name}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
@@ -141,7 +217,10 @@ export const CategorySection: ComponentConfig<CategorySectionProps> = {
             ))}
           </div>
         </div>
-      </section>
-    );
+        </section>
+      );
+    };
+
+    return <View {...props} />;
   },
 };

@@ -111,7 +111,6 @@ const templates: Template[] = [
     data: {
       content: [
         { type: "FeaturedMedia", props: { title: "Our Work" } },
-        { type: "Masonry", props: { columns: 3 } },
       ],
     },
   },
@@ -212,7 +211,6 @@ const templates: Template[] = [
       content: [
         { type: "FeaturedMedia", props: { title: "Our Journey" } },
         { type: "ZShape", props: {} },
-        { type: "Masonry", props: {} },
       ],
     },
   },

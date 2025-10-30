@@ -17,7 +17,36 @@ import { trackButtonClick } from '@/lib/analytics';
 import UtmLink from '@/components/UtmLink';
 import { BuilderComponent } from "@/components/BuilderComponent";
 import { builder } from "@/lib/builder";
-import { DEFAULT_HOMEPAGE_CONFIG, getHomepageConfig, type HomepageConfig } from '@/lib/homepage-config-service';
+// Removed homepage-config-service. Inline minimal config shape and defaults.
+type HomepageConfig = {
+  showHero: boolean;
+  showNewArrivals: boolean;
+  showFeatures: boolean;
+  showBestsellers: boolean;
+  showTestimonials: boolean;
+  showNewsletter: boolean;
+  heroOrder: number;
+  newArrivalsOrder: number;
+  featuresOrder: number;
+  bestsellersOrder: number;
+  testimonialsOrder: number;
+  newsletterOrder: number;
+};
+const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
+  showHero: true,
+  showNewArrivals: true,
+  showFeatures: true,
+  showBestsellers: true,
+  showTestimonials: true,
+  showNewsletter: true,
+  heroOrder: 10,
+  newArrivalsOrder: 20,
+  featuresOrder: 30,
+  bestsellersOrder: 40,
+  testimonialsOrder: 50,
+  newsletterOrder: 60,
+};
+
 import { OfferBanner } from '@/components/OfferBanner';
 import { pocketbase } from '@/lib/pocketbase';
 
@@ -52,8 +81,8 @@ const Index = () => {
     success: false,
     productsCount: 0
   });
-  const [homepageConfig, setHomepageConfig] = useState<HomepageConfig>(DEFAULT_HOMEPAGE_CONFIG);
-  const [configLoaded, setConfigLoaded] = useState(false);
+  const [homepageConfig] = useState<HomepageConfig>(DEFAULT_HOMEPAGE_CONFIG);
+  const [configLoaded] = useState(true);
   interface BuilderContent {
     data?: {
       title?: string;
@@ -84,32 +113,9 @@ const Index = () => {
   const bestsellersRef = useRef<HTMLElement>(null);
   const newArrivalsRef = useRef<HTMLElement>(null);
   
-  // Load homepage configuration from PocketBase
-  const loadHomepageConfig = async () => {
-    try {
-      const config = await getHomepageConfig();
-      setHomepageConfig(config);
-      setConfigLoaded(true);
-      console.log("Home page config loaded:", config);
-      console.log("Section ordering:", {
-        hero: config.heroOrder,
-        featured: config.featuredOrder,
-        newArrivals: config.newArrivalsOrder,
-        features: config.featuresOrder,
-        bestsellers: config.bestsellersOrder,
-        testimonials: config.testimonialsOrder,
-        newsletter: config.newsletterOrder
-      });
-    } catch (error) {
-      console.error('Error loading homepage configuration:', error);
-      setConfigLoaded(true); // Still mark as loaded to not block UI
-    }
-  };
-
   useEffect(() => {
     console.log('Index component mounted');
-    // Load configuration on component mount
-    loadHomepageConfig();
+    // Using default homepage configuration (static)
     
     const controller = new AbortController();
 

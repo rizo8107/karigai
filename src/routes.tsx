@@ -10,6 +10,7 @@ import { trackPageView } from "@/lib/analytics"
 import useUtmParams from "@/hooks/useUtmParams"
 import { getUtmParamsForAnalytics } from "@/lib/utm"
 import { MetaPixelRouterTracker } from "./components/MetaPixelRouterTracker"
+import { PluginProvider } from "@/plugins/Provider"
 
 // Eager load critical pages
 import Index from "./pages/Index"
@@ -51,6 +52,7 @@ const WebhookTest = lazy(() => import("./pages/WebhookTest"))
 const PuckEditor = lazy(() => import("./pages/PuckEditor"))
 const PuckRenderer = lazy(() => import("./pages/PuckRenderer"))
 const PagesManager = lazy(() => import("./pages/PagesManager"))
+const PluginsManager = lazy(() => import("./pages/PluginsManager"))
 
 // Import Builder.io initialization
 import "@/lib/builder"
@@ -107,14 +109,15 @@ export function Routes() {
   return (
     <BrowserRouter>
       <MetaPixelRouterTracker />
-      <TooltipProvider>
-        <Sonner />
-        <div className="flex flex-col min-h-screen">
-          <Navbar />
-          <main className="flex-grow">
-            <Suspense fallback={<PageLoader />}>
-              <ScrollToTop />
-              <RouterRoutes>
+      <PluginProvider>
+        <TooltipProvider>
+          <Sonner />
+          <div className="flex flex-col min-h-screen">
+            <Navbar />
+            <main className="flex-grow">
+              <Suspense fallback={<PageLoader />}>
+                <ScrollToTop />
+                <RouterRoutes>
                 <Route path="/" element={<PuckHome />} />
 
                 <Route path="/shop" element={<Shop />} />
@@ -176,6 +179,14 @@ export function Routes() {
                 <Route path="/admin/pages" element={<PagesManager />} />
                 <Route path="/admin/pages/:pageId/edit" element={<PuckEditor />} />
                 <Route path="/page/:slug" element={<PuckRenderer />} />
+                <Route
+                  path="/admin/plugins"
+                  element={
+                    <PrivateRoute>
+                      <PluginsManager />
+                    </PrivateRoute>
+                  }
+                />
                 
                 {/* Builder.io routes */}
                 <Route path="/builder/*" element={<BuilderPage />} />
@@ -189,6 +200,7 @@ export function Routes() {
           <Footer />
         </div>
       </TooltipProvider>
+    </PluginProvider>
     </BrowserRouter>
   )
 } 

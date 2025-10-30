@@ -5,14 +5,24 @@ import { Button } from '@/components/ui/button';
 import { Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
 
 // Wrapper component that can use hooks
-const ImageSelectorContent = ({ value, onChange }: { value?: string; onChange: (value: string) => void }) => {
+const ImageSelectorContent = ({ value, onChange, fieldName }: { value?: string; onChange: (value: string) => void; fieldName?: string }) => {
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   useEffect(() => {
     loadImages();
   }, []);
+  useEffect(() => {
+    if (!collapsed) {
+      // ensure gallery is loaded when user expands
+      if (!contentItems.length && !loading) {
+        loadImages();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collapsed]);
 
     const loadImages = async () => {
       setLoading(true);
@@ -45,8 +55,43 @@ const ImageSelectorContent = ({ value, onChange }: { value?: string; onChange: (
       setUploading(false);
     };
 
+    const currentThumb = value || '';
+    const fileName = currentThumb ? currentThumb.split('/').pop() : '';
+    const friendly = (() => {
+      const n = (fieldName || '').toLowerCase();
+      if (n.includes('desktop')) return 'Desktop image';
+      if (n.includes('tablet')) return 'Tablet image';
+      if (n.includes('mobile')) return 'Mobile image';
+      return 'Main image';
+    })();
+
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
+        {/* Compact header */}
+        <div className="flex items-center justify-between gap-3 border rounded-md p-2 bg-gray-50">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-10 w-16 rounded bg-gray-200 overflow-hidden flex items-center justify-center">
+              {currentThumb ? (
+                <img src={currentThumb} alt="Selected" className="h-full w-full object-cover" />
+              ) : (
+                <ImageIcon className="h-5 w-5 text-gray-400" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">{friendly} • Current image</p>
+              <p className="text-xs truncate max-w-[28ch]" title={currentThumb}>{fileName || 'None selected'}</p>
+            </div>
+          </div>
+          <div className="shrink-0">
+            <Button type="button" variant="outline" size="sm" onClick={() => setCollapsed(!collapsed)}>
+              {collapsed ? 'Edit' : 'Done'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Expanded controls */}
+        {!collapsed && (
+        <>
         {/* Upload Button */}
         <div>
           <label className="block">
@@ -159,15 +204,17 @@ const ImageSelectorContent = ({ value, onChange }: { value?: string; onChange: (
             className="w-full px-3 py-2 border rounded-md"
           />
         </div>
+        </>
+        )}
       </div>
     );
-};
+  };
 
 // Puck field that uses the wrapper component
 export const ImageSelector: CustomField<string | undefined> = {
   type: 'custom',
-  render: ({ value, onChange }) => {
-    return <ImageSelectorContent value={value} onChange={onChange} />;
+  render: ({ value, onChange, name }) => {
+    return <ImageSelectorContent value={value} onChange={onChange} fieldName={name as string} />;
   },
 };
 

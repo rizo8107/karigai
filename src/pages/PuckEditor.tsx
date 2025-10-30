@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Puck } from "@measured/puck";
 import "@measured/puck/puck.css";
 import "@/styles/puck-block.css";
+import "@/styles/puck-editor-overrides.css";
 import { completePuckConfig as puckConfig } from "@/puck/config/complete";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -291,7 +292,7 @@ export default function PuckEditor() {
   }
 
   return (
-    <div className="h-screen">
+    <div className="puck-editor-root h-screen">
       <Puck
         key={puckKey}
         config={puckConfig}
