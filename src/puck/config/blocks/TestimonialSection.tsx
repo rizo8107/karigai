@@ -133,7 +133,7 @@ export const TestimonialSection: ComponentConfig<TestimonialSectionProps> = {
           )}
 
           <div className={cn("grid gap-8", columnClasses[columns || 3])}>
-            {testimonials.map((testimonial, index) => (
+            {(testimonials || []).map((testimonial, index) => (
               <div
                 key={index}
                 className="bg-white rounded-lg p-6 shadow-sm border"

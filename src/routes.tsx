@@ -13,6 +13,7 @@ import { MetaPixelRouterTracker } from "./components/MetaPixelRouterTracker"
 
 // Eager load critical pages
 import Index from "./pages/Index"
+import PuckHome from "./pages/PuckHome"
 
 // Lazy load non-critical pages
 const Shop = lazy(() => import("./pages/Shop"))
@@ -114,7 +115,8 @@ export function Routes() {
             <Suspense fallback={<PageLoader />}>
               <ScrollToTop />
               <RouterRoutes>
-                <Route path="/" element={<Index />} />
+                <Route path="/" element={<PuckHome />} />
+
                 <Route path="/shop" element={<Shop />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/bestsellers" element={<Bestsellers />} />

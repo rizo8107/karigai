@@ -1,0 +1,23 @@
+/* Prevent margin-collapsing from shifting Puck selection overlays without affecting padding */
+.puck-block {
+  position: relative;
+  display: flow-root; /* creates a new BFC without scrollbars */
+}
+
+/* Ensure internal wrappers don't clip overlays */
+.puck-block * {
+  overflow: visible;
+}
+
+/* Make Puck drop zone wrapper not break grid layout */
+.puck-grid [data-puck-dropzone] {
+  display: contents;
+}
+.puck-grid [data-puck-dropzone] .puck-block {
+  display: block;
+}
+
+/* Allow grid items to shrink properly within columns */
+.puck-grid > * {
+  min-width: 0;
+}

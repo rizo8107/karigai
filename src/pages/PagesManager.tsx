@@ -23,6 +23,8 @@ interface Page {
   status: "draft" | "published";
   created: string;
   updated: string;
+  published?: boolean;
+  content_json?: any;
 }
 
 export default function PagesManager() {
@@ -33,10 +35,37 @@ export default function PagesManager() {
   const [newPageTitle, setNewPageTitle] = useState("");
   const [newPageSlug, setNewPageSlug] = useState("");
   const [creating, setCreating] = useState(false);
+  const DEFAULT_PUCK_PAGES = [
+    { title: "Home", slug: "home" },
+    { title: "About", slug: "about" },
+  ];
 
   useEffect(() => {
-    loadPages();
+    (async () => {
+      await ensureDefaultPages();
+      await loadPages();
+    })();
   }, []);
+
+  const ensureDefaultPages = async () => {
+    try {
+      for (const def of DEFAULT_PUCK_PAGES) {
+        try {
+          await pocketbase.collection("pages").getFirstListItem(`slug="${def.slug}"`);
+        } catch {
+          await pocketbase.collection("pages").create({
+            title: def.title,
+            slug: def.slug,
+            content_json: JSON.stringify({ content: [], root: { title: def.title } }),
+            published: false,
+            status: "draft",
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Error ensuring default pages:", e);
+    }
+  };
 
   const loadPages = async () => {
     try {
@@ -47,7 +76,7 @@ export default function PagesManager() {
           sort: "-updated",
         });
       
-      setPages(result.items as Page[]);
+      setPages(result.items as unknown as Page[]);
     } catch (error) {
       console.error("Error loading pages:", error);
     } finally {
@@ -174,6 +203,29 @@ export default function PagesManager() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {pages.map((page) => (
             <Card key={page.id} className="hover:shadow-md transition-shadow">
+              {/* Thumbnail */}
+              <CardContent className="p-0">
+                <div className="aspect-video w-full bg-muted overflow-hidden rounded-t-lg">
+                  {(() => {
+                    try {
+                      let data: any = page.content_json;
+                      if (typeof data === 'string') data = JSON.parse(data);
+                      const thumb: string | undefined = data?.root?.thumbnail ||
+                        (Array.isArray(data?.content)
+                          ? (data.content.find((c: any) => c?.type === 'Image')?.props?.src)
+                          : undefined);
+                      const src = thumb || 'https://via.placeholder.com/800x450?text=No+Thumbnail';
+                      return (
+                        <img src={src} alt={page.title} className="w-full h-full object-cover" />
+                      );
+                    } catch {
+                      return (
+                        <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground">No thumbnail</div>
+                      );
+                    }
+                  })()}
+                </div>
+              </CardContent>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <CardTitle className="text-lg line-clamp-2">

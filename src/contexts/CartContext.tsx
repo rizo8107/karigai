@@ -237,8 +237,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               // Verify user exists before creating cart to prevent DrySubmit rule failure
               try {
                 await pocketbase.collection('users').getOne(user.id);
-              } catch (userError) {
-                console.error('Cannot create cart: User verification failed', userError);
+              } catch (userError: any) {
+                // User doesn't exist or is invalid - silently exit
+                if (userError?.status === 404) {
+                  console.log('User session is stale, cart sync skipped');
+                }
                 return; // Exit if user doesn't exist
               }
               

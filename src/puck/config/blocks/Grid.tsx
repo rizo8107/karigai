@@ -93,16 +93,18 @@ export const Grid: ComponentConfig<GridProps> = {
     };
 
     return (
-      <div
-        className={cn(
-          "grid",
-          columnClasses[columns || 3],
-          gapClasses[gap || "md"],
-          alignClasses[align || "stretch"],
-          justifyClasses[justify || "start"]
-        )}
-      >
-        {renderDropZone({ zone: "grid-items" })}
+      <div className={cn("puck-grid")}> 
+        <div
+          className={cn(
+            "grid",
+            columnClasses[columns || 3],
+            gapClasses[gap || "md"],
+            alignClasses[align || "stretch"],
+            justifyClasses[justify || "start"]
+          )}
+        >
+          {renderDropZone({ zone: "grid-items" })}
+        </div>
       </div>
     );
   },
