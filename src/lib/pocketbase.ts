@@ -649,17 +649,44 @@ export interface ReviewComment {
     };
 }
 
+export interface ProductCardSettings {
+    corner: 'rounded' | 'square' | 'pill';
+    shadow: 'none' | 'soft' | 'medium' | 'strong';
+    showWishlist: boolean;
+    showTags: boolean;
+    showDescription: boolean;
+    ctaLabel: string;
+    ctaStyle: 'default' | 'outline' | 'pill';
+    imageRatio?: 'square' | 'portrait' | 'wide';
+    titleSize?: 'sm' | 'md' | 'lg';
+    descSize?: 'sm' | 'md' | 'lg';
+    ctaSize?: 'sm' | 'md' | 'lg';
+    spacing?: 'compact' | 'comfortable';
+}
+
+export interface ThemeData {
+    primary: { hex: string; hsl: string; hoverHex?: string };
+    accent: { hex: string; hsl: string };
+    textOnPrimary: string;
+    dark: { primaryHsl: string; accentHsl: string };
+    radiusRem?: string;
+    productCard?: ProductCardSettings;
+}
+
 export interface ThemeSettings extends RecordModel {
     name: string;
     is_active: boolean;
-    primary_color: string;
-    primary_color_hover: string;
-    primary_color_hsl: string;
-    accent_color: string;
-    accent_color_hsl: string;
-    text_on_primary: string;
-    dark_mode_primary_color_hsl: string;
-    dark_mode_accent_color_hsl: string;
+    // New JSON blob (preferred)
+    data?: ThemeData | Record<string, unknown>;
+    // Legacy flat fields (optional for backwards compatibility)
+    primary_color?: string;
+    primary_color_hover?: string;
+    primary_color_hsl?: string;
+    accent_color?: string;
+    accent_color_hsl?: string;
+    text_on_primary?: string;
+    dark_mode_primary_color_hsl?: string;
+    dark_mode_accent_color_hsl?: string;
 }
 
 // Function to create a review
@@ -790,14 +817,16 @@ export const getAllThemes = async (): Promise<ThemeSettings[]> => {
 export const createTheme = async (theme: { 
     name: string;
     is_active: boolean;
-    primary_color: string;
-    primary_color_hover: string;
-    primary_color_hsl: string;
-    accent_color: string;
-    accent_color_hsl: string;
-    text_on_primary: string;
-    dark_mode_primary_color_hsl: string;
-    dark_mode_accent_color_hsl: string;
+    // Either provide data JSON (preferred) or legacy flat fields below
+    data?: ThemeData;
+    primary_color?: string;
+    primary_color_hover?: string;
+    primary_color_hsl?: string;
+    accent_color?: string;
+    accent_color_hsl?: string;
+    text_on_primary?: string;
+    dark_mode_primary_color_hsl?: string;
+    dark_mode_accent_color_hsl?: string;
 }): Promise<ThemeSettings> => {
     try {
         // If this theme is active, deactivate all other themes first
@@ -816,6 +845,7 @@ export const createTheme = async (theme: {
 export const updateTheme = async (id: string, theme: Partial<{
     name: string;
     is_active: boolean;
+    data: ThemeData;
     primary_color: string;
     primary_color_hover: string;
     primary_color_hsl: string;
@@ -864,6 +894,59 @@ export const activateTheme = async (id: string): Promise<ThemeSettings> => {
         console.error('Error activating theme:', error);
         throw new Error(error instanceof Error ? error.message : 'Failed to activate theme');
     }
+};
+
+export const getActiveThemeData = async (): Promise<ThemeData | null> => {
+    const theme = await getActiveTheme();
+    if (!theme) return null;
+    
+    // Try to parse data JSON first
+    if (theme.data) {
+        try {
+            if (typeof theme.data === 'string') {
+                return JSON.parse(theme.data) as ThemeData;
+            }
+            const obj = theme.data as Record<string, unknown>;
+            if (obj && typeof obj === 'object' && ('primary' in obj || 'accent' in obj || 'textOnPrimary' in obj)) {
+                return obj as unknown as ThemeData;
+            }
+        } catch (e) {
+            console.warn('Failed to parse theme data JSON:', e);
+        }
+    }
+    
+    // Fallback to legacy flat fields
+    return {
+        primary: {
+            hex: theme.primary_color || '',
+            hsl: theme.primary_color_hsl || '',
+            hoverHex: theme.primary_color_hover || ''
+        },
+        accent: {
+            hex: theme.accent_color || '',
+            hsl: theme.accent_color_hsl || ''
+        },
+        textOnPrimary: theme.text_on_primary || '',
+        dark: {
+            primaryHsl: theme.dark_mode_primary_color_hsl || '',
+            accentHsl: theme.dark_mode_accent_color_hsl || ''
+        },
+        radiusRem: (typeof window !== 'undefined' ? localStorage.getItem('theme_radius') || undefined : undefined),
+        productCard: {
+            corner: 'rounded',
+            shadow: 'soft',
+            showWishlist: true,
+            showTags: true,
+            showDescription: true,
+            ctaLabel: 'Add to Cart',
+            ctaStyle: 'pill',
+            imageRatio: 'portrait',
+            titleSize: 'md',
+            descSize: 'sm',
+            ctaSize: 'md',
+            spacing: 'compact'
+        }
+    };
 };
 
 // Helper function to deactivate all themes

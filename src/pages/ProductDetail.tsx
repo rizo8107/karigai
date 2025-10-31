@@ -664,7 +664,7 @@ const ProductDetail = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Product Images - Enhanced Gallery */}
           <div className="space-y-4">
-            <div className="relative bg-gray-50 rounded-xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow duration-300">
+            <div className="relative bg-card rounded-xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow duration-300">
               {selectedImage ? (
                 <>
                   <ProductImage
@@ -679,7 +679,7 @@ const ProductDetail = () => {
                   />
                   <button 
                     onClick={() => setShowSizeGuide(true)}
-                    className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute bottom-4 right-4 bg-background/90 text-foreground backdrop-blur-sm p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                     title="View size guide"
                   >
                     <Ruler className="h-5 w-5" />
@@ -687,8 +687,8 @@ const ProductDetail = () => {
                   <button
                     onClick={toggleWishlist}
                     className={cn(
-                      "absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg",
-                      isWishlisted ? "text-red-500" : "text-gray-600 hover:text-gray-900"
+                      "absolute top-4 right-4 bg-background/90 text-foreground backdrop-blur-sm p-2 rounded-full shadow-lg",
+                      isWishlisted ? "text-destructive" : "text-muted-foreground hover:text-foreground"
                     )}
                     title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
                   >
@@ -697,7 +697,7 @@ const ProductDetail = () => {
                 </>
               ) : (
                 <div className="aspect-square w-full h-full flex items-center justify-center">
-                  <ImageIcon className="h-12 w-12 text-gray-400" />
+                  <ImageIcon className="h-12 w-12 text-muted-foreground" />
                 </div>
               )}
             </div>
@@ -709,7 +709,7 @@ const ProductDetail = () => {
                   type="button" 
                   onClick={() => handleImageSelect(image)}
                   className={cn(
-                    "relative bg-gray-50 rounded-lg overflow-hidden transition-all",
+                    "relative bg-card rounded-lg overflow-hidden transition-all",
                     selectedImage === image ? "ring-2 ring-primary ring-offset-2" : "hover:ring-1 hover:ring-primary/50",
                     "aspect-square shadow-sm"
                   )}
@@ -738,7 +738,7 @@ const ProductDetail = () => {
                 type="button" 
                 onClick={decreaseQuantity}
                 disabled={quantity <= 1}
-                className="p-3 text-gray-600 hover:text-gray-900 disabled:text-gray-300 transition-colors"
+                className="p-3 text-muted-foreground hover:text-foreground disabled:text-muted-foreground transition-colors"
               >
                 <Minus className="h-5 w-5" />
               </button>
@@ -746,14 +746,14 @@ const ProductDetail = () => {
               <button 
                 type="button" 
                 onClick={increaseQuantity}
-                className="p-3 text-gray-600 hover:text-gray-900 transition-colors"
+                className="p-3 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Plus className="h-5 w-5" />
               </button>
             </div>
             
             {/* Title and Price */}
-            <h1 className="text-3xl font-bold mb-3 text-gray-800">{product.name}</h1>
+            <h1 className="text-3xl font-bold mb-3 text-foreground">{product.name}</h1>
             <div className="flex flex-wrap items-center gap-4 mb-8">
               <div className="flex items-center gap-2">
                 <p className="text-3xl font-semibold text-primary">
@@ -761,10 +761,10 @@ const ProductDetail = () => {
                 </p>
                 {product.original_price && product.original_price > product.price && (
                   <>
-                    <p className="text-lg text-gray-500 line-through">
+                    <p className="text-lg text-muted-foreground line-through">
                       ₹{product.original_price.toFixed(2)}
                     </p>
-                    <span className="text-sm bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">
+                    <span className="text-sm bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-medium">
                       {Math.round((1 - product.price / product.original_price) * 100)}% OFF
                     </span>
                   </>
@@ -773,7 +773,7 @@ const ProductDetail = () => {
               {orderConfig.showStarRating && (
                 <div className="flex items-center gap-1">
                   {product.reviews && product.reviews > 0 ? (
-                    <div className="flex items-center gap-1 text-yellow-400">
+                    <div className="flex items-center gap-1 text-accent">
                       {Array(5).fill(null).map((_, i) => (
                         <Star 
                           key={i} 
@@ -785,7 +785,7 @@ const ProductDetail = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1 text-gray-300">
+                    <div className="flex items-center gap-1 text-muted-foreground">
                       {Array(5).fill(null).map((_, i) => (
                         <Star key={i} className="h-4 w-4" />
                       ))}
@@ -920,7 +920,7 @@ const ProductDetail = () => {
                   to={`/product/${relatedProduct.id}`}
                   className="group block"
                 >
-                  <div className="relative aspect-square overflow-hidden bg-gray-50 rounded-xl mb-5 shadow-sm group-hover:shadow-md transition-shadow duration-300">
+                  <div className="relative aspect-square overflow-hidden bg-card rounded-xl mb-5 shadow-sm group-hover:shadow-md transition-shadow duration-300">
                     <ProductImage
                       url={relatedProduct.images?.[0] || ''}
                       alt={relatedProduct.name}

@@ -11,6 +11,7 @@ import useUtmParams from "@/hooks/useUtmParams"
 import { getUtmParamsForAnalytics } from "@/lib/utm"
 import { MetaPixelRouterTracker } from "./components/MetaPixelRouterTracker"
 import { PluginProvider } from "@/plugins/Provider"
+import { DynamicThemeProvider } from "@/contexts/ThemeContext"
 
 // Eager load critical pages
 import Index from "./pages/Index"
@@ -53,6 +54,7 @@ const PuckEditor = lazy(() => import("./pages/PuckEditor"))
 const PuckRenderer = lazy(() => import("./pages/PuckRenderer"))
 const PagesManager = lazy(() => import("./pages/PagesManager"))
 const PluginsManager = lazy(() => import("./pages/PluginsManager"))
+const ThemeManager = lazy(() => import("./pages/ThemeManager"))
 
 // Import Builder.io initialization
 import "@/lib/builder"
@@ -109,6 +111,7 @@ export function Routes() {
   return (
     <BrowserRouter>
       <MetaPixelRouterTracker />
+      <DynamicThemeProvider>
       <PluginProvider>
         <TooltipProvider>
           <Sonner />
@@ -187,12 +190,21 @@ export function Routes() {
                     </PrivateRoute>
                   }
                 />
+                <Route
+                  path="/admin/themes"
+                  element={
+                    <PrivateRoute>
+                      <ThemeManager />
+                    </PrivateRoute>
+                  }
+                />
                 
                 {/* Builder.io routes */}
                 <Route path="/builder/*" element={<BuilderPage />} />
                 <Route path="/builder-preview/:path*" element={<BuilderPage />} />
                 <Route path="/builder-example" element={<BuilderExample />} />
-                
+
+                {/* Fallback */}
                 <Route path="*" element={<NotFound />} />
               </RouterRoutes>
             </Suspense>
@@ -200,7 +212,8 @@ export function Routes() {
           <Footer />
         </div>
       </TooltipProvider>
-    </PluginProvider>
+      </PluginProvider>
+      </DynamicThemeProvider>
     </BrowserRouter>
   )
-} 
+}

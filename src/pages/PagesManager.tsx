@@ -178,10 +178,15 @@ export default function PagesManager() {
             Create and manage your website pages with the visual editor
           </p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Page
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/admin/themes">Theme Settings</Link>
+          </Button>
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Page
+          </Button>
+        </div>
       </div>
 
       {pages.length === 0 ? (

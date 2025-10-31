@@ -222,8 +222,20 @@ const KarigaiProductGridContent = ({ title, description, category, limit, column
       <div className="relative">
         {showArrows && pages.length > 1 && (
           <>
-            <button aria-label="Previous" className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/40 text-white h-9 w-9 rounded-full" onClick={() => setPageIndex((p) => Math.max(0, p - 1))}>‹</button>
-            <button aria-label="Next" className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/40 text-white h-9 w-9 rounded-full" onClick={() => setPageIndex((p) => Math.min(pages.length - 1, p + 1))}>›</button>
+            <button
+              aria-label="Previous"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-primary/70 text-primary-foreground hover:bg-primary"
+              onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+            >
+              ‹
+            </button>
+            <button
+              aria-label="Next"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-primary/70 text-primary-foreground hover:bg-primary"
+              onClick={() => setPageIndex((p) => Math.min(pages.length - 1, p + 1))}
+            >
+              ›
+            </button>
           </>
         )}
 

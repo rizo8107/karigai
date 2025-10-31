@@ -122,7 +122,7 @@ const ProductGridContent = ({ title, showTitle, columns, limit, category, featur
       </div>
       
       <div className="text-center mt-12">
-        <button className="px-6 py-2 border border-primary text-primary hover:bg-primary hover:text-white transition-colors rounded">
+        <button className="px-6 py-2 border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors rounded">
           Load More Products
         </button>
       </div>

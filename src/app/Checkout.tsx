@@ -7,7 +7,7 @@ export default function Checkout() {
     <div className="space-y-4">
       {cartItems.map((item) => (
         <div key={item.product.id} className="flex justify-between py-1">
-          <span className="text-gray-600">{item.product.name} × {item.quantity}</span>
+          <span className="text-muted-foreground">{item.product.name} × {item.quantity}</span>
           <span>₹{(item.product.price * item.quantity).toFixed(2)}</span>
         </div>
       ))}

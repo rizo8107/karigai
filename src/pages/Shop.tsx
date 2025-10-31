@@ -18,6 +18,7 @@ import { preloadImages } from '@/utils/imageOptimizer';
 import { Collections } from '@/lib/pocketbase';
 import { pocketbase } from '@/lib/pocketbase';
 import { Breadcrumbs, BreadcrumbItem } from '@/components/Breadcrumbs';
+import ProductCard from '@/components/ProductCard';
 
 export default function Shop() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -365,115 +366,9 @@ export default function Shop() {
           ) : (
             <div ref={productGridRef} className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
               {filteredProducts.map((product, index) => (
-                <Link
-                  key={product.id}
-                  to={`/product/${product.id}`}
-                  className="group block"
-                  data-product-id={product.id}
-                >
-                  <div className="relative overflow-hidden bg-gray-300 rounded-lg mb-2 md:mb-4 group">
-                    {product.images?.[0] ? (
-                      <ProductImage 
-                        url={product.images[0]} 
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                        priority={index < 4} // Only set priority for first 4 products (visible above the fold)
-                        width={300} 
-                        height={300}
-                        size={index < 8 ? "medium" : "small"} // Use higher quality for first 8 products
-                        useResponsive={true}
-                        aspectRatio="square"
-                      />
-                    ) : (
-                      <div className="aspect-square w-full h-full flex items-center justify-center">
-                        <ShoppingBag className="h-12 w-12 text-gray-400" />
-                      </div>
-                    )}
-                    
-                    <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-                      {product.bestseller && (
-                        <Badge variant="secondary" className="bg-black text-white rounded-full text-xs">
-                          Bestseller
-                        </Badge>
-                      )}
-                      {product.new && (
-                        <Badge variant="secondary" className="bg-primary/90 text-white rounded-full text-xs">
-                          New
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Add to Cart button - always visible on mobile, with quantity controls */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-white p-2 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-200">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center border rounded-md overflow-hidden bg-white">
-                          <Button
-                            onClick={(e) => handleQuantityChange(e, product.id, -1)}
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 rounded-none hover:bg-gray-100"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-7 text-center text-sm font-medium">
-                            {productQuantities[product.id] || 1}
-                          </span>
-                          <Button
-                            onClick={(e) => handleQuantityChange(e, product.id, 1)}
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 rounded-none hover:bg-gray-100"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        <Button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleAddToCart(product);
-                          }}
-                          variant="default"
-                          size="sm"
-                          className="flex-1 h-7 text-xs sm:text-sm bg-[#a67b5c] hover:bg-[#8a6549] text-white"
-                        >
-                          Add to Cart
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium text-sm sm:text-base mb-1 truncate">
-                      {product.name}
-                    </h3>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <p className={cn(
-                          "text-sm sm:text-base font-medium",
-                          product.original_price && product.original_price > product.price ? "text-[#a67b5c]" : ""
-                        )}>
-                          ₹{typeof product.price === 'number' ? product.price.toFixed(2) : '0.00'}
-                        </p>
-                        {product.original_price && product.original_price > product.price && (
-                          <p className="text-sm text-gray-500 line-through">
-                            ₹{product.original_price.toFixed(2)}
-                          </p>
-                        )}
-                      </div>
-                      {product.original_price && product.original_price > product.price && (
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs font-medium text-[#a67b5c]">
-                            Save ₹{(product.original_price - product.price).toFixed(2)}
-                          </span>
-                          <span className="text-xs font-medium text-black">
-                            ({Math.round((1 - product.price / product.original_price) * 100)}% OFF)
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Link>
+                <div key={product.id} data-product-id={product.id}>
+                  <ProductCard product={product} priority={index < 4} />
+                </div>
               ))}
             </div>
           )}
