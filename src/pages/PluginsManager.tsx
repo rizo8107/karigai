@@ -569,24 +569,299 @@ export default function PluginsManager() {
                     <Label>Muted</Label>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="vid-w">Width (px)</Label>
-                    <Input
-                      id="vid-w"
-                      type="number"
-                      value={vidConfig.width ?? 320}
-                      onChange={(e) => setVidConfig({ ...vidConfig, width: Number(e.target.value) })}
-                    />
+                {/* Responsive Sizing */}
+                <div className="space-y-4 border-t pt-4">
+                  <Label className="text-base font-semibold">Responsive Sizing</Label>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Desktop</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="grid gap-2">
+                          <Label htmlFor="vid-desktop-w">Width (px)</Label>
+                          <Input
+                            id="vid-desktop-w"
+                            type="number"
+                            value={vidConfig.desktop?.width ?? 320}
+                            onChange={(e) => setVidConfig({ 
+                              ...vidConfig, 
+                              desktop: { ...vidConfig.desktop, width: Number(e.target.value) }
+                            })}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="vid-desktop-h">Height (px)</Label>
+                          <Input
+                            id="vid-desktop-h"
+                            type="number"
+                            value={vidConfig.desktop?.height ?? 180}
+                            onChange={(e) => setVidConfig({ 
+                              ...vidConfig, 
+                              desktop: { ...vidConfig.desktop, height: Number(e.target.value) }
+                            })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Mobile</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="grid gap-2">
+                          <Label htmlFor="vid-mobile-w">Width (px)</Label>
+                          <Input
+                            id="vid-mobile-w"
+                            type="number"
+                            value={vidConfig.mobile?.width ?? 280}
+                            onChange={(e) => setVidConfig({ 
+                              ...vidConfig, 
+                              mobile: { ...vidConfig.mobile, width: Number(e.target.value) }
+                            })}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="vid-mobile-h">Height (px)</Label>
+                          <Input
+                            id="vid-mobile-h"
+                            type="number"
+                            value={vidConfig.mobile?.height ?? 160}
+                            onChange={(e) => setVidConfig({ 
+                              ...vidConfig, 
+                              mobile: { ...vidConfig.mobile, height: Number(e.target.value) }
+                            })}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="vid-h">Height (px)</Label>
-                    <Input
-                      id="vid-h"
-                      type="number"
-                      value={vidConfig.height ?? 180}
-                      onChange={(e) => setVidConfig({ ...vidConfig, height: Number(e.target.value) })}
+                </div>
+                
+                {/* Shop Now Button */}
+                <div className="space-y-4 border-t pt-4">
+                  <Label className="text-base font-semibold">Shop Now Button</Label>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={vidConfig.shopNowButton?.enabled === true}
+                      onCheckedChange={(v) => setVidConfig({ 
+                        ...vidConfig, 
+                        shopNowButton: { ...vidConfig.shopNowButton, enabled: v }
+                      })}
                     />
+                    <Label>Enable Shop Now overlay button</Label>
+                  </div>
+                  {vidConfig.shopNowButton?.enabled && (
+                    <div className="space-y-3 pl-4 border-l-2 border-muted">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="shop-text">Button Text</Label>
+                          <Input
+                            id="shop-text"
+                            value={vidConfig.shopNowButton?.text ?? "Shop Now"}
+                            onChange={(e) => setVidConfig({ 
+                              ...vidConfig, 
+                              shopNowButton: { ...vidConfig.shopNowButton, text: e.target.value }
+                            })}
+                            placeholder="Shop Now"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="shop-position">Position</Label>
+                          <select
+                            id="shop-position"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            value={vidConfig.shopNowButton?.position ?? "bottom-right"}
+                            onChange={(e) => setVidConfig({ 
+                              ...vidConfig, 
+                              shopNowButton: { ...vidConfig.shopNowButton, position: e.target.value as "bottom-left" | "bottom-right" | "bottom-center" }
+                            })}
+                          >
+                            <option value="bottom-left">Bottom Left</option>
+                            <option value="bottom-right">Bottom Right</option>
+                            <option value="bottom-center">Bottom Center</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="shop-product">Product ID</Label>
+                          <Input
+                            id="shop-product"
+                            value={vidConfig.shopNowButton?.productId ?? ""}
+                            onChange={(e) => setVidConfig({ 
+                              ...vidConfig, 
+                              shopNowButton: { ...vidConfig.shopNowButton, productId: e.target.value }
+                            })}
+                            placeholder="product-123"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="shop-bg">Background Color</Label>
+                          <Input
+                            id="shop-bg"
+                            value={vidConfig.shopNowButton?.backgroundColor ?? "#000000"}
+                            onChange={(e) => setVidConfig({ 
+                              ...vidConfig, 
+                              shopNowButton: { ...vidConfig.shopNowButton, backgroundColor: e.target.value }
+                            })}
+                            placeholder="#000000"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="shop-text-color">Text Color</Label>
+                          <Input
+                            id="shop-text-color"
+                            value={vidConfig.shopNowButton?.textColor ?? "#ffffff"}
+                            onChange={(e) => setVidConfig({ 
+                              ...vidConfig, 
+                              shopNowButton: { ...vidConfig.shopNowButton, textColor: e.target.value }
+                            })}
+                            placeholder="#ffffff"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="shop-url">Custom URL (optional)</Label>
+                        <Input
+                          id="shop-url"
+                          value={vidConfig.shopNowButton?.url ?? ""}
+                          onChange={(e) => setVidConfig({ 
+                            ...vidConfig, 
+                            shopNowButton: { ...vidConfig.shopNowButton, url: e.target.value }
+                          })}
+                          placeholder="https://example.com/offer"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Leave empty to use Product ID, or provide a custom URL to override
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Product-Specific Videos */}
+                <div className="space-y-4 border-t pt-4">
+                  <Label className="text-base font-semibold">Product-Specific Videos</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Configure different videos for specific products. Videos will automatically show when users visit those product pages.
+                  </p>
+                  <div className="space-y-3">
+                    {(vidConfig.productVideos || []).map((pv, index) => (
+                      <div key={index} className="p-3 border rounded-md space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Product Video #{index + 1}</Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const updated = [...(vidConfig.productVideos || [])];
+                              updated.splice(index, 1);
+                              setVidConfig({ ...vidConfig, productVideos: updated });
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label>Product ID</Label>
+                            <Input
+                              value={pv.productId}
+                              onChange={(e) => {
+                                const updated = [...(vidConfig.productVideos || [])];
+                                updated[index] = { ...pv, productId: e.target.value };
+                                setVidConfig({ ...vidConfig, productVideos: updated });
+                              }}
+                              placeholder="product-123"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label>Video URL</Label>
+                            <Input
+                              value={pv.videoUrl}
+                              onChange={(e) => {
+                                const updated = [...(vidConfig.productVideos || [])];
+                                updated[index] = { ...pv, videoUrl: e.target.value };
+                                setVidConfig({ ...vidConfig, productVideos: updated });
+                              }}
+                              placeholder="https://youtube.com/embed/..."
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const updated = [...(vidConfig.productVideos || []), { productId: "", videoUrl: "" }];
+                        setVidConfig({ ...vidConfig, productVideos: updated });
+                      }}
+                    >
+                      Add Product Video
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Path-Specific Configurations */}
+                <div className="space-y-4 border-t pt-4">
+                  <Label className="text-base font-semibold">Path-Specific Videos</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Configure different videos for different site sections. Use * for wildcards (e.g., /product/* for all product pages).
+                  </p>
+                  <div className="space-y-3">
+                    {(vidConfig.pathConfigs || []).map((pc, index) => (
+                      <div key={index} className="p-3 border rounded-md space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Path Config #{index + 1}</Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const updated = [...(vidConfig.pathConfigs || [])];
+                              updated.splice(index, 1);
+                              setVidConfig({ ...vidConfig, pathConfigs: updated });
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Paths (one per line)</Label>
+                          <Textarea
+                            value={pc.paths.join("\n")}
+                            onChange={(e) => {
+                              const updated = [...(vidConfig.pathConfigs || [])];
+                              updated[index] = { ...pc, paths: e.target.value.split("\n").map(s => s.trim()).filter(Boolean) };
+                              setVidConfig({ ...vidConfig, pathConfigs: updated });
+                            }}
+                            placeholder="/\n/shop\n/product/*"
+                            rows={3}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Video URL for these paths</Label>
+                          <Input
+                            value={pc.videoUrl || ""}
+                            onChange={(e) => {
+                              const updated = [...(vidConfig.pathConfigs || [])];
+                              updated[index] = { ...pc, videoUrl: e.target.value };
+                              setVidConfig({ ...vidConfig, pathConfigs: updated });
+                            }}
+                            placeholder="https://youtube.com/embed/..."
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const updated = [...(vidConfig.pathConfigs || []), { paths: ["/"], videoUrl: "" }];
+                        setVidConfig({ ...vidConfig, pathConfigs: updated });
+                      }}
+                    >
+                      Add Path Configuration
+                    </Button>
                   </div>
                 </div>
                 <div className="grid gap-2">

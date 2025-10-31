@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { PluginDefinition, WhatsAppPluginConfig, VideoPluginConfig, PopupBannerConfig } from "./types";
+import React, { useEffect, useState, useMemo } from "react";
+import { useLocation, useParams } from "react-router-dom";
+import { PluginDefinition, WhatsAppPluginConfig, VideoPluginConfig, PopupBannerConfig, ProductVideoMapping, PathVideoConfig } from "./types";
 
 function cx(...classes: (string | false | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -252,6 +253,66 @@ const PopupBanner: React.FC<{ config: PopupBannerConfig }> = ({ config }) => {
 const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
   const [visible, setVisible] = useState(true);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const location = useLocation();
+  const params = useParams();
+  
+  // Determine current product ID from URL params
+  const currentProductId = params.id || null;
+  
+  // Determine which video and config to use based on current path and product
+  const activeVideoConfig = useMemo(() => {
+    const currentPath = location.pathname;
+    
+    // Check path-specific configs first
+    if (config.pathConfigs) {
+      for (const pathConfig of config.pathConfigs) {
+        const matchesPath = pathConfig.paths.some(path => {
+          if (path.endsWith('*')) {
+            return currentPath.startsWith(path.slice(0, -1));
+          }
+          return currentPath === path;
+        });
+        
+        if (matchesPath) {
+          // Check for product-specific video within this path config
+          if (currentProductId && pathConfig.productVideos) {
+            const productVideo = pathConfig.productVideos.find(pv => pv.productId === currentProductId);
+            if (productVideo) {
+              return {
+                videoUrl: productVideo.videoUrl,
+                shopNowButton: productVideo.shopNowButton || pathConfig.shopNowButton
+              };
+            }
+          }
+          
+          // Use path-specific video
+          if (pathConfig.videoUrl) {
+            return {
+              videoUrl: pathConfig.videoUrl,
+              shopNowButton: pathConfig.shopNowButton
+            };
+          }
+        }
+      }
+    }
+    
+    // Check global product-specific videos
+    if (currentProductId && config.productVideos) {
+      const productVideo = config.productVideos.find(pv => pv.productId === currentProductId);
+      if (productVideo) {
+        return {
+          videoUrl: productVideo.videoUrl,
+          shopNowButton: productVideo.shopNowButton || config.shopNowButton
+        };
+      }
+    }
+    
+    // Fallback to default video
+    return {
+      videoUrl: config.videoUrl,
+      shopNowButton: config.shopNowButton
+    };
+  }, [config, location.pathname, currentProductId]);
   
   useEffect(() => {
     if (config.autoClose && (config.autoCloseAfterMs ?? 0) > 0) {
@@ -271,19 +332,23 @@ const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
     }
   }, [config.autoClose, config.autoCloseAfterMs]);
   
-  if (!config.enabled || !config.videoUrl || !visible) return null;
+  if (!config.enabled || !activeVideoConfig.videoUrl || !visible) return null;
   
   const z = config.zIndex ?? 60;
-  const w = config.width ?? 320;
-  const h = config.height ?? 180;
-  const isYouTube = /youtube|youtu\.be/.test(config.videoUrl);
-  const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  
+  // Responsive sizing
+  const dimensions = isMobile 
+    ? { w: config.mobile?.width ?? 280, h: config.mobile?.height ?? 160 }
+    : { w: config.desktop?.width ?? 320, h: config.desktop?.height ?? 180 };
+  
+  const isYouTube = /youtube|youtu\.be/.test(activeVideoConfig.videoUrl);
   
   // Enhanced YouTube URL for mobile autoplay
-  const enhancedVideoUrl = isYouTube && config.videoUrl 
-    ? config.videoUrl + (config.videoUrl.includes('?') ? '&' : '?') + 
+  const enhancedVideoUrl = isYouTube && activeVideoConfig.videoUrl 
+    ? activeVideoConfig.videoUrl + (activeVideoConfig.videoUrl.includes('?') ? '&' : '?') + 
       `autoplay=${config.autoPlay ? 1 : 0}&mute=${config.muted ? 1 : 0}&playsinline=1&enablejsapi=1`
-    : config.videoUrl;
+    : activeVideoConfig.videoUrl;
   
   const style: React.CSSProperties = {
     position: "fixed",
@@ -294,6 +359,23 @@ const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
     left: config.position?.endsWith("left") ? (config.offsetX ?? 16) : undefined,
   };
   
+  // Shop Now button handler
+  const handleShopNow = () => {
+    const button = activeVideoConfig.shopNowButton;
+    if (!button?.enabled) return;
+    
+    let targetUrl = button.url;
+    if (button.productId) {
+      targetUrl = `/product/${button.productId}`;
+    } else if (config.shopNowButton?.productId) {
+      targetUrl = `/product/${config.shopNowButton.productId}`;
+    }
+    
+    if (targetUrl) {
+      window.open(targetUrl, '_blank');
+    }
+  };
+  
   console.debug("[Plugins] Rendering VideoFloating", { 
     enabled: config.enabled, 
     position: config.position, 
@@ -301,6 +383,8 @@ const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
     url: enhancedVideoUrl, 
     isMobile,
     timeLeft,
+    dimensions,
+    activeVideoConfig,
     style 
   });
   
@@ -321,36 +405,60 @@ const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
               const parent = (e.currentTarget.closest('[data-plugin-wrapper]') as HTMLElement) || undefined;
               if (parent) parent.style.display = 'none';
             }}
-            className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-black/70 text-white flex items-center justify-center text-xs shadow hover:bg-black/90 transition-colors"
+            className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-black/70 text-white flex items-center justify-center text-xs shadow hover:bg-black/90 transition-colors z-10"
             title="Close"
           >
             ×
           </button>
         )}
         
-        {isYouTube ? (
-          <iframe
-            width={w}
-            height={h}
-            src={enhancedVideoUrl}
-            title="Video"
-            frameBorder={0}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-            className="rounded-md shadow-lg"
-          />
-        ) : (
-          <video
-            width={w}
-            height={h}
-            src={config.videoUrl}
-            autoPlay={config.autoPlay}
-            muted={config.muted}
-            playsInline={isMobile}
-            controls
-            className="rounded-md shadow-lg"
-          />
-        )}
+        {/* Video Player */}
+        <div className="relative">
+          {isYouTube ? (
+            <iframe
+              width={dimensions.w}
+              height={dimensions.h}
+              src={enhancedVideoUrl}
+              title="Video"
+              frameBorder={0}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              className="rounded-md shadow-lg"
+            />
+          ) : (
+            <video
+              width={dimensions.w}
+              height={dimensions.h}
+              src={activeVideoConfig.videoUrl}
+              autoPlay={config.autoPlay}
+              muted={config.muted}
+              playsInline={isMobile}
+              controls
+              className="rounded-md shadow-lg"
+            />
+          )}
+          
+          {/* Shop Now Overlay Button */}
+          {activeVideoConfig.shopNowButton?.enabled && (
+            <button
+              onClick={handleShopNow}
+              className={cx(
+                "absolute px-3 py-1.5 text-sm font-medium rounded-md shadow-lg transition-all hover:scale-105",
+                activeVideoConfig.shopNowButton.position === "bottom-left" && "bottom-2 left-2",
+                activeVideoConfig.shopNowButton.position === "bottom-right" && "bottom-2 right-2",
+                activeVideoConfig.shopNowButton.position === "bottom-center" && "bottom-2 left-1/2 -translate-x-1/2",
+                !activeVideoConfig.shopNowButton.position && "bottom-2 right-2"
+              )}
+              style={{
+                backgroundColor: activeVideoConfig.shopNowButton.backgroundColor || config.shopNowButton?.backgroundColor || "#000000",
+                color: activeVideoConfig.shopNowButton.textColor || config.shopNowButton?.textColor || "#ffffff"
+              }}
+              title="Shop Now"
+            >
+              {activeVideoConfig.shopNowButton.text || config.shopNowButton?.text || "Shop Now"}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -394,11 +502,26 @@ export const pluginRegistry = {
       position: "bottom-right",
       autoPlay: false,
       muted: true,
-      width: 320,
-      height: 180,
+      desktop: {
+        width: 320,
+        height: 180
+      },
+      mobile: {
+        width: 280,
+        height: 160
+      },
       showClose: true,
       autoClose: false,
-      autoCloseAfterMs: 10000, // Default 10 seconds
+      autoCloseAfterMs: 10000,
+      shopNowButton: {
+        enabled: false,
+        text: "Shop Now",
+        position: "bottom-right",
+        backgroundColor: "#000000",
+        textColor: "#ffffff"
+      },
+      productVideos: [],
+      pathConfigs: [],
       visibility: { mode: "all", include: [], exclude: [] },
     } as VideoPluginConfig,
     Component: VideoFloating,

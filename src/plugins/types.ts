@@ -34,13 +34,66 @@ export interface WhatsAppPluginConfig extends BasePluginConfig {
 }
 
 export interface VideoPluginConfig extends BasePluginConfig {
-  videoUrl: string; // youtube embed url or mp4 link
+  // Video sources - can be single URL or multiple product-specific videos
+  videoUrl?: string; // fallback/default video URL
+  productVideos?: ProductVideoMapping[]; // product-specific videos
+  
+  // Display settings
   position?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
   autoPlay?: boolean;
   muted?: boolean;
-  width?: number; // px
-  height?: number; // px
   showClose?: boolean;
+  
+  // Responsive sizing
+  desktop?: {
+    width?: number; // px
+    height?: number; // px
+  };
+  mobile?: {
+    width?: number; // px
+    height?: number; // px
+  };
+  
+  // Shop Now overlay button
+  shopNowButton?: {
+    enabled?: boolean;
+    text?: string;
+    productId?: string; // link to specific product
+    url?: string; // or custom URL
+    position?: "bottom-left" | "bottom-right" | "bottom-center";
+    backgroundColor?: string;
+    textColor?: string;
+  };
+  
+  // Path-specific visibility (extends base visibility)
+  pathConfigs?: PathVideoConfig[];
+}
+
+export interface ProductVideoMapping {
+  productId: string;
+  videoUrl: string;
+  shopNowButton?: {
+    enabled?: boolean;
+    text?: string;
+    url?: string;
+    backgroundColor?: string;
+    textColor?: string;
+  };
+}
+
+export interface PathVideoConfig {
+  paths: string[]; // e.g. ["/", "/shop", "/product/*"]
+  videoUrl?: string;
+  productVideos?: ProductVideoMapping[];
+  shopNowButton?: {
+    enabled?: boolean;
+    text?: string;
+    productId?: string;
+    url?: string;
+    position?: "bottom-left" | "bottom-right" | "bottom-center";
+    backgroundColor?: string;
+    textColor?: string;
+  };
 }
 
 export interface PopupBannerConfig extends BasePluginConfig {
