@@ -73,6 +73,13 @@ const ProductDetail = () => {
   const [selectedColor, setSelectedColor] = useState<ProductColor | null>(null);
   const { toast } = useToast();
   const relatedLoaded = useRef(false);
+
+  // Active image index for pager dots
+  const currentIndex = useMemo(() => {
+    if (!product?.images || !selectedImage) return 0;
+    const idx = product.images.indexOf(selectedImage);
+    return idx >= 0 ? idx : 0;
+  }, [product?.images, selectedImage]);
   // Track last add to cart time to prevent duplicate events
   const lastAddToCartRef = useRef<number>(0);
   // Track last wishlist action time to prevent duplicate events
@@ -716,23 +723,23 @@ const ProductDetail = () => {
                   >
                     <ArrowLeft className="h-5 w-5" />
                   </button>
-                  {/* Mobile gallery arrows */}
-                  <button
-                    type="button"
-                    onClick={handlePrevImage}
-                    className="md:hidden absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/90 shadow grid place-items-center text-foreground"
-                    aria-label="Previous image"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleNextImage}
-                    className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/90 shadow grid place-items-center text-foreground"
-                    aria-label="Next image"
-                  >
-                    ›
-                  </button>
+                  {/* Mobile image pager: dots with active rectangle */}
+                  {product?.images?.length ? (
+                    <div className="md:hidden absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-white/80 shadow ring-1 ring-black/5 flex items-center gap-1.5">
+                      {product.images.map((img, i) => (
+                        <button
+                          key={img || i}
+                          type="button"
+                          aria-label={`Go to image ${i + 1}`}
+                          onClick={() => handleImageSelect(img)}
+                          className={cn(
+                            "rounded-full transition-all",
+                            currentIndex === i ? "h-1.5 w-8 bg-gray-700" : "h-1 w-1 bg-gray-400/80"
+                          )}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
                   {/* Desktop Only Actions */}
                   <button
                     onClick={toggleWishlist}

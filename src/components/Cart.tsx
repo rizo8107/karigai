@@ -58,12 +58,10 @@ export function Cart({ children }: CartProps) {
           </Button>
         )}
       </SheetTrigger>
-      <SheetContent className="flex w-full flex-col sm:max-w-lg">
-        <SheetHeader>
-          <SheetTitle>Shopping Cart ({itemCount} items)</SheetTitle>
-          <SheetDescription>
-            View and manage items in your shopping cart
-          </SheetDescription>
+      <SheetContent className="flex w-full flex-col sm:max-w-md">
+        <SheetHeader className="text-center space-y-1">
+          <SheetTitle className="text-lg">Shopping Cart ({itemCount} items)</SheetTitle>
+          <SheetDescription className="text-muted-foreground">View and manage items in your shopping cart</SheetDescription>
         </SheetHeader>
 
         {isLoading ? (
@@ -86,15 +84,15 @@ export function Cart({ children }: CartProps) {
         ) : (
           <>
             <ScrollArea className="flex-1 -mx-6 px-6">
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {items.map((item, index) => (
-                  <div key={`${item.productId}-${item.color}-${index}`} className="flex gap-4">
-                    <div className="relative aspect-square h-24">
+                  <div key={`${item.productId}-${item.color}-${index}`} className="flex gap-3 rounded-xl border border-gray-100 p-3">
+                    <div className="relative aspect-square h-20">
                       {item.product && item.product.images && item.product.images[0] ? (
                         <ProductImage
                           url={item.product.images[0]}
                           alt={item.product.name}
-                          className="rounded-lg"
+                          className="rounded-lg object-cover"
                         />
                       ) : (
                         <div className="bg-muted w-full h-full rounded-lg flex items-center justify-center">
@@ -106,7 +104,7 @@ export function Cart({ children }: CartProps) {
                       <div className="flex justify-between items-start">
                         <Link
                           to={`/product/${item.productId}`}
-                          className="font-medium hover:text-primary"
+                          className="font-medium hover:text-primary line-clamp-2"
                           onClick={() => setIsOpen(false)}
                         >
                           {item.product?.name || 'Product'}
@@ -120,7 +118,7 @@ export function Cart({ children }: CartProps) {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs text-muted-foreground mt-0.5">
                         {item.color ? `Color: ${item.color}` : 'Default'}
                       </div>
                       <div className="mt-2 flex items-center gap-2">
@@ -132,7 +130,7 @@ export function Cart({ children }: CartProps) {
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="w-8 text-center">{item.quantity}</span>
+                        <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
                         <Button
                           variant="outline"
                           size="icon"
@@ -141,7 +139,7 @@ export function Cart({ children }: CartProps) {
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
-                        <div className="ml-auto font-medium">
+                        <div className="ml-auto font-semibold">
                           ₹{((Number(item.product?.price) || 0) * (Number(item.quantity) || 0)).toFixed(2)}
                         </div>
                       </div>
@@ -149,8 +147,9 @@ export function Cart({ children }: CartProps) {
                   </div>
                 ))}
                 
-                {/* Cross-selling component */}
-                <CartCrossSell onClose={handleCloseCart} />
+                <div className="pt-2">
+                  <CartCrossSell onClose={handleCloseCart} />
+                </div>
               </div>
             </ScrollArea>
 
@@ -179,7 +178,7 @@ export function Cart({ children }: CartProps) {
                 </div>
               )}
               
-              <Button asChild className="w-full" disabled={items.length === 0 || (total || 0) < 150}>
+              <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={items.length === 0 || (total || 0) < 150}>
                 <Link to="/checkout" onClick={handleCheckout}>
                   Proceed to Checkout (₹{(total || 0).toFixed(2)})
                 </Link>
@@ -197,4 +196,4 @@ export function Cart({ children }: CartProps) {
       </SheetContent>
     </Sheet>
   );
-} 
+}
