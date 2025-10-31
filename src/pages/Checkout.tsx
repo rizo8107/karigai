@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, ShoppingBag, LockIcon, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, ShoppingBag, LockIcon, CheckCircle, AlertTriangle, Tag, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { OfferBanner } from '@/components/OfferBanner';
 import { 
@@ -1746,8 +1746,6 @@ const removeCoupon = () => {
       <div className="max-w-6xl mx-auto">
         {/* Checkout Header with Progress */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-center mb-6">Checkout</h1>
-          
           {/* Login Options Section */}
           {showLoginOptions && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-8 border border-gray-200">
@@ -1830,332 +1828,328 @@ const removeCoupon = () => {
               </button>
             </div>
           )}
-          <div className="flex justify-center items-center mb-8">
-            <div className="flex items-center w-full max-w-3xl">
-              <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold">1</div>
-                <span className="text-sm mt-1">Information</span>
-              </div>
-              <div className="flex-1 h-1 mx-2 bg-primary"></div>
-              <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold">2</div>
-                <span className="text-sm mt-1">Review</span>
-              </div>
-              <div className="flex-1 h-1 mx-2 bg-primary"></div>
-              <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold">3</div>
-                <span className="text-sm mt-1">Payment</span>
-              </div>
-            </div>
-          </div>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="space-y-8 bg-white p-6 rounded-lg shadow-sm border">
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold flex items-center">
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs mr-2">1</span>
-            Contact Information
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-                className={!formData.name ? "border-red-300" : ""}
-              />
-              {!formData.name && (
-                <p className="text-xs text-red-500">Full name is required</p>
-              )}
+        <div className="max-w-md mx-auto">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+            {/* Receipt Header */}
+            <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 p-6 text-white text-center">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <ShoppingBag className="w-8 h-8" />
+              </div>
+              <p className="text-emerald-100 text-sm">Complete your purchase</p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                className={!formData.email || (formData.email && !formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) ? "border-red-300" : ""}
-              />
-              {!formData.email ? (
-                <p className="text-xs text-red-500">Email is required</p>
-              ) : formData.email && !formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) ? (
-                <p className="text-xs text-red-500">Please enter a valid email address</p>
-              ) : null}
-            </div>
-          </div>
-        </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {/* Contact Section */}
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2 pb-2 border-b border-gray-100">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                    <span className="text-emerald-600 font-semibold text-sm">1</span>
+                  </div>
+                  <h3 className="font-semibold text-gray-800">Contact</h3>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <Input
+                      id="name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      placeholder="Full Name"
+                      required
+                      className={`rounded-xl border-gray-200 focus:border-emerald-400 focus:ring-emerald-400 ${!formData.name ? "border-red-300" : ""}`}
+                    />
+                    {!formData.name && (
+                      <p className="text-xs text-red-500 mt-1">Full name is required</p>
+                    )}
+                  </div>
+                  <div>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="Email Address"
+                      required
+                      className={`rounded-xl border-gray-200 focus:border-emerald-400 focus:ring-emerald-400 ${!formData.email || (formData.email && !formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) ? "border-red-300" : ""}`}
+                    />
+                    {!formData.email ? (
+                      <p className="text-xs text-red-500 mt-1">Email is required</p>
+                    ) : formData.email && !formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) ? (
+                      <p className="text-xs text-red-500 mt-1">Please enter a valid email address</p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
 
-        <Separator />
+              {/* Shipping Section */}
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2 pb-2 border-b border-gray-100">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                    <span className="text-emerald-600 font-semibold text-sm">2</span>
+                  </div>
+                  <h3 className="font-semibold text-gray-800">Shipping</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    {/* Force disable address autocomplete in production to prevent any issues */}
+                    {import.meta.env.MODE === 'development' && import.meta.env.VITE_ENABLE_ADDRESS_AUTOCOMPLETE === 'true' ? (
+                      <AddressAutocomplete
+                        onAddressSelect={handleAddressSelect}
+                        defaultValue={formData.address}
+                        error={errors?.address || (!formData.address ? "Address is required" : undefined)}
+                      />
+                    ) : (
+                      <div>
+                        <Label htmlFor="address">Street Address</Label>
+                        <Input
+                          id="address"
+                          name="address"
+                          value={formData.address}
+                          onChange={handleInputChange}
+                          required
+                          className={!formData.address ? "border-red-300" : ""}
+                        />
+                        {!formData.address && (
+                          <p className="text-xs text-red-500">Address is required</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleInputChange}
+                        required
+                        className={errors?.city || !formData.city ? "border-red-500" : ""}
+                      />
+                      {errors?.city ? (
+                        <p className="text-xs text-red-500">{errors.city}</p>
+                      ) : !formData.city ? (
+                        <p className="text-xs text-red-500">City is required</p>
+                      ) : null}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="state">State</Label>
+                      <Input
+                        id="state"
+                        name="state"
+                        value={formData.state}
+                        onChange={handleInputChange}
+                        required
+                        className={errors?.state || !formData.state ? "border-red-500" : ""}
+                      />
+                      {errors?.state ? (
+                        <p className="text-xs text-red-500">{errors.state}</p>
+                      ) : !formData.state ? (
+                        <p className="text-xs text-red-500">State is required</p>
+                      ) : null}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="zipCode">ZIP Code</Label>
+                      <Input
+                        id="zipCode"
+                        name="zipCode"
+                        value={formData.zipCode}
+                        onChange={handleInputChange}
+                        required
+                        data-testid="zip-input"
+                        className={errors?.zipCode || !formData.zipCode ? "border-red-500" : ""}
+                      />
+                      {errors?.zipCode ? (
+                        <p className="text-xs text-red-500">{errors.zipCode}</p>
+                      ) : !formData.zipCode ? (
+                        <p className="text-xs text-red-500">ZIP code is required</p>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      required
+                      className={errors?.phone || !formData.phone ? "border-red-500" : ""}
+                      placeholder="10-digit mobile number"
+                    />
+                    {errors?.phone ? (
+                      <p className="text-xs text-red-500">{errors.phone}</p>
+                    ) : !formData.phone ? (
+                      <p className="text-xs text-red-500">Phone number is required</p>
+                    ) : null}
+                    <p className="text-xs text-muted-foreground">Enter a 10-digit Indian mobile number</p>
+                  </div>
+                </div>
+              </div>
 
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold flex items-center">
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs mr-2">2</span>
-            Shipping Address
-          </h2>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              {/* Force disable address autocomplete in production to prevent any issues */}
-              {import.meta.env.MODE === 'development' && import.meta.env.VITE_ENABLE_ADDRESS_AUTOCOMPLETE === 'true' ? (
-                <AddressAutocomplete
-                  onAddressSelect={handleAddressSelect}
-                  defaultValue={formData.address}
-                  error={errors?.address || (!formData.address ? "Address is required" : undefined)}
-                />
-              ) : (
-                <div>
-                  <Label htmlFor="address">Street Address</Label>
-                  <Input
-                    id="address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    required
-                    className={!formData.address ? "border-red-300" : ""}
-                  />
-                  {!formData.address && (
-                    <p className="text-xs text-red-500">Address is required</p>
+              {/* Order Summary Section */}
+              <div className="bg-gray-50 rounded-2xl p-4 space-y-3 border border-gray-100">
+                <h3 className="font-semibold text-gray-800 text-sm">Order Items</h3>
+                <div className="space-y-2">
+                  {items.map((item) => (
+                    <div key={`${item.productId}-${item.color}`} className="flex justify-between text-sm">
+                      <span className="text-gray-600">
+                        {item.product.name} × {item.quantity}
+                        {item.color && <span className="text-xs text-gray-500 ml-1">({item.color})</span>}
+                      </span>
+                      <span className="font-medium text-gray-800">₹{(item.product.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="border-t border-gray-200 pt-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Subtotal</span>
+                    <span className="font-medium text-gray-800">₹{subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Shipping</span>
+                    <span className="font-medium text-gray-800">
+                      {formData.state ? 
+                        `₹${calculateFinalTotal().shippingCost.toFixed(2)}` : 
+                        <span className="text-xs text-gray-500">Enter address</span>}
+                    </span>
+                  </div>
+                  {formData.state && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">Est. Delivery</span>
+                      <span className="text-gray-600">{calculateFinalTotal().estimatedDelivery}</span>
+                    </div>
+                  )}
+                  {appliedCoupon && (
+                    <div className="flex justify-between text-sm text-emerald-600">
+                      <span>Discount ({appliedCoupon.code})</span>
+                      <span className="font-medium">-₹{(appliedCoupon.discountAmount || 0).toFixed(2)}</span>
+                    </div>
                   )}
                 </div>
+                
+                <div className="border-t-2 border-gray-300 pt-3 flex justify-between">
+                  <span className="font-bold text-gray-800">Total</span>
+                  <span className="font-bold text-xl text-emerald-600">₹{(calculateFinalTotal()?.finalTotal || 0).toFixed(2)}</span>
+                </div>
+              </div>
+
+              {calculateFinalTotal().finalTotal < 150 && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                  <div className="flex items-start space-x-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-800">Minimum Order Required</p>
+                      <p className="text-xs text-amber-700">Add ₹{(150 - calculateFinalTotal().finalTotal).toFixed(2)} more to checkout</p>
+                    </div>
+                  </div>
+                </div>
               )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  required
-                  className={errors?.city || !formData.city ? "border-red-500" : ""}
-                />
-                {errors?.city ? (
-                  <p className="text-xs text-red-500">{errors.city}</p>
-                ) : !formData.city ? (
-                  <p className="text-xs text-red-500">City is required</p>
-                ) : null}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
-                <Input
-                  id="state"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleInputChange}
-                  required
-                  className={errors?.state || !formData.state ? "border-red-500" : ""}
-                />
-                {errors?.state ? (
-                  <p className="text-xs text-red-500">{errors.state}</p>
-                ) : !formData.state ? (
-                  <p className="text-xs text-red-500">State is required</p>
-                ) : null}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="zipCode">ZIP Code</Label>
-                <Input
-                  id="zipCode"
-                  name="zipCode"
-                  value={formData.zipCode}
-                  onChange={handleInputChange}
-                  required
-                  data-testid="zip-input"
-                  className={errors?.zipCode || !formData.zipCode ? "border-red-500" : ""}
-                />
-                {errors?.zipCode ? (
-                  <p className="text-xs text-red-500">{errors.zipCode}</p>
-                ) : !formData.zipCode ? (
-                  <p className="text-xs text-red-500">ZIP code is required</p>
-                ) : null}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handleInputChange}
-                required
-                className={errors?.phone || !formData.phone ? "border-red-500" : ""}
-                placeholder="10-digit mobile number"
-              />
-              {errors?.phone ? (
-                <p className="text-xs text-red-500">{errors.phone}</p>
-              ) : !formData.phone ? (
-                <p className="text-xs text-red-500">Phone number is required</p>
-              ) : null}
-              <p className="text-xs text-muted-foreground">Enter a 10-digit Indian mobile number</p>
-            </div>
-          </div>
-        </div>
 
-        <Separator />
-
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold flex items-center">
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs mr-2">3</span>
-            Order Summary
-          </h2>
-          <div className="space-y-2">
-            {items.map((item) => (
-              <div key={`${item.productId}-${item.color}`} className="flex justify-between py-1">
-                <span className="text-gray-600">{item.product.name} × {item.quantity}</span>
-                <span className="font-medium">₹{(item.product.price * item.quantity).toFixed(2)}</span>
-              </div>
-            ))}
-            <Separator />
-            <div className="flex justify-between py-1">
-              <span className="text-gray-600">Subtotal</span>
-              <span className="font-medium">₹{subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-gray-600">Shipping</span>
-              <span className="font-medium">
-                {formData.state ? 
-                  `₹${calculateFinalTotal().shippingCost.toFixed(2)}` : 
-                  'Calculated after address'}
-              </span>
-            </div>
-            {formData.state && (
-              <div className="flex justify-between py-1">
-                <span className="text-gray-600">Estimated Delivery</span>
-                <span className="font-medium">{calculateFinalTotal().estimatedDelivery}</span>
-              </div>
-            )}
-            {appliedCoupon && (
-              <div className="flex justify-between py-1">
-                <span className="text-gray-600">Discount ({appliedCoupon.code})</span>
-                <span className="font-medium">-₹{(appliedCoupon.discountAmount || 0).toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between py-1 font-semibold">
-              <span>Total</span>
-              <span>₹{(calculateFinalTotal()?.finalTotal || 0).toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
-
-        {calculateFinalTotal().finalTotal < 150 && (
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-md mb-6">
-            <div className="flex items-center">
-              <AlertTriangle className="h-5 w-5 text-amber-500 mr-2" />
-              <p className="font-medium text-amber-800">
-                Minimum order value is ₹150 (Current: ₹{calculateFinalTotal().finalTotal.toFixed(2)})
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold flex items-center">
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs mr-2">4</span>
-            Coupon Code
-          </h2>
-          <div className="flex items-center space-x-3">
-            <Input
-              id="couponCode"
-              name="couponCode"
-              type="text"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-              placeholder="Enter coupon code"
-              data-testid="coupon-input"
-            />
-            {couponLoading ? (
-              <Button disabled className="w-24">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Applying...
-              </Button>
-            ) : (
-              <Button type="button" onClick={applyCoupon} className="w-24" data-testid="apply-coupon-btn">
-                Apply
-              </Button>
-            )}
-            {appliedCoupon && (
-              <Button type="button" onClick={removeCoupon} className="w-24">
-                Remove
-              </Button>
-            )}
-          </div>
-          {couponError && <p className="text-red-500 text-sm">{couponError}</p>}
-          
-          {/* Suggested Coupons Section */}
-          {suggestedCouponsLoading ? (
-            <div className="flex items-center space-x-2 text-sm text-gray-500">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Loading available coupons...</span>
-            </div>
-          ) : suggestedCoupons.length > 0 && (
-            <div className="mt-3">
-              <p className="text-sm text-gray-500 mb-2">Available coupons:</p>
-              <div className="flex flex-wrap gap-2">
-                {suggestedCoupons.map((coupon) => (
-                  <button
-                    key={coupon.id}
-                    type="button"
-                    onClick={() => {
-                      // Apply the coupon directly with the code instead of relying on state update
-                      handleApplyCoupon(coupon.code);
-                    }}
-                    className="inline-flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md text-sm transition-colors"
-                  >
-                    <span className="font-medium">{coupon.code}</span>
-                    {coupon.description && (
-                      <span className="ml-1 text-xs text-gray-500">- {coupon.description}</span>
+              {/* Coupon Code Section */}
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2 pb-2 border-b border-gray-100">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                    <span className="text-emerald-600 font-semibold text-sm">3</span>
+                  </div>
+                  <h3 className="font-semibold text-gray-800">Promo Code</h3>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      id="couponCode"
+                      name="couponCode"
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      placeholder="Enter promo code"
+                      data-testid="coupon-input"
+                      className="rounded-xl border-gray-200 focus:border-emerald-400 focus:ring-emerald-400"
+                    />
+                    {couponLoading ? (
+                      <Button disabled className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-6 shrink-0">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Applying
+                      </Button>
+                    ) : (
+                      <Button 
+                        type="button" 
+                        onClick={applyCoupon} 
+                        className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-6 shrink-0" 
+                        data-testid="apply-coupon-btn"
+                      >
+                        Apply
+                      </Button>
                     )}
-                  </button>
-                ))}
+                  </div>
+                  {couponError && <p className="text-xs text-red-500">{couponError}</p>}
+                  {appliedCoupon && (
+                    <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                      <div className="flex items-center space-x-2">
+                        <Tag className="w-4 h-4 text-emerald-600" />
+                        <span className="text-sm font-medium text-emerald-700">{appliedCoupon.code} applied</span>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={removeCoupon}
+                        className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Suggested Coupons */}
+                {suggestedCouponsLoading ? (
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Loading coupons...</span>
+                  </div>
+                ) : suggestedCoupons.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-500">Available offers:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {suggestedCoupons.map((coupon) => (
+                        <button
+                          key={coupon.id}
+                          type="button"
+                          onClick={() => handleApplyCoupon(coupon.code)}
+                          className="inline-flex items-center px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-medium text-emerald-700 transition-colors"
+                        >
+                          <Tag className="w-3 h-3 mr-1" />
+                          <span>{coupon.code}</span>
+                          {coupon.description && (
+                            <span className="ml-1 text-emerald-600">· {coupon.description}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
-            </div>
-          )}
-        </div>
 
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold flex items-center">
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs mr-2">5</span>
-            Payment Method
-          </h2>
-          <div className="flex items-center space-x-3 p-6 border rounded-md bg-white shadow-sm hover:shadow-md transition-shadow duration-200">
-            <img src="/razorpay-logo.svg" alt="Razorpay" className="h-8" onError={(e) => (e.currentTarget.src = 'https://razorpay.com/assets/razorpay-logo.svg')} />
-            <div>
-              <p className="font-medium">Pay with Razorpay</p>
-              <p className="text-sm text-gray-500">Secure payment via Razorpay</p>
-              {import.meta.env.VITE_RAZORPAY_KEY_ID?.startsWith('rzp_live') && (
-                <p className="text-xs text-green-600 font-medium mt-1">Live payments enabled</p>
+              {/* Submit Button */}
+              {isSubmitting || isPaymentProcessing ? (
+                <Button disabled className="w-full py-6 text-lg rounded-2xl bg-gray-300">
+                  <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                  {isPaymentProcessing ? 'Processing...' : 'Please wait...'}
+                </Button>
+              ) : (
+                <Button 
+                  type="submit" 
+                  className="w-full py-6 text-lg rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200" 
+                  disabled={!isFormValid || items.length === 0 || calculateFinalTotal().finalTotal < 150}
+                >
+                  <LockIcon className="h-5 w-5 mr-2" />
+                  {`Pay ₹${calculateFinalTotal().finalTotal.toFixed(2)}`}
+                </Button>
               )}
-            </div>
-          </div>
-        </div>
-
-        {isSubmitting || isPaymentProcessing ? (
-          <Button disabled className="w-full mt-6 py-6 text-lg">
-            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-            {isPaymentProcessing ? 'Processing Payment...' : 'Processing...'}
-          </Button>
-        ) : (
-          <Button 
-            type="submit" 
-            className="w-full mt-6 py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-200" 
-            disabled={!isFormValid || items.length === 0 || calculateFinalTotal().finalTotal < 150}
-          >
-            {`Complete Purchase - ₹${calculateFinalTotal().finalTotal.toFixed(2)}`}
-          </Button>
-        )}
-        
-        <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
-          <LockIcon className="h-4 w-4 mr-2" />
-          <span>Secure checkout powered by Razorpay</span>
-        </div>
       </form>
           </div>
           

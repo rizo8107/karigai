@@ -11,6 +11,9 @@ import { usePlugins } from "@/plugins/Provider";
 import { savePluginConfig, togglePlugin } from "@/plugins/service";
 import type { PluginKey, WhatsAppPluginConfig, VideoPluginConfig, PopupBannerConfig } from "@/plugins/types";
 import { getContentItems, uploadVideo, getContentVideoUrl, type ContentItem, getContentImageUrl, uploadImage } from "@/lib/content-service";
+import { pocketbase } from "@/lib/pocketbase";
+import { ProductImage } from "@/components/ProductImage";
+import { Search, X } from "lucide-react";
 
 export default function PluginsManager() {
   const { enabled, configs, loading, reload } = usePlugins();
@@ -26,6 +29,12 @@ export default function PluginsManager() {
   const [images, setImages] = useState<ContentItem[]>([]);
   const [loadingImages, setLoadingImages] = useState(false);
   const [selected, setSelected] = useState<PluginKey>("whatsapp_floating");
+  const [productPickerOpen, setProductPickerOpen] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
+  const [selectedProductForVideo, setSelectedProductForVideo] = useState<{index: number, type: 'main' | 'path'} | null>(null);
+  const [selectedVideoField, setSelectedVideoField] = useState<{type: 'main' | 'product' | 'path', index?: number} | null>(null);
 
   useEffect(() => {
     if (!loading) {
@@ -83,7 +92,25 @@ export default function PluginsManager() {
       // Reload list and prefill selected URL
       await loadVideos();
       const url = getContentVideoUrl(created);
-      if (vidConfig) setVidConfig({ ...vidConfig, videoUrl: url });
+      
+      if (selectedVideoField?.type === 'main') {
+        // Update main video URL
+        if (vidConfig) setVidConfig({ ...vidConfig, videoUrl: url });
+      } else if (selectedVideoField?.type === 'product' && selectedVideoField.index !== undefined) {
+        // Update product-specific video URL
+        if (vidConfig) {
+          const updated = [...(vidConfig.productVideos || [])];
+          updated[selectedVideoField.index] = { ...updated[selectedVideoField.index], videoUrl: url };
+          setVidConfig({ ...vidConfig, productVideos: updated });
+        }
+      } else if (selectedVideoField?.type === 'path' && selectedVideoField.index !== undefined) {
+        // Update path-specific video URL
+        if (vidConfig) {
+          const updated = [...(vidConfig.pathConfigs || [])];
+          updated[selectedVideoField.index] = { ...updated[selectedVideoField.index], videoUrl: url };
+          setVidConfig({ ...vidConfig, pathConfigs: updated });
+        }
+      }
     }
   };
 
@@ -105,6 +132,88 @@ export default function PluginsManager() {
       const url = getContentImageUrl(created);
       if (popupConfig) setPopupConfig({ ...popupConfig, imageUrl: url });
     }
+  };
+
+  const loadProducts = async () => {
+    try {
+      setLoadingProducts(true);
+      
+      // Wait a bit for PocketBase auth to be ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('PocketBase auth state:', {
+        isAdmin: pocketbase.authStore.isAdmin,
+        isValid: pocketbase.authStore.isValid,
+        token: pocketbase.authStore.token ? 'present' : 'missing'
+      });
+      
+      // Try multiple approaches to fetch products
+      let records;
+      
+      try {
+        // First attempt: simple getList like ecommerce.tsx
+        records = await pocketbase.collection('products').getList(1, 50, {
+          sort: '-created'
+        });
+        console.log('Products loaded successfully:', records.items.length);
+      } catch (firstError) {
+        console.warn('First attempt failed:', firstError);
+        
+        try {
+          // Second attempt: without sort parameter
+          records = await pocketbase.collection('products').getList(1, 50);
+          console.log('Products loaded without sort:', records.items.length);
+        } catch (secondError) {
+          console.warn('Second attempt failed:', secondError);
+          
+          try {
+            // Third attempt: smaller page size
+            records = await pocketbase.collection('products').getList(1, 10);
+            console.log('Products loaded with smaller page:', records.items.length);
+          } catch (thirdError) {
+            console.warn('Third attempt failed:', thirdError);
+            
+            // Fourth attempt: try getFullList
+            const fullList = await pocketbase.collection('products').getFullList();
+            records = { items: fullList.slice(0, 50) };
+            console.log('Products loaded via getFullList:', fullList.length);
+          }
+        }
+      }
+      
+      setProducts(records.items || records || []);
+    } catch (error) {
+      console.error('All product loading attempts failed:', error);
+      console.error('Error details:', {
+        message: (error as any)?.message || 'Unknown error',
+        status: (error as any)?.status || 'Unknown status',
+        data: (error as any)?.data || 'No data'
+      });
+      setProducts([]);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  const filteredProducts = products.filter(product => 
+    product.name.toLowerCase().includes(productSearch.toLowerCase())
+  );
+
+  const handleProductSelect = (product: any) => {
+    if (!selectedProductForVideo || !vidConfig) return;
+    
+    const { index, type } = selectedProductForVideo;
+    
+    if (type === 'main') {
+      // Update main product videos array
+      const updated = [...(vidConfig.productVideos || [])];
+      updated[index] = { ...updated[index], productId: product.id };
+      setVidConfig({ ...vidConfig, productVideos: updated });
+    }
+    
+    setProductPickerOpen(false);
+    setSelectedProductForVideo(null);
+    setProductSearch("");
   };
 
   return (
@@ -454,7 +563,11 @@ export default function PluginsManager() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={async () => { setVideoPickerOpen(true); await loadVideos(); }}
+                      onClick={async () => { 
+                        setSelectedVideoField({ type: 'main' });
+                        setVideoPickerOpen(true); 
+                        await loadVideos(); 
+                      }}
                     >
                       Select / Upload from Content
                     </Button>
@@ -672,6 +785,7 @@ export default function PluginsManager() {
                               ...vidConfig, 
                               shopNowButton: { ...vidConfig.shopNowButton, position: e.target.value as "bottom-left" | "bottom-right" | "bottom-center" }
                             })}
+                            title="Button position on video"
                           >
                             <option value="bottom-left">Bottom Left</option>
                             <option value="bottom-right">Bottom Right</option>
@@ -679,7 +793,7 @@ export default function PluginsManager() {
                           </select>
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 gap-4">
                         <div className="grid gap-2">
                           <Label htmlFor="shop-product">Product ID</Label>
                           <Input
@@ -692,29 +806,78 @@ export default function PluginsManager() {
                             placeholder="product-123"
                           />
                         </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="shop-bg">Background Color</Label>
-                          <Input
-                            id="shop-bg"
-                            value={vidConfig.shopNowButton?.backgroundColor ?? "#000000"}
-                            onChange={(e) => setVidConfig({ 
-                              ...vidConfig, 
-                              shopNowButton: { ...vidConfig.shopNowButton, backgroundColor: e.target.value }
-                            })}
-                            placeholder="#000000"
-                          />
+                        
+                        {/* Color Pickers */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="shop-bg">Background Color</Label>
+                            <div className="flex gap-2 items-center">
+                              <input
+                                id="shop-bg"
+                                type="color"
+                                value={vidConfig.shopNowButton?.backgroundColor ?? "#000000"}
+                                onChange={(e) => setVidConfig({ 
+                                  ...vidConfig, 
+                                  shopNowButton: { ...vidConfig.shopNowButton, backgroundColor: e.target.value }
+                                })}
+                                className="w-12 h-10 rounded border border-input cursor-pointer"
+                              />
+                              <Input
+                                value={vidConfig.shopNowButton?.backgroundColor ?? "#000000"}
+                                onChange={(e) => setVidConfig({ 
+                                  ...vidConfig, 
+                                  shopNowButton: { ...vidConfig.shopNowButton, backgroundColor: e.target.value }
+                                })}
+                                placeholder="#000000"
+                                className="flex-1 font-mono text-sm"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="shop-text-color">Text Color</Label>
+                            <div className="flex gap-2 items-center">
+                              <input
+                                id="shop-text-color"
+                                type="color"
+                                value={vidConfig.shopNowButton?.textColor ?? "#ffffff"}
+                                onChange={(e) => setVidConfig({ 
+                                  ...vidConfig, 
+                                  shopNowButton: { ...vidConfig.shopNowButton, textColor: e.target.value }
+                                })}
+                                className="w-12 h-10 rounded border border-input cursor-pointer"
+                              />
+                              <Input
+                                value={vidConfig.shopNowButton?.textColor ?? "#ffffff"}
+                                onChange={(e) => setVidConfig({ 
+                                  ...vidConfig, 
+                                  shopNowButton: { ...vidConfig.shopNowButton, textColor: e.target.value }
+                                })}
+                                placeholder="#ffffff"
+                                className="flex-1 font-mono text-sm"
+                              />
+                            </div>
+                          </div>
                         </div>
+                        
+                        {/* Button Preview */}
                         <div className="grid gap-2">
-                          <Label htmlFor="shop-text-color">Text Color</Label>
-                          <Input
-                            id="shop-text-color"
-                            value={vidConfig.shopNowButton?.textColor ?? "#ffffff"}
-                            onChange={(e) => setVidConfig({ 
-                              ...vidConfig, 
-                              shopNowButton: { ...vidConfig.shopNowButton, textColor: e.target.value }
-                            })}
-                            placeholder="#ffffff"
-                          />
+                          <Label>Button Preview</Label>
+                          <div className="p-4 bg-gray-100 rounded-md flex items-center justify-center">
+                            <button
+                              type="button"
+                              className="px-3 py-1.5 text-sm font-medium rounded-md shadow-lg transition-all hover:scale-105"
+                              style={{
+                                backgroundColor: vidConfig.shopNowButton?.backgroundColor || "#000000",
+                                color: vidConfig.shopNowButton?.textColor || "#ffffff"
+                              }}
+                              disabled
+                            >
+                              {vidConfig.shopNowButton?.text || "Shop Now"}
+                            </button>
+                          </div>
+                          <p className="text-xs text-muted-foreground text-center">
+                            This is how the button will appear on your video
+                          </p>
                         </div>
                       </div>
                       <div className="grid gap-2">
@@ -762,16 +925,36 @@ export default function PluginsManager() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="grid gap-2">
-                            <Label>Product ID</Label>
-                            <Input
-                              value={pv.productId}
-                              onChange={(e) => {
-                                const updated = [...(vidConfig.productVideos || [])];
-                                updated[index] = { ...pv, productId: e.target.value };
-                                setVidConfig({ ...vidConfig, productVideos: updated });
-                              }}
-                              placeholder="product-123"
-                            />
+                            <Label>Product</Label>
+                            <div className="flex gap-2">
+                              <Input
+                                value={pv.productId}
+                                onChange={(e) => {
+                                  const updated = [...(vidConfig.productVideos || [])];
+                                  updated[index] = { ...pv, productId: e.target.value };
+                                  setVidConfig({ ...vidConfig, productVideos: updated });
+                                }}
+                                placeholder="product-123"
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => {
+                                  setSelectedProductForVideo({ index, type: 'main' });
+                                  setProductPickerOpen(true);
+                                  await loadProducts();
+                                }}
+                              >
+                                Browse
+                              </Button>
+                            </div>
+                            {pv.productId && (
+                              <div className="text-xs text-muted-foreground">
+                                Selected: {products.find(p => p.id === pv.productId)?.name || pv.productId}
+                              </div>
+                            )}
                           </div>
                           <div className="grid gap-2">
                             <Label>Video URL</Label>
@@ -784,6 +967,30 @@ export default function PluginsManager() {
                               }}
                               placeholder="https://youtube.com/embed/..."
                             />
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => {
+                                  setSelectedVideoField({ type: 'product', index });
+                                  setVideoPickerOpen(true);
+                                  await loadVideos();
+                                }}
+                              >
+                                Select / Upload Video
+                              </Button>
+                              {pv.videoUrl && (
+                                <a 
+                                  href={pv.videoUrl} 
+                                  className="text-sm underline" 
+                                  target="_blank" 
+                                  rel="noreferrer"
+                                >
+                                  Open video
+                                </a>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -849,6 +1056,30 @@ export default function PluginsManager() {
                             }}
                             placeholder="https://youtube.com/embed/..."
                           />
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                setSelectedVideoField({ type: 'path', index });
+                                setVideoPickerOpen(true);
+                                await loadVideos();
+                              }}
+                            >
+                              Select / Upload Video
+                            </Button>
+                            {pc.videoUrl && (
+                              <a 
+                                href={pc.videoUrl} 
+                                className="text-sm underline" 
+                                target="_blank" 
+                                rel="noreferrer"
+                              >
+                                Open video
+                              </a>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1117,14 +1348,32 @@ export default function PluginsManager() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[420px] overflow-auto">
               {videos.map((v) => {
                 const url = getContentVideoUrl(v);
+                
+                const handleVideoSelect = () => {
+                  if (selectedVideoField?.type === 'main') {
+                    if (vidConfig) setVidConfig({ ...vidConfig, videoUrl: url });
+                  } else if (selectedVideoField?.type === 'product' && selectedVideoField.index !== undefined) {
+                    if (vidConfig) {
+                      const updated = [...(vidConfig.productVideos || [])];
+                      updated[selectedVideoField.index] = { ...updated[selectedVideoField.index], videoUrl: url };
+                      setVidConfig({ ...vidConfig, productVideos: updated });
+                    }
+                  } else if (selectedVideoField?.type === 'path' && selectedVideoField.index !== undefined) {
+                    if (vidConfig) {
+                      const updated = [...(vidConfig.pathConfigs || [])];
+                      updated[selectedVideoField.index] = { ...updated[selectedVideoField.index], videoUrl: url };
+                      setVidConfig({ ...vidConfig, pathConfigs: updated });
+                    }
+                  }
+                  setVideoPickerOpen(false);
+                  setSelectedVideoField(null);
+                };
+                
                 return (
                   <button
                     key={v.id}
                     type="button"
-                    onClick={() => {
-                      if (vidConfig) setVidConfig({ ...vidConfig, videoUrl: url });
-                      setVideoPickerOpen(false);
-                    }}
+                    onClick={handleVideoSelect}
                     className="rounded-md border hover:ring-2 hover:ring-primary p-1 text-left"
                     title="Select this video"
                   >
@@ -1167,6 +1416,125 @@ export default function PluginsManager() {
               {!loadingImages && images.length === 0 && (
                 <div className="text-sm text-muted-foreground">No images found. Upload one above.</div>
               )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Product Picker Dialog */}
+      <Dialog open={productPickerOpen} onOpenChange={setProductPickerOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Select Product</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search products..."
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            {/* Loading state */}
+            {loadingProducts && (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-sm text-muted-foreground">Loading products...</div>
+              </div>
+            )}
+            
+            {/* Products grid */}
+            {!loadingProducts && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[500px] overflow-auto">
+                {filteredProducts.map((product) => {
+                  const imageUrl = product.images && product.images.length > 0 ? product.images[0] : null;
+                  return (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => handleProductSelect(product)}
+                      className="p-3 border rounded-lg hover:ring-2 hover:ring-primary text-left transition-all hover:shadow-md"
+                      title={`Select ${product.name}`}
+                    >
+                      <div className="space-y-3">
+                        {/* Product Image */}
+                        <div className="aspect-square bg-muted rounded-md overflow-hidden">
+                          {imageUrl ? (
+                            <ProductImage
+                              url={imageUrl}
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                              <div className="text-center">
+                                <div className="text-2xl mb-1">📦</div>
+                                <div className="text-xs">No Image</div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Product Info */}
+                        <div className="space-y-1">
+                          <h4 className="font-medium text-sm line-clamp-2 leading-tight">
+                            {product.name}
+                          </h4>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">
+                              ID: {product.id}
+                            </span>
+                            {product.price && (
+                              <span className="text-xs font-medium">
+                                ₹{product.price}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            
+            {/* No results */}
+            {!loadingProducts && filteredProducts.length === 0 && products.length > 0 && (
+              <div className="text-center py-8">
+                <div className="text-sm text-muted-foreground">
+                  No products found matching "{productSearch}"
+                </div>
+              </div>
+            )}
+            
+            {/* No products at all */}
+            {!loadingProducts && products.length === 0 && (
+              <div className="text-center py-8">
+                <div className="text-sm text-muted-foreground">
+                  No products found. Please add products first.
+                </div>
+              </div>
+            )}
+            
+            {/* Footer */}
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="text-xs text-muted-foreground">
+                {!loadingProducts && `${filteredProducts.length} of ${products.length} products`}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setProductPickerOpen(false);
+                  setSelectedProductForVideo(null);
+                  setProductSearch("");
+                }}
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         </DialogContent>

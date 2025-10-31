@@ -4,7 +4,7 @@ import '@/styles/payment-status.css';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Loader2, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Loader2, CheckCircle2, ArrowRight, Package, MapPin, Calendar, CreditCard, Truck, QrCode } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { pocketbase } from '@/lib/pocketbase';
 import { formatOrderDate, calculateOrderTotal, OrderData as BaseOrderData } from '@/utils/orderUtils';
@@ -163,27 +163,14 @@ export default function OrderConfirmation() {
   const shippingAddress = order.shipping_address?.expand;
 
   return (
-    <div className="konipai-container py-12">
-      <Card className="p-8 max-w-3xl mx-auto">
-        <div className="text-center mb-8">
-          <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold mb-2">Thank You for Your Order!</h1>
-          <p className="text-gray-600">
-            Order #{order.id} has been successfully placed on {formatOrderDate(order.created)}
-          </p>
-          <div className={`mt-4 payment-status-badge ${order.payment_status === 'captured' ? 'payment-status-completed' : order.payment_status === 'authorized' ? 'payment-status-authorized' : 'payment-status-pending'}`}>
-            <span className="status-dot"></span>
-            Payment {order.payment_status === 'captured' ? 'Completed' : 
-                     order.payment_status === 'authorized' ? 'Authorized' : 
-                     'Pending'}
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Order Details</h2>
-            <div className="space-y-4">
-              {orderItems.map((item) => (
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-md mx-auto">
+        {/* Ticket/Receipt Card */}
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+          {/* Success Header */}
+          <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 p-6 text-white text-center relative">
+            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <CheckCircle2 className="w-10 h-10" />
                 <div key={item.productId} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                   <div className="flex-grow">
                     <h3 className="font-medium">{item.product.name}</h3>

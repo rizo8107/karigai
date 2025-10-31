@@ -385,6 +385,8 @@ const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
     timeLeft,
     dimensions,
     activeVideoConfig,
+    shopNowEnabled: activeVideoConfig.shopNowButton?.enabled || config.shopNowButton?.enabled,
+    shopNowConfig: activeVideoConfig.shopNowButton || config.shopNowButton,
     style 
   });
   
@@ -439,23 +441,23 @@ const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
           )}
           
           {/* Shop Now Overlay Button */}
-          {activeVideoConfig.shopNowButton?.enabled && (
+          {(activeVideoConfig.shopNowButton?.enabled || config.shopNowButton?.enabled) && (
             <button
               onClick={handleShopNow}
               className={cx(
-                "absolute px-3 py-1.5 text-sm font-medium rounded-md shadow-lg transition-all hover:scale-105",
-                activeVideoConfig.shopNowButton.position === "bottom-left" && "bottom-2 left-2",
-                activeVideoConfig.shopNowButton.position === "bottom-right" && "bottom-2 right-2",
-                activeVideoConfig.shopNowButton.position === "bottom-center" && "bottom-2 left-1/2 -translate-x-1/2",
-                !activeVideoConfig.shopNowButton.position && "bottom-2 right-2"
+                "absolute px-3 py-1.5 text-sm font-medium rounded-md shadow-lg transition-all hover:scale-105 z-10",
+                (activeVideoConfig.shopNowButton?.position || config.shopNowButton?.position) === "bottom-left" && "bottom-2 left-2",
+                (activeVideoConfig.shopNowButton?.position || config.shopNowButton?.position) === "bottom-right" && "bottom-2 right-2",
+                (activeVideoConfig.shopNowButton?.position || config.shopNowButton?.position) === "bottom-center" && "bottom-2 left-1/2 -translate-x-1/2",
+                !(activeVideoConfig.shopNowButton?.position || config.shopNowButton?.position) && "bottom-2 right-2"
               )}
               style={{
-                backgroundColor: activeVideoConfig.shopNowButton.backgroundColor || config.shopNowButton?.backgroundColor || "#000000",
-                color: activeVideoConfig.shopNowButton.textColor || config.shopNowButton?.textColor || "#ffffff"
+                backgroundColor: activeVideoConfig.shopNowButton?.backgroundColor || config.shopNowButton?.backgroundColor || "#000000",
+                color: activeVideoConfig.shopNowButton?.textColor || config.shopNowButton?.textColor || "#ffffff"
               }}
               title="Shop Now"
             >
-              {activeVideoConfig.shopNowButton.text || config.shopNowButton?.text || "Shop Now"}
+              {activeVideoConfig.shopNowButton?.text || config.shopNowButton?.text || "Shop Now"}
             </button>
           )}
         </div>
@@ -514,7 +516,7 @@ export const pluginRegistry = {
       autoClose: false,
       autoCloseAfterMs: 10000,
       shopNowButton: {
-        enabled: false,
+        enabled: true,
         text: "Shop Now",
         position: "bottom-right",
         backgroundColor: "#000000",

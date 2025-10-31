@@ -119,6 +119,75 @@ export function parseConfigForKey(key: PluginKey, raw: unknown): WhatsAppPluginC
       : "all";
     const allowedPositions = ["bottom-right", "bottom-left", "top-right", "top-left"] as const;
     const position = allowedPositions.includes(obj.position) ? obj.position : "bottom-right";
+    
+    // Handle legacy width/height vs new desktop/mobile structure
+    const desktop = obj.desktop || {
+      width: typeof obj.width === "number" ? obj.width : 320,
+      height: typeof obj.height === "number" ? obj.height : 180
+    };
+    const mobile = obj.mobile || {
+      width: typeof obj.mobile?.width === "number" ? obj.mobile.width : 280,
+      height: typeof obj.mobile?.height === "number" ? obj.mobile.height : 160
+    };
+    
+    // Parse shop now button config
+    const shopNowButton = obj.shopNowButton ? {
+      enabled: Boolean(obj.shopNowButton.enabled),
+      text: typeof obj.shopNowButton.text === "string" ? obj.shopNowButton.text : "Shop Now",
+      productId: typeof obj.shopNowButton.productId === "string" ? obj.shopNowButton.productId : undefined,
+      url: typeof obj.shopNowButton.url === "string" ? obj.shopNowButton.url : undefined,
+      position: ["bottom-left", "bottom-right", "bottom-center"].includes(obj.shopNowButton.position) 
+        ? obj.shopNowButton.position : "bottom-right",
+      backgroundColor: typeof obj.shopNowButton.backgroundColor === "string" ? obj.shopNowButton.backgroundColor : "#000000",
+      textColor: typeof obj.shopNowButton.textColor === "string" ? obj.shopNowButton.textColor : "#ffffff"
+    } : {
+      enabled: true,
+      text: "Shop Now",
+      position: "bottom-right" as const,
+      backgroundColor: "#000000",
+      textColor: "#ffffff"
+    };
+    
+    // Parse product videos
+    const productVideos = Array.isArray(obj.productVideos) ? obj.productVideos.map((pv: any) => ({
+      productId: String(pv.productId || ""),
+      videoUrl: String(pv.videoUrl || ""),
+      shopNowButton: pv.shopNowButton ? {
+        enabled: Boolean(pv.shopNowButton.enabled),
+        text: String(pv.shopNowButton.text || "Shop Now"),
+        url: String(pv.shopNowButton.url || ""),
+        backgroundColor: String(pv.shopNowButton.backgroundColor || "#000000"),
+        textColor: String(pv.shopNowButton.textColor || "#ffffff")
+      } : undefined
+    })) : [];
+    
+    // Parse path configs
+    const pathConfigs = Array.isArray(obj.pathConfigs) ? obj.pathConfigs.map((pc: any) => ({
+      paths: Array.isArray(pc.paths) ? pc.paths.map((p: unknown) => String(p)) : [],
+      videoUrl: String(pc.videoUrl || ""),
+      productVideos: Array.isArray(pc.productVideos) ? pc.productVideos.map((pv: any) => ({
+        productId: String(pv.productId || ""),
+        videoUrl: String(pv.videoUrl || ""),
+        shopNowButton: pv.shopNowButton ? {
+          enabled: Boolean(pv.shopNowButton.enabled),
+          text: String(pv.shopNowButton.text || "Shop Now"),
+          url: String(pv.shopNowButton.url || ""),
+          backgroundColor: String(pv.shopNowButton.backgroundColor || "#000000"),
+          textColor: String(pv.shopNowButton.textColor || "#ffffff")
+        } : undefined
+      })) : undefined,
+      shopNowButton: pc.shopNowButton ? {
+        enabled: Boolean(pc.shopNowButton.enabled),
+        text: String(pc.shopNowButton.text || "Shop Now"),
+        productId: String(pc.shopNowButton.productId || ""),
+        url: String(pc.shopNowButton.url || ""),
+        position: ["bottom-left", "bottom-right", "bottom-center"].includes(pc.shopNowButton.position) 
+          ? pc.shopNowButton.position : "bottom-right",
+        backgroundColor: String(pc.shopNowButton.backgroundColor || "#000000"),
+        textColor: String(pc.shopNowButton.textColor || "#ffffff")
+      } : undefined
+    })) : [];
+    
     return {
       enabled: Boolean(obj.enabled),
       zIndex: typeof obj.zIndex === "number" ? obj.zIndex : 60,
@@ -126,13 +195,16 @@ export function parseConfigForKey(key: PluginKey, raw: unknown): WhatsAppPluginC
       position,
       autoPlay: Boolean(obj.autoPlay),
       muted: obj.muted !== false,
-      width: typeof obj.width === "number" ? obj.width : 320,
-      height: typeof obj.height === "number" ? obj.height : 180,
       showClose: obj.showClose !== false,
       offsetX: typeof obj.offsetX === "number" ? obj.offsetX : 16,
       offsetY: typeof obj.offsetY === "number" ? obj.offsetY : 16,
       autoClose: obj.autoClose === true,
       autoCloseAfterMs: typeof obj.autoCloseAfterMs === "number" ? obj.autoCloseAfterMs : 0,
+      desktop,
+      mobile,
+      shopNowButton,
+      productVideos,
+      pathConfigs,
       visibility: {
         mode,
         include: Array.isArray(v.include) ? v.include.map((s: unknown) => String(s)) : [],
