@@ -256,12 +256,32 @@ const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
   const location = useLocation();
   const params = useParams();
   
-  // Determine current product ID from URL params
-  const currentProductId = params.id || null;
+  // Extract product ID from pathname since useParams() doesn't work outside Router context
+  const isProductPage = location.pathname.startsWith('/product/');
+  const currentProductId = isProductPage 
+    ? location.pathname.split('/product/')[1]?.split('/')[0] || null
+    : null;
+  
+  console.log('[VideoFloating] URL Params:', { 
+    paramsId: params.id, 
+    currentProductId, 
+    pathname: location.pathname,
+    isProductPage,
+    extractedFromPath: isProductPage ? location.pathname.split('/product/')[1]?.split('/')[0] : 'N/A'
+  });
   
   // Determine which video and config to use based on current path and product
   const activeVideoConfig = useMemo(() => {
     const currentPath = location.pathname;
+    
+    console.log('[VideoFloating] Config check:', {
+      currentPath,
+      isProductPage,
+      currentProductId,
+      hasProductVideos: !!config.productVideos,
+      productVideosCount: config.productVideos?.length || 0,
+      productVideos: config.productVideos
+    });
     
     // Check path-specific configs first
     if (config.pathConfigs) {
@@ -300,6 +320,7 @@ const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
     if (currentProductId && config.productVideos) {
       const productVideo = config.productVideos.find(pv => pv.productId === currentProductId);
       if (productVideo) {
+        console.log('[VideoFloating] Found product-specific video for:', currentProductId);
         return {
           videoUrl: productVideo.videoUrl,
           shopNowButton: productVideo.shopNowButton || config.shopNowButton
@@ -307,12 +328,23 @@ const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
       }
     }
     
-    // Fallback to default video
+    // IMPORTANT: If we're on ANY product page, don't show the main video
+    // This prevents the main video from showing on product pages
+    if (isProductPage) {
+      console.log('[VideoFloating] On product page, hiding main video');
+      return {
+        videoUrl: '',
+        shopNowButton: config.shopNowButton
+      };
+    }
+    
+    // Fallback to default video (only on non-product pages like homepage)
+    console.log('[VideoFloating] Using main video');
     return {
       videoUrl: config.videoUrl,
       shopNowButton: config.shopNowButton
     };
-  }, [config, location.pathname, currentProductId]);
+  }, [config, location.pathname, currentProductId, isProductPage]);
   
   useEffect(() => {
     if (config.autoClose && (config.autoCloseAfterMs ?? 0) > 0) {
@@ -331,6 +363,13 @@ const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
       return () => clearInterval(interval);
     }
   }, [config.autoClose, config.autoCloseAfterMs]);
+  
+  console.log('[VideoFloating] Render check:', {
+    enabled: config.enabled,
+    hasVideoUrl: !!activeVideoConfig.videoUrl,
+    videoUrl: activeVideoConfig.videoUrl,
+    visible: visible
+  });
   
   if (!config.enabled || !activeVideoConfig.videoUrl || !visible) return null;
   
