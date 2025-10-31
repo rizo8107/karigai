@@ -1,0 +1,516 @@
+import { Check, Play, Image as ImageIcon } from 'lucide-react';
+import { type Product } from '@/lib/pocketbase';
+import { useState, useEffect } from 'react';
+import { VideoPlayer } from '@/components/ui/video-player';
+import { pocketbase, Collections } from '@/lib/pocketbase';
+import { getOrderConfig, type OrderDetailsConfig } from '@/lib/order-config-service';
+import { getPocketBaseImageUrl } from '@/utils/imageOptimizer';
+
+// --- helpers (unchanged) ---
+const getYouTubeVideoId = (url: string | undefined): string | null => {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  if (match && match[2].length === 11) return match[2];
+  return null;
+};
+const isYouTubeUrl = (url: string | undefined) => !!getYouTubeVideoId(url);
+const getYouTubeEmbedUrl = (url: string | undefined) => {
+  const id = getYouTubeVideoId(url);
+  return id ? `https://www.youtube.com/embed/${id}` : '';
+};
+const isVideoFileUrl = (url: string | undefined): boolean => {
+  if (!url) return false;
+  const exts = ['.mp4', '.mov', '.webm', '.ogg', '.avi', '.wmv', '.m4v', '.mpg', '.mpeg'];
+  return exts.some(ext => url.toLowerCase().endsWith(ext));
+};
+const isPocketBaseFileUrl = (url: string | undefined): boolean => {
+  if (!url) return false;
+  return url.includes('/api/files/') || (!!url && !url.startsWith('http'));
+};
+const getPocketBaseFileUrl = (url: string | undefined): string => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  const baseUrl = pocketbase.baseUrl.endsWith('/')
+    ? pocketbase.baseUrl.slice(0, -1)
+    : pocketbase.baseUrl;
+  return `${baseUrl}/api/files/${Collections.PRODUCTS}/${url}`;
+};
+
+interface ProductDetailsProps {
+  product: Product;
+  onAddToCart?: (payload: { product: Product; quantity: number }) => void;
+}
+
+export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) => {
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [thumbnailLoading, setThumbnailLoading] = useState(true);
+  const [thumbnailError, setThumbnailError] = useState(false);
+  const [orderConfig, setOrderConfig] = useState<OrderDetailsConfig | null>(null);
+
+  // NEW: UI local state to match mock
+  const unitPrice =
+    (product as any)?.price ??
+    (product as any)?.selling_price ??
+    (product as any)?.finalPrice ??
+    0;
+  const currencyPrefix = (product as any)?.currencySymbol ?? '₹'; // change to '$' if you prefer
+  const [qty, setQty] = useState<number>(1);
+  const total = Math.max(0, unitPrice * qty);
+
+  const [detailsOpen, setDetailsOpen] = useState<boolean>(true);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const cfg = await getOrderConfig({ forceRefresh: true });
+        if (mounted) setOrderConfig(cfg);
+      } catch {
+        if (mounted) setOrderConfig(null);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // thumbnail logic (kept)
+  useEffect(() => {
+    if (!product?.videoUrl) {
+      // Use first product image if available for the hero
+      if (product.images?.length) {
+        const img = getPocketBaseImageUrl(
+          product.images[0],
+          Collections.PRODUCTS,
+          'large',
+          'webp'
+        );
+        setThumbnailUrl(img);
+      } else {
+        setThumbnailUrl(null);
+      }
+      setThumbnailLoading(false);
+      return;
+    }
+
+    setThumbnailLoading(true);
+    setThumbnailError(false);
+
+    if ((product as any).videoThumbnail) {
+      try {
+        const vt = (product as any).videoThumbnail as string;
+        if (vt.startsWith('http')) {
+          setThumbnailUrl(vt);
+        } else {
+          const baseUrl = pocketbase.baseUrl.endsWith('/')
+            ? pocketbase.baseUrl.slice(0, -1)
+            : pocketbase.baseUrl;
+          const url = `${baseUrl}/api/files/${Collections.PRODUCTS}/${product.id}/${vt}`;
+          setThumbnailUrl(url);
+        }
+        setThumbnailLoading(false);
+        return;
+      } catch {
+        setThumbnailError(true);
+        setThumbnailLoading(false);
+      }
+    }
+
+    if (isYouTubeUrl(product.videoUrl)) {
+      const id = getYouTubeVideoId(product.videoUrl);
+      if (id) setThumbnailUrl(`https://img.youtube.com/vi/${id}/hqdefault.jpg`);
+      setThumbnailLoading(false);
+      return;
+    }
+
+    if (isPocketBaseFileUrl(product.videoUrl)) {
+      if (product.images?.length) {
+        try {
+          const img = getPocketBaseImageUrl(
+            product.images[0],
+            Collections.PRODUCTS,
+            'large',
+            'webp'
+          );
+          setThumbnailUrl(img);
+        } catch {
+          setThumbnailError(true);
+        }
+      } else {
+        setThumbnailUrl(getPocketBaseFileUrl(product.videoUrl));
+      }
+      setThumbnailLoading(false);
+      return;
+    }
+
+    setThumbnailUrl(null);
+    setThumbnailLoading(false);
+  }, [product?.videoUrl, product?.images]);
+
+  if (!product) return null;
+
+  const playVideo = () => setIsVideoPlaying(true);
+  const stopVideo = () => setIsVideoPlaying(false);
+
+  const addToCart = () => {
+    onAddToCart?.({ product, quantity: qty });
+  };
+
+  return (
+    <div className="w-full flex justify-center pb-10">
+      {/* Phone-like card wrapper */}
+      <div className="w-full max-w-[430px] rounded-[32px] border border-gray-200 shadow-[0_8px_30px_rgba(0,0,0,0.06)] overflow-hidden bg-white">
+        {/* Mint hero area */}
+        <div className="relative bg-[#8ED7C9]">
+          {/* top action pills (back/share) placeholders to match mock */}
+          <div className="absolute left-3 top-3 flex gap-2">
+            <button
+              className="h-9 w-9 rounded-full bg-white/80 backdrop-blur shadow-sm grid place-items-center text-gray-700"
+              aria-label="Back"
+            >
+              ‹
+            </button>
+          </div>
+          <div className="absolute right-3 top-3">
+            <button
+              className="h-9 w-9 rounded-full bg-white/80 backdrop-blur shadow-sm grid place-items-center text-gray-700"
+              aria-label="Share"
+            >
+              ⤴
+            </button>
+          </div>
+
+          {/* product image / video thumbnail */}
+          <div className="px-16 pt-16 pb-8">
+            <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-white shadow-lg">
+              {!isVideoPlaying ? (
+                <div className="absolute inset-0">
+                  {thumbnailLoading ? (
+                    <div className="w-full h-full grid place-items-center">
+                      <div className="w-10 h-10 border-[3px] border-white border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : thumbnailError || !thumbnailUrl ? (
+                    <div className="w-full h-full grid place-items-center bg-gray-50">
+                      <ImageIcon size={48} className="text-gray-300" />
+                    </div>
+                  ) : (
+                    <img
+                      src={thumbnailUrl}
+                      alt={product.title || 'Product'}
+                      className="w-full h-full object-cover"
+                      onError={() => setThumbnailError(true)}
+                    />
+                  )}
+
+                  {/* play overlay */}
+                  {product.videoUrl && (
+                    <button
+                      onClick={playVideo}
+                      className="absolute inset-0 grid place-items-center bg-black/20 hover:bg-black/30 transition"
+                      aria-label="Play video"
+                    >
+                      <span className="h-16 w-16 rounded-full bg-white grid place-items-center shadow-lg">
+                        <Play className="text-[#2A8C7E] ml-1" size={28} />
+                      </span>
+                    </button>
+                  )}
+                </div>
+              ) : isYouTubeUrl(product.videoUrl) ? (
+                <iframe
+                  src={`${getYouTubeEmbedUrl(product.videoUrl)}?autoplay=1`}
+                  title="YouTube video player"
+                  className="absolute inset-0 w-full h-full"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : isPocketBaseFileUrl(product.videoUrl) || isVideoFileUrl(product.videoUrl) ? (
+                <div className="relative z-[90] h-full">
+                  <VideoPlayer
+                    src={
+                      isPocketBaseFileUrl(product.videoUrl)
+                        ? getPocketBaseFileUrl(product.videoUrl)
+                        : (product.videoUrl as string)
+                    }
+                    onClose={stopVideo}
+                  />
+                </div>
+              ) : (
+                <iframe
+                  src={`${product.videoUrl}${product.videoUrl.includes('?') ? '&' : '?'}autoplay=1`}
+                  title="Product video"
+                  className="absolute inset-0 w-full h-full"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* White bottom sheet styled like the mock */}
+        <div className="bg-white rounded-t-[28px] -mt-6 relative z-10 p-6">
+          {/* Title & Price */}
+          <div className="flex items-start justify-between">
+            <h1 className="text-[20px] leading-6 font-semibold text-gray-900">
+              {product.title || 'Product'}
+            </h1>
+            <span className="text-[22px] font-extrabold text-[#2A8C7E]">
+              {currencyPrefix}
+              {unitPrice?.toFixed ? unitPrice.toFixed(2) : unitPrice}
+            </span>
+          </div>
+
+          {/* Details short copy (matches mock line) */}
+          <div className="mt-3">
+            <h3 className="text-[13px] font-semibold text-gray-900/90 mb-1">Details</h3>
+            <p className="text-[12px] leading-5 text-gray-500">
+              {product.description
+                ? product.description
+                : 'We select high quality materials and craft with care to deliver everyday reliability and comfort.'}
+            </p>
+
+            {/* Expand for full sections (keeps your elements) */}
+            <button
+              onClick={() => setDetailsOpen(o => !o)}
+              className="mt-2 text-[12px] font-medium text-[#2A8C7E] underline underline-offset-4"
+            >
+              {detailsOpen ? 'Hide full details' : 'Show full details'}
+            </button>
+          </div>
+
+          {/* Qty & Total row */}
+          <div className="mt-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setQty(q => Math.max(1, q - 1))}
+                className="h-8 w-8 rounded-full bg-gray-100 grid place-items-center text-gray-700"
+                aria-label="Decrease quantity"
+              >
+                –
+              </button>
+              <span className="min-w-[28px] text-center font-semibold text-gray-900">{qty}</span>
+              <button
+                onClick={() => setQty(q => q + 1)}
+                className="h-8 w-8 rounded-full bg-gray-100 grid place-items-center text-gray-700"
+                aria-label="Increase quantity"
+              >
+                +
+              </button>
+            </div>
+
+            <div className="text-sm text-gray-600">
+              <span className="mr-2">Total :</span>
+              <span className="font-semibold text-gray-900">
+                {currencyPrefix}
+                {total?.toFixed ? total.toFixed(2) : total}
+              </span>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div className="mt-5">
+            <button
+              onClick={addToCart}
+              className="w-full h-12 rounded-xl bg-[#2A8C7E] text-white font-semibold shadow-[0_8px_20px_rgba(42,140,126,0.35)] hover:brightness-110 transition"
+            >
+              Add To Cart
+            </button>
+          </div>
+        </div>
+
+        {/* Full details section (your existing blocks), tucked after the card to keep mock clean */}
+        {detailsOpen && (
+          <div className="px-4 pb-6 pt-2">
+            {/* Description */}
+            {product.description && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mt-4">
+                <div className="p-4 border-b border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900">Description</h3>
+                </div>
+                <div className="p-4">
+                  <p className="text-gray-600 leading-relaxed">{product.description}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Specifications */}
+            {orderConfig && orderConfig.showProductSpecifications !== false && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mt-4">
+                <div className="p-4 border-b border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900">Specifications</h3>
+                </div>
+                <div className="p-4">
+                  <div className="grid grid-cols-1 gap-3">
+                    {[
+                      { label: 'Material', value: product.specifications?.material || (product as any).material },
+                      { label: 'Dimensions', value: product.specifications?.dimensions || (product as any).dimensions },
+                      { label: 'Weight', value: product.specifications?.weight },
+                      { label: 'Capacity', value: product.specifications?.capacity },
+                      { label: 'Style', value: product.specifications?.style || 'Modern' },
+                      { label: 'Pattern', value: product.specifications?.pattern || 'Solid' },
+                      { label: 'Closure', value: product.specifications?.closure || 'Standard' },
+                      {
+                        label: 'Water Resistant',
+                        value:
+                          typeof product.specifications?.waterResistant === 'boolean'
+                            ? product.specifications?.waterResistant
+                              ? 'Yes'
+                              : 'No'
+                            : undefined,
+                      },
+                    ]
+                      .filter(s => s.value && s.value !== 'Standard')
+                      .map((s, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
+                        >
+                          <span className="text-gray-600 font-medium">{s.label}</span>
+                          <span className="text-gray-900 font-semibold">{s.value as any}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Care */}
+            {orderConfig && orderConfig.showCareInstructions !== false && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mt-4">
+                <div className="p-4 border-b border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900">Care Instructions</h3>
+                </div>
+                <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#2A8C7E]" />
+                      Cleaning
+                    </h4>
+                    <ul className="space-y-2">
+                      {(product.care_instructions?.cleaning ||
+                        (product as any).care || [
+                          'Spot clean with mild soap and water',
+                          'Do not machine wash',
+                          'Air dry in shade',
+                          'Do not bleach',
+                        ]).map((t: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="w-5 h-5 rounded-full bg-green-100 grid place-items-center mt-0.5">
+                            <Check className="h-3 w-3 text-green-600" />
+                          </span>
+                          <span className="text-gray-600 leading-relaxed">{t}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#2A8C7E]" />
+                      Storage
+                    </h4>
+                    <ul className="space-y-2">
+                      {(product.care_instructions?.storage || [
+                        'Store in a cool, dry place',
+                        'Avoid direct sunlight',
+                        'Keep away from moisture',
+                        'Use dust bag when not in use',
+                      ]).map((t: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="w-5 h-5 rounded-full bg-green-100 grid place-items-center mt-0.5">
+                            <Check className="h-3 w-3 text-green-600" />
+                          </span>
+                          <span className="text-gray-600 leading-relaxed">{t}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Features */}
+            {orderConfig &&
+              orderConfig.showFeaturesAndBenefits !== false &&
+              product.features &&
+              product.features.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mt-4">
+                  <div className="p-4 border-b border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-900">Key Features</h3>
+                  </div>
+                  <div className="p-4">
+                    <ul className="space-y-3">
+                      {product.features.map((f, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <span className="w-8 h-8 rounded-full bg-[#2A8C7E]/10 grid place-items-center mt-0.5">
+                            <Check className="h-4 w-4 text-[#2A8C7E]" />
+                          </span>
+                          <span className="text-gray-600 leading-relaxed font-medium">{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+            {/* Usage */}
+            {orderConfig && orderConfig.showUsageGuidelines !== false && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mt-4">
+                <div className="p-4 border-b border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900">Usage Guidelines</h3>
+                </div>
+                <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#2A8C7E]" />
+                      Recommended Use
+                    </h4>
+                    <ul className="space-y-2">
+                      {(product.usage_guidelines?.recommended_use || [
+                        'Distribute weight evenly for better durability',
+                        'Clean spills immediately to prevent staining',
+                        'Use internal pockets for organization',
+                        'Avoid overloading beyond capacity',
+                      ]).map((t: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="w-5 h-5 rounded-full bg-green-100 grid place-items-center mt-0.5">
+                            <Check className="h-3 w-3 text-green-600" />
+                          </span>
+                          <span className="text-gray-600 leading-relaxed">{t}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#2A8C7E]" />
+                      Pro Tips
+                    </h4>
+                    <ul className="space-y-2">
+                      {(product.usage_guidelines?.pro_tips || [
+                        'Use hooks when placing on floors',
+                        'Rotate usage to maintain shape',
+                        'Store stuffed to maintain structure',
+                        'Apply water-repellent spray for protection',
+                      ]).map((t: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="w-5 h-5 rounded-full bg-green-100 grid place-items-center mt-0.5">
+                            <Check className="h-3 w-3 text-green-600" />
+                          </span>
+                          <span className="text-gray-600 leading-relaxed">{t}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

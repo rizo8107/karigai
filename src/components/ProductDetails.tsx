@@ -224,234 +224,276 @@ export const ProductDetails = ({ product }: ProductDetailsProps) => {
   };
 
   return (
-    <div className="mt-16 space-y-8">
-      {/* Product Video */}
-      {product.videoUrl && (
-        <div className="bg-gray-50 rounded-lg p-6 mb-24">
-          <h3 className="text-lg font-semibold mb-4">Product Video</h3>
-          <div className="relative w-full bg-gray-100 rounded-lg overflow-visible aspect-video">
-            {!isVideoPlaying ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 rounded-lg">
-                {thumbnailLoading ? (
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    <p className="text-sm text-gray-500">Loading thumbnail...</p>
-                  </div>
-                ) : thumbnailError || !thumbnailUrl ? (
-                  <div className="flex flex-col items-center justify-center space-y-2 p-4">
-                    <ImageIcon size={48} className="text-gray-400" />
-                    <p className="text-sm text-gray-500 text-center">Product Video</p>
-                  </div>
-                ) : (
-                  <img 
-                    src={thumbnailUrl} 
-                    alt="Video thumbnail" 
-                    className="w-full h-full object-cover"
-                    onError={() => setThumbnailError(true)}
-                  />
-                )}
-                
-                <button
-                  onClick={() => setIsVideoPlaying(true)}
-                  className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors group"
-                  aria-label="Play video"
-                >
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/80 group-hover:bg-white flex items-center justify-center">
-                    <Play size={24} className="text-primary ml-1 sm:ml-1.5 sm:size-[32px]" />
-                  </div>
-                </button>
-              </div>
-            ) : (
-              isYouTubeUrl(product.videoUrl) ? (
-                <iframe
-                  src={`${getYouTubeEmbedUrl(product.videoUrl)}${isVideoPlaying ? '?autoplay=1' : ''}`}
-                  title="YouTube video player"
-                  className="absolute top-0 left-0 w-full h-full"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
-              ) : isPocketBaseFileUrl(product.videoUrl) || isVideoFileUrl(product.videoUrl) ? (
-                <div className="z-[90] relative" style={{ position: 'relative', zIndex: 90 }}>
-                  <VideoPlayer 
-                    src={isPocketBaseFileUrl(product.videoUrl) ? getPocketBaseFileUrl(product.videoUrl) : product.videoUrl}
-                    onClose={() => setIsVideoPlaying(false)}
-                  />
+    <div className="space-y-6 pb-8">
+      {/* Mobile Card-based UI - hidden on desktop */}
+      <div className="md:hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-xl font-semibold text-gray-900">Description</h3>
+          </div>
+          <div className="p-6">
+            <p className="text-gray-600 leading-relaxed text-sm">{product.description || 'No description available.'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop sections - hidden on mobile */}
+      <div className="hidden md:block space-y-6">
+        {/* Product Video */}
+        {product.videoUrl && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <h3 className="text-xl font-semibold text-gray-900">Product Video</h3>
+            </div>
+          <div className="p-6">
+            <div className="relative w-full bg-gray-50 rounded-xl overflow-hidden aspect-video">
+              {!isVideoPlaying ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 rounded-xl">
+                  {thumbnailLoading ? (
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                      <p className="text-sm text-gray-500 font-medium">Loading thumbnail...</p>
+                    </div>
+                  ) : thumbnailError || !thumbnailUrl ? (
+                    <div className="flex flex-col items-center justify-center space-y-3 p-6">
+                      <ImageIcon size={56} className="text-gray-300" />
+                      <p className="text-sm text-gray-500 font-medium text-center">Product Video</p>
+                    </div>
+                  ) : (
+                    <img 
+                      src={thumbnailUrl} 
+                      alt="Video thumbnail" 
+                      className="w-full h-full object-cover rounded-xl"
+                      onError={() => setThumbnailError(true)}
+                    />
+                  )}
+                  
+                  <button
+                    onClick={() => setIsVideoPlaying(true)}
+                    className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-all duration-300 group rounded-xl"
+                    aria-label="Play video"
+                  >
+                    <div className="w-16 h-16 rounded-full bg-white shadow-lg group-hover:shadow-xl group-hover:scale-105 flex items-center justify-center transition-all duration-300">
+                      <Play size={28} className="text-primary ml-1" />
+                    </div>
+                  </button>
                 </div>
               ) : (
-                <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+                isYouTubeUrl(product.videoUrl) ? (
                   <iframe
-                    src={`${product.videoUrl}${product.videoUrl.includes('?') ? '&' : '?'}autoplay=1`}
-                    title="Product video"
-                    className="w-full h-full"
-                    style={{ maxHeight: 'calc(100% - 60px)', aspectRatio: 'auto' }}
+                    src={`${getYouTubeEmbedUrl(product.videoUrl)}${isVideoPlaying ? '?autoplay=1' : ''}`}
+                    title="YouTube video player"
+                    className="absolute top-0 left-0 w-full h-full rounded-xl"
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                   ></iframe>
+                ) : isPocketBaseFileUrl(product.videoUrl) || isVideoFileUrl(product.videoUrl) ? (
+                  <div className="z-[90] relative rounded-xl overflow-hidden" style={{ position: 'relative', zIndex: 90 }}>
+                    <VideoPlayer 
+                      src={isPocketBaseFileUrl(product.videoUrl) ? getPocketBaseFileUrl(product.videoUrl) : product.videoUrl}
+                      onClose={() => setIsVideoPlaying(false)}
+                    />
+                  </div>
+                ) : (
+                  <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+                    <iframe
+                      src={`${product.videoUrl}${product.videoUrl.includes('?') ? '&' : '?'}autoplay=1`}
+                      title="Product video"
+                      className="w-full h-full rounded-xl"
+                      style={{ maxHeight: 'calc(100% - 60px)', aspectRatio: 'auto' }}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+        {/* Show a minimal placeholder while config loads to avoid flashing sections */}
+        {orderConfig === null && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 animate-pulse">
+            <div className="h-6 w-48 bg-gray-200 rounded-lg mb-4"></div>
+            <div className="h-4 w-full bg-gray-200 rounded-lg mb-3"></div>
+            <div className="h-4 w-5/6 bg-gray-200 rounded-lg"></div>
+          </div>
+        )}
+        
+        {/* Product Description */}
+        {product.description && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <h3 className="text-xl font-semibold text-gray-900">Description</h3>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-600 leading-relaxed">{product.description}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Product Specifications */}
+        {orderConfig && orderConfig.showProductSpecifications !== false && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-xl font-semibold text-gray-900">Specifications</h3>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 gap-4">
+              {[
+                { label: 'Material', value: product.specifications?.material || product.material },
+                { label: 'Dimensions', value: product.specifications?.dimensions || product.dimensions },
+                { label: 'Weight', value: product.specifications?.weight || 'Standard' },
+                { label: 'Capacity', value: product.specifications?.capacity || 'Standard' },
+                { label: 'Style', value: product.specifications?.style || 'Modern' },
+                { label: 'Pattern', value: product.specifications?.pattern || 'Solid' },
+                { label: 'Closure', value: product.specifications?.closure || 'Standard' },
+                { label: 'Water Resistant', value: product.specifications?.waterResistant ? 'Yes' : 'No' }
+              ].filter(spec => spec.value && spec.value !== 'Standard').map((spec, index) => (
+                <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+                  <span className="text-gray-600 font-medium">{spec.label}</span>
+                  <span className="text-gray-900 font-semibold">{spec.value}</span>
                 </div>
-              )
-            )}
+              ))}
+            </div>
           </div>
         </div>
-      )}
-      {/* Show a minimal placeholder while config loads to avoid flashing sections */}
-      {orderConfig === null && (
-        <div className="bg-gray-50 rounded-lg p-6 animate-pulse mb-4">
-          <div className="h-5 w-48 bg-gray-200 rounded mb-4"></div>
-          <div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
-          <div className="h-4 w-5/6 bg-gray-200 rounded"></div>
-        </div>
-      )}
+        )}
 
-      {/* Product Specifications */}
-      {orderConfig && orderConfig.showProductSpecifications !== false && (
-      <div className="bg-gray-50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold mb-4">Product Specifications</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">Material</span>
-              <span className="font-medium">{product.specifications?.material || product.material}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">Dimensions</span>
-              <span className="font-medium">{product.specifications?.dimensions || product.dimensions}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">Weight</span>
-              <span className="font-medium">{product.specifications?.weight || 'Standard'}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">Capacity</span>
-              <span className="font-medium">{product.specifications?.capacity || 'Standard'}</span>
-            </div>
+        {/* Care Instructions */}
+        {orderConfig && orderConfig.showCareInstructions !== false && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-xl font-semibold text-gray-900">Care Instructions</h3>
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">Style</span>
-              <span className="font-medium">{product.specifications?.style || 'Modern'}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">Pattern</span>
-              <span className="font-medium">{product.specifications?.pattern || 'Solid'}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">Closure</span>
-              <span className="font-medium">{product.specifications?.closure || 'Standard'}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">Water Resistant</span>
-              <span className="font-medium">{product.specifications?.waterResistant ? 'Yes' : 'No'}</span>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary"></div>
+                  Cleaning
+                </h4>
+                <ul className="space-y-3">
+                  {(product.care_instructions?.cleaning || product.care || [
+                    'Spot clean with mild soap and water',
+                    'Do not machine wash',
+                    'Air dry in shade',
+                    'Do not bleach'
+                  ]).map((instruction, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="h-3 w-3 text-green-600" />
+                      </div>
+                      <span className="text-gray-600 leading-relaxed">{instruction}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary"></div>
+                  Storage
+                </h4>
+                <ul className="space-y-3">
+                  {(product.care_instructions?.storage || [
+                    'Store in a cool, dry place',
+                    'Avoid direct sunlight',
+                    'Keep away from moisture',
+                    'Use dust bag when not in use'
+                  ]).map((instruction, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="h-3 w-3 text-green-600" />
+                      </div>
+                      <span className="text-gray-600 leading-relaxed">{instruction}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </div>
+        )}
+
+        {/* Features and Benefits */}
+        {orderConfig && orderConfig.showFeaturesAndBenefits !== false && product.features && product.features.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-xl font-semibold text-gray-900">Key Features</h3>
+          </div>
+          <div className="p-6">
+            <ul className="space-y-4">
+              {product.features.map((feature, index) => (
+                <li key={index} className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="text-gray-600 leading-relaxed font-medium">{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        )}
+
+        {/* Usage Guidelines */}
+        {orderConfig && orderConfig.showUsageGuidelines !== false && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-xl font-semibold text-gray-900">Usage Guidelines</h3>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary"></div>
+                  Recommended Use
+                </h4>
+                <ul className="space-y-3">
+                  {(product.usage_guidelines?.recommended_use || [
+                    'Distribute weight evenly for better durability',
+                    'Clean spills immediately to prevent staining',
+                    'Use internal pockets for organization',
+                    'Avoid overloading beyond capacity'
+                  ]).map((guideline, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="h-3 w-3 text-green-600" />
+                      </div>
+                      <span className="text-gray-600 leading-relaxed">{guideline}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary"></div>
+                  Pro Tips
+                </h4>
+                <ul className="space-y-3">
+                  {(product.usage_guidelines?.pro_tips || [
+                    'Use bag hooks when placing on floors',
+                    'Rotate usage to maintain shape',
+                    'Store stuffed to maintain structure',
+                    'Apply water repellent spray for protection'
+                  ]).map((tip, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="h-3 w-3 text-green-600" />
+                      </div>
+                      <span className="text-gray-600 leading-relaxed">{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
-      )}
-
-      {/* Care Instructions */}
-      {orderConfig && orderConfig.showCareInstructions !== false && (
-        <div className="bg-gray-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4">Care Instructions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-medium mb-2">Cleaning</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                {(product.care_instructions?.cleaning || product.care || [
-                  'Spot clean with mild soap and water',
-                  'Do not machine wash',
-                  'Air dry in shade',
-                  'Do not bleach'
-                ]).map((instruction, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <Check className="h-4 w-4 mt-1 text-green-600 shrink-0" />
-                    <span>{instruction}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-medium mb-2">Storage</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                {(product.care_instructions?.storage || [
-                  'Store in a cool, dry place',
-                  'Avoid direct sunlight',
-                  'Keep away from moisture',
-                  'Use dust bag when not in use'
-                ]).map((instruction, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <Check className="h-4 w-4 mt-1 text-green-600 shrink-0" />
-                    <span>{instruction}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Features and Benefits */}
-      {orderConfig && orderConfig.showFeaturesAndBenefits !== false && (
-        <div className="bg-gray-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4">Features & Benefits</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-medium mb-3">Key Features</h4>
-              <ul className="space-y-3">
-                {(product.features || []).map((feature, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <Check className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-muted-foreground">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Usage Guidelines */}
-      {orderConfig && orderConfig.showUsageGuidelines !== false && (
-        <div className="bg-gray-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4">Usage Guidelines</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-medium mb-3">Recommended Use</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                {(product.usage_guidelines?.recommended_use || [
-                  'Distribute weight evenly for better durability',
-                  'Clean spills immediately to prevent staining',
-                  'Use internal pockets for organization',
-                  'Avoid overloading beyond capacity'
-                ]).map((guideline, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <Check className="h-4 w-4 mt-1 text-green-600 shrink-0" />
-                    <span>{guideline}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-medium mb-3">Pro Tips</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                {(product.usage_guidelines?.pro_tips || [
-                  'Use bag hooks when placing on floors',
-                  'Rotate usage to maintain shape',
-                  'Store stuffed to maintain structure',
-                  'Apply water repellent spray for protection'
-                ]).map((tip, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <Check className="h-4 w-4 mt-1 text-green-600 shrink-0" />
-                    <span>{tip}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
