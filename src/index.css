@@ -13,8 +13,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 20 10% 5%;
 
-    --primary: 142 72% 28%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 142 72% 28% !important;
+    --primary-foreground: 0 0% 100% !important;
 
     --secondary: 48 50% 96%;
     --secondary-foreground: 20 10% 5%;
@@ -22,7 +22,7 @@
     --muted: 240 5% 96%;
     --muted-foreground: 20 10% 40%;
 
-    --accent: 142 71% 80%;
+    --accent: 142 71% 80% !important;
     --accent-foreground: 20 10% 5%;
 
     --destructive: 0 84.2% 60.2%;
@@ -45,8 +45,8 @@
     --popover: 20 14.3% 4.1%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 142 50% 24%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 142 50% 24% !important;
+    --primary-foreground: 210 40% 98% !important;
 
     --secondary: 12 6.5% 15.1%;
     --secondary-foreground: 0 0% 95%;
@@ -54,8 +54,8 @@
     --muted: 12 6.5% 15.1%;
     --muted-foreground: 24 5.4% 63.9%;
 
-    --accent: 142 40% 30%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 142 40% 30% !important;
+    --accent-foreground: 210 40% 98% !important;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 85.7% 97.3%;
@@ -127,6 +127,19 @@
   .konipai-tab {
     @apply data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=inactive]:bg-[#f4f4f5] rounded-none px-2 sm:px-4 py-2 font-medium text-xs sm:text-sm md:text-base overflow-hidden text-ellipsis whitespace-nowrap;
   }
+}
+
+/* Force green theme colors for buttons */
+.bg-primary {
+  background-color: hsl(142 72% 28%) !important;
+}
+
+.text-primary-foreground {
+  color: hsl(0 0% 100%) !important;
+}
+
+.hover\:bg-primary\/90:hover {
+  background-color: hsl(142 72% 28% / 0.9) !important;
 }
 
 /* Hide scrollbar but maintain functionality for breadcrumbs */
