@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getProducts, Product } from "@/lib/pocketbase";
 import { cn } from "@/lib/utils";
 
-export interface KarigaiProductGridProps {
+export interface ProductGridProps {
   title?: string;
   description?: string;
   category?: string;
@@ -21,7 +21,7 @@ export interface KarigaiProductGridProps {
 }
 
 // Wrapper component that can use hooks
-const KarigaiProductGridContent = ({ title, description, category, limit, columnsDesktop, columnsTablet, columnsMobile, showFeatured, mode, carouselRows = 1, showArrows = true, showDots = true }: KarigaiProductGridProps) => {
+const ProductGridContent = ({ title, description, category, limit, columnsDesktop, columnsTablet, columnsMobile, showFeatured, mode, carouselRows = 1, showArrows = true, showDots = true }: ProductGridProps) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -121,7 +121,39 @@ const KarigaiProductGridContent = ({ title, description, category, limit, column
   }, [products, itemsPerPage, mode]);
 
   const [pageIndex, setPageIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  
   useEffect(() => setPageIndex(0), [itemsPerPage, mode, products.length]);
+
+  // Handle touch events for swipe functionality
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 30; // Reduced threshold for better sensitivity
+    const isRightSwipe = distance < -30;
+
+    if (isLeftSwipe && pageIndex < pages.length - 1) {
+      setPageIndex(prev => prev + 1);
+    }
+    if (isRightSwipe && pageIndex > 0) {
+      setPageIndex(prev => prev - 1);
+    }
+    
+    // Reset touch states
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
 
   if (loading) {
     return (
@@ -224,14 +256,14 @@ const KarigaiProductGridContent = ({ title, description, category, limit, column
           <>
             <button
               aria-label="Previous"
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-primary/70 text-primary-foreground hover:bg-primary"
+              className="absolute left-1 top-1/2 -translate-y-1/2 z-10 h-6 w-6 rounded-full bg-primary/80 text-primary-foreground hover:bg-primary text-xs font-bold shadow-md"
               onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
             >
               ‹
             </button>
             <button
               aria-label="Next"
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-primary/70 text-primary-foreground hover:bg-primary"
+              className="absolute right-1 top-1/2 -translate-y-1/2 z-10 h-6 w-6 rounded-full bg-primary/80 text-primary-foreground hover:bg-primary text-xs font-bold shadow-md"
               onClick={() => setPageIndex((p) => Math.min(pages.length - 1, p + 1))}
             >
               ›
@@ -239,11 +271,27 @@ const KarigaiProductGridContent = ({ title, description, category, limit, column
           </>
         )}
 
-        <div className="overflow-hidden">
-          <div className="flex transition-transform duration-300 will-change-transform" style={{ transform: `translate3d(-${pageIndex * 100}%, 0, 0)` }}>
+        <div 
+          className="overflow-hidden rounded-lg"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div 
+            className="flex carousel-smooth" 
+            style={{ 
+              transform: `translate3d(-${pageIndex * 100}%, 0, 0)`
+            }}
+          >
             {pages.map((group, gi) => (
               <div key={gi} className="shrink-0 w-full px-1">
-                <div className={cn("grid gap-6", `grid-cols-${currentCols}`)} style={{ gridAutoRows: "1fr" }}>
+                <div 
+                  className={cn("grid gap-6", `grid-cols-${currentCols}`)} 
+                  style={{ 
+                    gridAutoRows: "1fr",
+                    minHeight: "400px" // Prevent layout shifts
+                  }}
+                >
                   {group.map((product, index) => (
                     <ProductCard key={product.id} product={product} priority={index < currentCols} />
                   ))}
@@ -265,7 +313,7 @@ const KarigaiProductGridContent = ({ title, description, category, limit, column
   );
 };
 
-export const poructgrind: ComponentConfig<KarigaiProductGridProps> = {
+export const ProductGrid: ComponentConfig<ProductGridProps> = {
   fields: {
     title: { type: "text", label: "Section Title" },
     description: { type: "textarea", label: "Description (optional)" },
@@ -311,9 +359,10 @@ export const poructgrind: ComponentConfig<KarigaiProductGridProps> = {
     showDots: true,
   },
   render: (props) => {
-    return <KarigaiProductGridContent {...props} />;
+    return <ProductGridContent {...props} />;
   },
 };
 
-// Backward compatibility export (kept to avoid breaking existing pages)
-export const KarigaiProductGrid: ComponentConfig<KarigaiProductGridProps> = poructgrind;
+// Backward compatibility exports (kept to avoid breaking existing pages)
+export const KarigaiProductGrid: ComponentConfig<ProductGridProps> = ProductGrid;
+export const poructgrind: ComponentConfig<ProductGridProps> = ProductGrid;

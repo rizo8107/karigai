@@ -1,6 +1,6 @@
 import { Config } from "@measured/puck";
 import { Hero } from "./blocks/Hero";
-import { ProductGrid } from "./blocks/ProductGrid";
+import { ProductGrid } from "./blocks/KarigaiProductGrid";
 import { CategorySection } from "./blocks/CategorySection";
 import { FeatureSection } from "./blocks/FeatureSection";
 import { TestimonialSection } from "./blocks/TestimonialSection";

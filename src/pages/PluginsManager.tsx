@@ -598,6 +598,38 @@ export default function PluginsManager() {
                     onChange={(e) => setVidConfig({ ...vidConfig, zIndex: Number(e.target.value) })}
                   />
                 </div>
+                
+                {/* Auto-close Settings */}
+                <div className="space-y-4 border-t pt-4">
+                  <Label className="text-base font-semibold">Auto-close Settings</Label>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={vidConfig.autoClose === true}
+                      onCheckedChange={(v) => setVidConfig({ ...vidConfig, autoClose: v })}
+                    />
+                    <Label>Enable auto-close</Label>
+                  </div>
+                  {vidConfig.autoClose && (
+                    <div className="grid gap-2">
+                      <Label htmlFor="vid-autoclose-ms">Auto-close after (seconds)</Label>
+                      <Input
+                        id="vid-autoclose-ms"
+                        type="number"
+                        min="1"
+                        max="300"
+                        value={Math.ceil((vidConfig.autoCloseAfterMs ?? 10000) / 1000)}
+                        onChange={(e) => setVidConfig({ 
+                          ...vidConfig, 
+                          autoCloseAfterMs: Number(e.target.value) * 1000 
+                        })}
+                        placeholder="10"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Video will automatically close after this many seconds. A countdown timer will be shown to users.
+                      </p>
+                    </div>
+                  )}
+                </div>
                 {/* Visibility */}
                 <div className="space-y-2">
                   <Label>Visibility</Label>

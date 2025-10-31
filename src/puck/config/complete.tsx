@@ -3,8 +3,7 @@ import { ImageSelector } from "@/puck/fields/ImageSelector";
 
 // Import all existing block components
 import { Hero } from "./blocks/Hero";
-import { ProductGrid } from "./blocks/ProductGrid";
-import { KarigaiProductGrid } from "./blocks/KarigaiProductGrid";
+import { ProductGrid, KarigaiProductGrid } from "./blocks/KarigaiProductGrid";
 import { CategorySection } from "./blocks/CategorySection";
 import { FeatureSection } from "./blocks/FeatureSection";
 import { TestimonialSection } from "./blocks/TestimonialSection";

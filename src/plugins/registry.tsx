@@ -251,17 +251,40 @@ const PopupBanner: React.FC<{ config: PopupBannerConfig }> = ({ config }) => {
 
 const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
   const [visible, setVisible] = useState(true);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  
   useEffect(() => {
     if (config.autoClose && (config.autoCloseAfterMs ?? 0) > 0) {
-      const t = setTimeout(() => setVisible(false), config.autoCloseAfterMs);
-      return () => clearTimeout(t);
+      setTimeLeft(Math.ceil((config.autoCloseAfterMs || 10000) / 1000));
+      
+      const interval = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev === null || prev <= 1) {
+            setVisible(false);
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return () => clearInterval(interval);
     }
   }, [config.autoClose, config.autoCloseAfterMs]);
+  
   if (!config.enabled || !config.videoUrl || !visible) return null;
+  
   const z = config.zIndex ?? 60;
   const w = config.width ?? 320;
   const h = config.height ?? 180;
   const isYouTube = /youtube|youtu\.be/.test(config.videoUrl);
+  const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  // Enhanced YouTube URL for mobile autoplay
+  const enhancedVideoUrl = isYouTube && config.videoUrl 
+    ? config.videoUrl + (config.videoUrl.includes('?') ? '&' : '?') + 
+      `autoplay=${config.autoPlay ? 1 : 0}&mute=${config.muted ? 1 : 0}&playsinline=1&enablejsapi=1`
+    : config.videoUrl;
+  
   const style: React.CSSProperties = {
     position: "fixed",
     top: config.position?.startsWith("top-") ? (config.offsetY ?? 16) : undefined,
@@ -270,10 +293,27 @@ const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
     right: config.position?.endsWith("right") ? (config.offsetX ?? 16) : undefined,
     left: config.position?.endsWith("left") ? (config.offsetX ?? 16) : undefined,
   };
-  console.debug("[Plugins] Rendering VideoFloating", { enabled: config.enabled, position: config.position, zIndex: z, url: config.videoUrl, style });
+  
+  console.debug("[Plugins] Rendering VideoFloating", { 
+    enabled: config.enabled, 
+    position: config.position, 
+    zIndex: z, 
+    url: enhancedVideoUrl, 
+    isMobile,
+    timeLeft,
+    style 
+  });
+  
   return (
     <div style={style}>
       <div className="relative" data-plugin-wrapper>
+        {/* Auto-close timer display */}
+        {timeLeft !== null && timeLeft > 0 && (
+          <div className="absolute -top-8 left-0 bg-black/80 text-white text-xs px-2 py-1 rounded">
+            Auto-close in {timeLeft}s
+          </div>
+        )}
+        
         {config.showClose !== false && (
           <button
             aria-label="Close"
@@ -281,20 +321,21 @@ const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
               const parent = (e.currentTarget.closest('[data-plugin-wrapper]') as HTMLElement) || undefined;
               if (parent) parent.style.display = 'none';
             }}
-            className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-black/70 text-white flex items-center justify-center text-xs shadow"
+            className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-black/70 text-white flex items-center justify-center text-xs shadow hover:bg-black/90 transition-colors"
             title="Close"
           >
             ×
           </button>
         )}
+        
         {isYouTube ? (
           <iframe
             width={w}
             height={h}
-            src={config.videoUrl}
+            src={enhancedVideoUrl}
             title="Video"
             frameBorder={0}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
             className="rounded-md shadow-lg"
           />
@@ -305,6 +346,7 @@ const VideoFloating: React.FC<{ config: VideoPluginConfig }> = ({ config }) => {
             src={config.videoUrl}
             autoPlay={config.autoPlay}
             muted={config.muted}
+            playsInline={isMobile}
             controls
             className="rounded-md shadow-lg"
           />
@@ -356,7 +398,7 @@ export const pluginRegistry = {
       height: 180,
       showClose: true,
       autoClose: false,
-      autoCloseAfterMs: 0,
+      autoCloseAfterMs: 10000, // Default 10 seconds
       visibility: { mode: "all", include: [], exclude: [] },
     } as VideoPluginConfig,
     Component: VideoFloating,

@@ -154,6 +154,19 @@
   display: none;
 }
 
+/* Smooth scrolling for carousel and general page navigation */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Enhanced carousel animations */
+.carousel-smooth {
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
 /* Add minimum heights to prevent layout shifts */
 .min-height-container {
   min-height: 32px; /* Standard minimum height */
