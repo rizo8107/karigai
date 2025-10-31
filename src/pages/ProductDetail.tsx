@@ -955,7 +955,7 @@ const ProductDetail = () => {
 
                     {/* Price on the right of the quantity selector (as per image sample) */}
                     <p className="text-xl font-semibold text-foreground">
-                        ${(product.price * quantity).toFixed(2)}
+                        ₹{(product.price * quantity).toFixed(2)}
                     </p>
                 </div>
                 

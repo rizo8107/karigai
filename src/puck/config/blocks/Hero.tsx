@@ -8,6 +8,8 @@ export interface HeroProps {
   title: string;
   subtitle?: string;
   description?: string;
+  heroUrl?: string;
+  heroUrlTarget?: "_self" | "_blank";
   backgroundImage?: string;
   backgroundImageDesktop?: string;
   backgroundImageTablet?: string;
@@ -34,6 +36,7 @@ export interface HeroProps {
     text: string;
     href: string;
     variant?: "default" | "outline" | "secondary";
+    target?: "_self" | "_blank";
   }[];
   mode?: "single" | "slider";
   // slider options
@@ -50,6 +53,8 @@ export interface HeroSlide {
   title?: string;
   subtitle?: string;
   description?: string;
+  heroUrl?: string;
+  heroUrlTarget?: "_self" | "_blank";
   backgroundImage?: string;
   backgroundImageDesktop?: string;
   backgroundImageTablet?: string;
@@ -62,6 +67,7 @@ export interface HeroSlide {
     text: string;
     href: string;
     variant?: "default" | "outline" | "secondary";
+    target?: "_self" | "_blank";
   }[];
 }
 
@@ -86,6 +92,18 @@ export const Hero: ComponentConfig<HeroProps> = {
     description: {
       type: "textarea",
       label: "Description (optional)",
+    },
+    heroUrl: {
+      type: "text",
+      label: "Hero Link URL (optional - makes entire hero clickable)",
+    },
+    heroUrlTarget: {
+      type: "select",
+      label: "Hero Link Target",
+      options: [
+        { label: "Same Tab", value: "_self" },
+        { label: "New Tab", value: "_blank" },
+      ],
     },
     backgroundImage: { ...ImageSelector, label: "Main image (default fallback)" },
     backgroundImageDesktop: { ...ImageSelector, label: "Desktop image (≥1024px)" },
@@ -216,11 +234,20 @@ export const Hero: ComponentConfig<HeroProps> = {
             { label: "Secondary", value: "secondary" },
           ],
         },
+        target: {
+          type: "select",
+          label: "Link Target",
+          options: [
+            { label: "Same Tab", value: "_self" },
+            { label: "New Tab", value: "_blank" },
+          ],
+        },
       },
       defaultItemProps: {
         text: "Learn More",
         href: "#",
         variant: "default",
+        target: "_self",
       },
       getItemSummary: (item) => item.text || "Button",
     },
@@ -237,6 +264,15 @@ export const Hero: ComponentConfig<HeroProps> = {
         title: { type: "text" },
         subtitle: { type: "text" },
         description: { type: "textarea" },
+        heroUrl: { type: "text", label: "Slide Link URL (optional)" },
+        heroUrlTarget: {
+          type: "select",
+          label: "Slide Link Target",
+          options: [
+            { label: "Same Tab", value: "_self" },
+            { label: "New Tab", value: "_blank" },
+          ],
+        },
         backgroundImage: { ...ImageSelector, label: "Slide main image (fallback)" },
         backgroundImageDesktop: { ...ImageSelector, label: "Slide desktop image (≥1024px)" },
         backgroundImageTablet: { ...ImageSelector, label: "Slide tablet image (≥640px)" },
@@ -263,8 +299,16 @@ export const Hero: ComponentConfig<HeroProps> = {
               { label: "Outline", value: "outline" },
               { label: "Secondary", value: "secondary" },
             ]},
+            target: {
+              type: "select",
+              label: "Link Target",
+              options: [
+                { label: "Same Tab", value: "_self" },
+                { label: "New Tab", value: "_blank" },
+              ],
+            },
           },
-          defaultItemProps: { text: "Learn More", href: "#", variant: "default" },
+          defaultItemProps: { text: "Learn More", href: "#", variant: "default", target: "_self" },
           getItemSummary: (it) => it.text || "Button",
         },
       },
@@ -280,6 +324,7 @@ export const Hero: ComponentConfig<HeroProps> = {
     title: "Welcome to Our Store",
     subtitle: "Discover Amazing Products",
     description: "Find everything you need in our carefully curated collection",
+    heroUrlTarget: "_self",
     textAlign: "center",
     textColor: "white",
     height: "lg",
@@ -294,8 +339,8 @@ export const Hero: ComponentConfig<HeroProps> = {
     transitionMs: 400,
     slides: [],
     buttons: [
-      { text: "Shop Now", href: "/shop", variant: "default" },
-      { text: "Learn More", href: "/about", variant: "outline" },
+      { text: "Shop Now", href: "/shop", variant: "default", target: "_self" },
+      { text: "Learn More", href: "/about", variant: "outline", target: "_self" },
     ],
   },
   render: (props) => {
@@ -303,6 +348,8 @@ export const Hero: ComponentConfig<HeroProps> = {
       title,
       subtitle,
       description,
+      heroUrl,
+      heroUrlTarget,
       backgroundImage,
       backgroundImageDesktop,
       backgroundImageTablet,
@@ -469,6 +516,34 @@ export const Hero: ComponentConfig<HeroProps> = {
             const active = i === index;
             const sTextColor = s.textColor || textColor || "white";
             const sAlign = s.textAlign || textAlign || "center";
+            const slideHeroUrl = s.heroUrl || heroUrl;
+            const slideHeroTarget = s.heroUrlTarget || heroUrlTarget || "_self";
+            const contentInner = (
+              <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className={cn("space-y-6", textColorClasses[sTextColor])}>
+                  {s.subtitle && <p className="text-lg font-medium opacity-90">{s.subtitle}</p>}
+                  <h1 className="text-4xl md:text-6xl font-bold leading-tight">{s.title || title}</h1>
+                  {(s.description || description) && (
+                    <p className="text-xl md:text-2xl opacity-80 max-w-2xl mx-auto">{s.description || description}</p>
+                  )}
+                  {(s.buttons || buttons)?.length ? (
+                    <div className="flex flex-wrap gap-4 justify-center">
+                      {(s.buttons || buttons)!.map((button, bi) => (
+                        <UIButton
+                          key={bi}
+                          variant={button.variant || "default"}
+                          size="lg"
+                          asChild={!puck?.isEditing}
+                          disabled={puck?.isEditing}
+                        >
+                          {puck?.isEditing ? button.text : <a href={button.href} target={button.target || "_self"} rel={button.target === "_blank" ? "noopener noreferrer" : undefined}>{button.text}</a>}
+                        </UIButton>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            );
             return (
               <div
                 key={`content-${i}`}
@@ -476,30 +551,16 @@ export const Hero: ComponentConfig<HeroProps> = {
                 aria-hidden={!active}
                 style={{ opacity: active ? 1 : 0, transition: `opacity ${Math.max(100, transitionMs || 400)}ms` }}
               >
-                <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                  <div className={cn("space-y-6", textColorClasses[sTextColor])}>
-                    {s.subtitle && <p className="text-lg font-medium opacity-90">{s.subtitle}</p>}
-                    <h1 className="text-4xl md:text-6xl font-bold leading-tight">{s.title || title}</h1>
-                    {(s.description || description) && (
-                      <p className="text-xl md:text-2xl opacity-80 max-w-2xl mx-auto">{s.description || description}</p>
-                    )}
-                    {(s.buttons || buttons)?.length ? (
-                      <div className="flex flex-wrap gap-4 justify-center">
-                        {(s.buttons || buttons)!.map((button, bi) => (
-                          <UIButton
-                            key={bi}
-                            variant={button.variant || "default"}
-                            size="lg"
-                            asChild={!puck?.isEditing}
-                            disabled={puck?.isEditing}
-                          >
-                            {puck?.isEditing ? button.text : <a href={button.href}>{button.text}</a>}
-                          </UIButton>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
+                {slideHeroUrl && !puck?.isEditing ? (
+                  <a
+                    href={slideHeroUrl}
+                    target={slideHeroTarget}
+                    rel={slideHeroTarget === "_blank" ? "noopener noreferrer" : undefined}
+                    className="absolute inset-0 z-[5]"
+                    aria-label="Hero link"
+                  />
+                ) : null}
+                {contentInner}
               </div>
             );
           })}
@@ -579,6 +640,16 @@ export const Hero: ComponentConfig<HeroProps> = {
           <div className="absolute inset-0 bg-black" style={{ opacity: (overlayOpacity || 50) / 100 }} />
         )}
 
+        {heroUrl && !puck?.isEditing ? (
+          <a
+            href={heroUrl}
+            target={heroUrlTarget || "_self"}
+            rel={heroUrlTarget === "_blank" ? "noopener noreferrer" : undefined}
+            className="absolute inset-0 z-[5]"
+            aria-label="Hero link"
+          />
+        ) : null}
+
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className={cn("space-y-6", textColorClasses[textColor || "white"]) }>
             {subtitle && <p className="text-lg font-medium opacity-90">{subtitle}</p>}
@@ -596,7 +667,7 @@ export const Hero: ComponentConfig<HeroProps> = {
                     asChild={!puck?.isEditing}
                     disabled={puck?.isEditing}
                   >
-                    {puck?.isEditing ? button.text : <a href={button.href}>{button.text}</a>}
+                    {puck?.isEditing ? button.text : <a href={button.href} target={button.target || "_self"} rel={button.target === "_blank" ? "noopener noreferrer" : undefined}>{button.text}</a>}
                   </UIButton>
                 ))}
               </div>
