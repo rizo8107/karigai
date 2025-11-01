@@ -680,31 +680,26 @@ export const pluginRegistry = {
 
         enabledScripts.forEach((customScript) => {
           const scriptContent = customScript.script.trim();
-          
-          // Check if it's a script tag with src attribute
-          if (scriptContent.startsWith('<script')) {
-            // Parse the script tag to extract attributes
+
+          // If the content contains any <script> tags, parse and inject ALL of them
+          if (scriptContent.includes('<script')) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(scriptContent, 'text/html');
-            const parsedScript = doc.querySelector('script');
-            
-            if (parsedScript) {
-              // Create a new script element
+            const parsedScripts = Array.from(doc.querySelectorAll('script'));
+
+            parsedScripts.forEach((parsedScript, idx) => {
               const script = document.createElement('script');
               script.setAttribute('data-custom-script-id', customScript.id);
               script.setAttribute('data-custom-script-name', customScript.name);
-              
-              // Copy all attributes from parsed script
+              script.setAttribute('data-custom-script-idx', String(idx));
+
               Array.from(parsedScript.attributes).forEach(attr => {
                 script.setAttribute(attr.name, attr.value);
               });
-              
-              // Copy text content if any
               if (parsedScript.textContent) {
                 script.textContent = parsedScript.textContent;
               }
-              
-              // Append to appropriate location
+
               if (customScript.location === 'head') {
                 document.head.appendChild(script);
               } else if (customScript.location === 'body_start') {
@@ -712,25 +707,27 @@ export const pluginRegistry = {
               } else {
                 document.body.appendChild(script);
               }
-              
+
               addedElements.push(script);
-              console.log(`[Custom Scripts] Injected: ${customScript.name}`, script);
-            }
+              console.log(`[Custom Scripts] Injected: ${customScript.name} [${idx}]`, script);
+            });
+
+            // If there are non-script nodes, we ignore them to avoid executing via innerHTML
           } else if (scriptContent.startsWith('<')) {
-            // It's other HTML content (not a script tag)
-            const div = document.createElement('div');
-            div.setAttribute('data-custom-script-id', customScript.id);
-            div.innerHTML = scriptContent;
-            
+            // Generic HTML without <script> tags
+            const container = document.createElement('div');
+            container.setAttribute('data-custom-script-id', customScript.id);
+            container.innerHTML = scriptContent;
+
             if (customScript.location === 'head') {
-              document.head.appendChild(div);
+              document.head.appendChild(container);
             } else if (customScript.location === 'body_start') {
-              document.body.insertBefore(div, document.body.firstChild);
+              document.body.insertBefore(container, document.body.firstChild);
             } else {
-              document.body.appendChild(div);
+              document.body.appendChild(container);
             }
-            
-            addedElements.push(div);
+
+            addedElements.push(container);
           } else {
             // It's raw JavaScript code
             const script = document.createElement('script');
