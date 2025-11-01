@@ -35,6 +35,7 @@
     "@builder.io/sdk": "^6.1.1",
     "@hookform/resolvers": "^3.9.0",
     "@measured/puck": "^0.20.2",
+    "@openpanel/web": "^1.0.1",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-aspect-ratio": "^1.1.0",

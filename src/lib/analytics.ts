@@ -14,6 +14,25 @@ import {
   pixelEvents
 } from './pixel';
 
+// Import OpenPanel tracking
+import {
+  opTrackPageView,
+  opTrackLogin,
+  opTrackSignup,
+  opTrackProductView,
+  opTrackAddToCart,
+  opTrackRemoveFromCart,
+  opTrackBeginCheckout,
+  opTrackPurchase,
+  opTrackFormStart,
+  opTrackFormComplete,
+  opTrackFormError,
+  opTrackButtonClick,
+  opTrackPaymentStart,
+  opTrackPaymentSuccess,
+  opTrackPaymentFailure,
+} from './openpanel';
+
 // Throttling and debouncing utilities
 const THROTTLE_DELAY = 2000; // 2 seconds
 const eventTimestamps: Record<string, number> = {};
@@ -157,24 +176,33 @@ export const trackPageView = (pageTitle: string, pagePath: string): void => {
     page_path: pagePath,
     timestamp: new Date().toISOString()
   });
+  
+  // Track in OpenPanel
+  opTrackPageView(pageTitle, pagePath);
 };
 
-export const trackUserLogin = (userId: string, method: string): void => {
+export const trackUserLogin = (userId: string, method: string, email?: string): void => {
   pushToDataLayer({
     event: 'login',
     user_id: userId,
     method: method,
     timestamp: new Date().toISOString()
   });
+  
+  // Track in OpenPanel
+  opTrackLogin(userId, method, email);
 };
 
-export const trackUserSignup = (userId: string, method: string): void => {
+export const trackUserSignup = (userId: string, method: string, email?: string): void => {
   pushToDataLayer({
     event: 'sign_up',
     user_id: userId,
     method: method,
     timestamp: new Date().toISOString()
   });
+  
+  // Track in OpenPanel
+  opTrackSignup(userId, method, email);
 };
 
 // Enhanced E-commerce tracking functions
@@ -220,6 +248,9 @@ export const trackProductView = (product: ProductItem): void => {
       content_category: product.item_category
     }
   );
+  
+  // Track in OpenPanel
+  opTrackProductView(product);
 };
 
 export const trackAddToCart = async (
@@ -273,6 +304,9 @@ export const trackAddToCart = async (
       price: product.price
     });
   }
+  
+  // Track in OpenPanel
+  opTrackAddToCart(product);
 };
 
 export const trackRemoveFromCart = (product: ProductItem): void => {
@@ -286,6 +320,9 @@ export const trackRemoveFromCart = (product: ProductItem): void => {
     },
     timestamp: new Date().toISOString()
   });
+  
+  // Track in OpenPanel
+  opTrackRemoveFromCart(product);
 };
 
 export const trackCartView = (products: ProductItem[], value: number): void => {
@@ -321,6 +358,9 @@ export const trackBeginCheckout = (products: ProductItem[], value: number): void
     products.map(product => product.item_id),
     products.reduce((sum, product) => sum + product.quantity, 0)
   );
+  
+  // Track in OpenPanel
+  opTrackBeginCheckout(products, value);
 };
 
 export const trackAddShippingInfo = (
@@ -448,6 +488,9 @@ export const trackPurchase = async (
       contentCategory: products[0]?.item_category
     });
   }
+  
+  // Track in OpenPanel
+  opTrackPurchase(products, transactionId, value, shipping, tax, coupon);
 };
 
 // Dynamic conversion value tracking
@@ -579,6 +622,9 @@ export const trackButtonClick = (buttonName: string, buttonText: string, pagePat
     page_path: pagePath,
     timestamp: new Date().toISOString()
   });
+  
+  // Track in OpenPanel
+  opTrackButtonClick(buttonName, buttonText, pagePath);
 };
 
 // Form interaction tracking - with debouncing
@@ -597,6 +643,9 @@ export const trackFormStart = (formName: string, formId: string): void => {
       form_id: formId,
       timestamp: new Date().toISOString()
     });
+    
+    // Track in OpenPanel
+    opTrackFormStart(formName, formId);
   }, 300); // 300ms debounce
 };
 
@@ -636,6 +685,9 @@ export const trackFormCompletion = async (
       contentCategory: 'form_submission'
     });
   }
+  
+  // Track in OpenPanel
+  opTrackFormComplete(formName, formId);
 };
 
 export const trackFormError = (formName: string, formId: string, errorMessage: string): void => {
@@ -646,6 +698,9 @@ export const trackFormError = (formName: string, formId: string, errorMessage: s
     error_message: errorMessage,
     timestamp: new Date().toISOString()
   });
+  
+  // Track in OpenPanel
+  opTrackFormError(formName, formId, errorMessage);
 };
 
 // Payment flow tracking
@@ -658,6 +713,9 @@ export const trackPaymentStart = (orderId: string, amount: number, paymentMethod
     payment_method: paymentMethod,
     timestamp: new Date().toISOString()
   });
+  
+  // Track in OpenPanel
+  opTrackPaymentStart(orderId, amount, paymentMethod);
 };
 
 export const trackPaymentSuccess = (
@@ -675,6 +733,9 @@ export const trackPaymentSuccess = (
     payment_method: paymentMethod,
     timestamp: new Date().toISOString()
   });
+  
+  // Track in OpenPanel
+  opTrackPaymentSuccess(orderId, transactionId, amount, paymentMethod);
 };
 
 export const trackPaymentFailure = (
@@ -692,6 +753,9 @@ export const trackPaymentFailure = (
     error_message: errorMessage,
     timestamp: new Date().toISOString()
   });
+  
+  // Track in OpenPanel
+  opTrackPaymentFailure(orderId, amount, paymentMethod, errorMessage);
 };
 
 // Define the window interface with dataLayer
