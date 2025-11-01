@@ -9,7 +9,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { pluginRegistry } from "@/plugins/registry";
 import { usePlugins } from "@/plugins/Provider";
 import { savePluginConfig, togglePlugin } from "@/plugins/service";
-import type { PluginKey, WhatsAppPluginConfig, VideoPluginConfig, PopupBannerConfig } from "@/plugins/types";
+import type { 
+  PluginKey, 
+  WhatsAppPluginConfig, 
+  VideoPluginConfig, 
+  PopupBannerConfig,
+  GoogleAnalyticsConfig,
+  GoogleTagManagerConfig,
+  FacebookPixelConfig,
+  MicrosoftClarityConfig,
+  CustomScriptsConfig,
+  CustomScript
+} from "@/plugins/types";
 import { getContentItems, uploadVideo, getContentVideoUrl, type ContentItem, getContentImageUrl, uploadImage } from "@/lib/content-service";
 import { pocketbase } from "@/lib/pocketbase";
 import { ProductImage } from "@/components/ProductImage";
@@ -25,6 +36,11 @@ export default function PluginsManager() {
   const [videos, setVideos] = useState<ContentItem[]>([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
   const [popupConfig, setPopupConfig] = useState<PopupBannerConfig | null>(null);
+  const [gaConfig, setGaConfig] = useState<GoogleAnalyticsConfig | null>(null);
+  const [gtmConfig, setGtmConfig] = useState<GoogleTagManagerConfig | null>(null);
+  const [fbConfig, setFbConfig] = useState<FacebookPixelConfig | null>(null);
+  const [clarityConfig, setClarityConfig] = useState<MicrosoftClarityConfig | null>(null);
+  const [customScriptsConfig, setCustomScriptsConfig] = useState<CustomScriptsConfig | null>(null);
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [images, setImages] = useState<ContentItem[]>([]);
   const [loadingImages, setLoadingImages] = useState(false);
@@ -41,6 +57,11 @@ export default function PluginsManager() {
       setWaConfig(configs.whatsapp_floating as WhatsAppPluginConfig);
       setVidConfig(configs.video_floating as VideoPluginConfig);
       setPopupConfig(configs.popup_banner as PopupBannerConfig);
+      setGaConfig(configs.google_analytics as GoogleAnalyticsConfig);
+      setGtmConfig(configs.google_tag_manager as GoogleTagManagerConfig);
+      setFbConfig(configs.facebook_pixel as FacebookPixelConfig);
+      setClarityConfig(configs.microsoft_clarity as MicrosoftClarityConfig);
+      setCustomScriptsConfig(configs.custom_scripts as CustomScriptsConfig);
     }
   }, [configs, loading]);
 
@@ -61,6 +82,21 @@ export default function PluginsManager() {
       if (key === "popup_banner" && popupConfig) {
         await savePluginConfig(key, popupConfig);
       }
+      if (key === "google_analytics" && gaConfig) {
+        await savePluginConfig(key, gaConfig);
+      }
+      if (key === "google_tag_manager" && gtmConfig) {
+        await savePluginConfig(key, gtmConfig);
+      }
+      if (key === "facebook_pixel" && fbConfig) {
+        await savePluginConfig(key, fbConfig);
+      }
+      if (key === "microsoft_clarity" && clarityConfig) {
+        await savePluginConfig(key, clarityConfig);
+      }
+      if (key === "custom_scripts" && customScriptsConfig) {
+        await savePluginConfig(key, customScriptsConfig);
+      }
       await reload();
     } finally {
       setSaving(false);
@@ -71,6 +107,11 @@ export default function PluginsManager() {
     if (key === "whatsapp_floating") setWaConfig(pluginRegistry.whatsapp_floating.defaultConfig);
     if (key === "video_floating") setVidConfig(pluginRegistry.video_floating.defaultConfig);
     if (key === "popup_banner") setPopupConfig(pluginRegistry.popup_banner.defaultConfig);
+    if (key === "google_analytics") setGaConfig(pluginRegistry.google_analytics.defaultConfig);
+    if (key === "google_tag_manager") setGtmConfig(pluginRegistry.google_tag_manager.defaultConfig);
+    if (key === "facebook_pixel") setFbConfig(pluginRegistry.facebook_pixel.defaultConfig);
+    if (key === "microsoft_clarity") setClarityConfig(pluginRegistry.microsoft_clarity.defaultConfig);
+    if (key === "custom_scripts") setCustomScriptsConfig(pluginRegistry.custom_scripts.defaultConfig);
   };
 
   const origin = useMemo(() => (typeof window !== "undefined" ? window.location.origin : ""), []);
@@ -255,6 +296,66 @@ export default function PluginsManager() {
               >
                 <span>Popup Banner</span>
                 <Switch checked={enabled.popup_banner} onCheckedChange={(v) => onToggle('popup_banner', v)} />
+              </button>
+              
+              {/* Analytics Plugins */}
+              <div className="pt-2 mt-2 border-t">
+                <div className="px-3 py-1 text-xs font-medium text-muted-foreground">Analytics</div>
+              </div>
+              
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-accent ${selected === 'google_analytics' ? 'bg-accent' : ''}`}
+                onClick={() => setSelected('google_analytics')}
+                title="Google Analytics (GA4) settings"
+              >
+                <span>Google Analytics</span>
+                <Switch checked={enabled.google_analytics} onCheckedChange={(v) => onToggle('google_analytics', v)} />
+              </button>
+              
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-accent ${selected === 'google_tag_manager' ? 'bg-accent' : ''}`}
+                onClick={() => setSelected('google_tag_manager')}
+                title="Google Tag Manager settings"
+              >
+                <span>Google Tag Manager</span>
+                <Switch checked={enabled.google_tag_manager} onCheckedChange={(v) => onToggle('google_tag_manager', v)} />
+              </button>
+              
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-accent ${selected === 'facebook_pixel' ? 'bg-accent' : ''}`}
+                onClick={() => setSelected('facebook_pixel')}
+                title="Facebook Pixel settings"
+              >
+                <span>Facebook Pixel</span>
+                <Switch checked={enabled.facebook_pixel} onCheckedChange={(v) => onToggle('facebook_pixel', v)} />
+              </button>
+              
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-accent ${selected === 'microsoft_clarity' ? 'bg-accent' : ''}`}
+                onClick={() => setSelected('microsoft_clarity')}
+                title="Microsoft Clarity settings"
+              >
+                <span>Microsoft Clarity</span>
+                <Switch checked={enabled.microsoft_clarity} onCheckedChange={(v) => onToggle('microsoft_clarity', v)} />
+              </button>
+              
+              {/* Custom Scripts */}
+              <div className="pt-2 mt-2 border-t">
+                <div className="px-3 py-1 text-xs font-medium text-muted-foreground">Custom</div>
+              </div>
+              
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-accent ${selected === 'custom_scripts' ? 'bg-accent' : ''}`}
+                onClick={() => setSelected('custom_scripts')}
+                title="Custom Scripts settings"
+              >
+                <span>Custom Scripts</span>
+                <Switch checked={enabled.custom_scripts} onCheckedChange={(v) => onToggle('custom_scripts', v)} />
               </button>
             </nav>
           </div>
@@ -1321,6 +1422,359 @@ export default function PluginsManager() {
           </CardContent>
         </Card>
         )}
+
+        {/* Google Analytics Configuration */}
+        {selected === 'google_analytics' && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Google Analytics (GA4)</CardTitle>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm">Enabled</Label>
+                <Switch
+                  checked={enabled.google_analytics}
+                  onCheckedChange={(v) => onToggle("google_analytics", v)}
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {gaConfig && (
+                <>
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-sm">
+                    <p className="font-medium mb-2">📊 Google Analytics is already integrated!</p>
+                    <p className="text-muted-foreground">
+                      All tracking is handled automatically through <code>src/lib/analytics.ts</code>. 
+                      Override values below or use .env defaults.
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="ga-measurement-id">Measurement ID</Label>
+                    <Input
+                      id="ga-measurement-id"
+                      value={gaConfig.measurementId || ""}
+                      onChange={(e) => setGaConfig({ ...gaConfig, measurementId: e.target.value })}
+                      placeholder={import.meta.env.VITE_GA_MEASUREMENT_ID || "G-XXXXXXXXXX"}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Default from .env: <code>{import.meta.env.VITE_GA_MEASUREMENT_ID || "Not set"}</code>
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={() => onSave("google_analytics")} disabled={saving}>
+                      {saving ? "Saving..." : "Save Configuration"}
+                    </Button>
+                    <Button variant="outline" onClick={() => resetToDefault("google_analytics")}>
+                      Reset to Default
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Google Tag Manager Configuration */}
+        {selected === 'google_tag_manager' && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Google Tag Manager</CardTitle>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm">Enabled</Label>
+                <Switch
+                  checked={enabled.google_tag_manager}
+                  onCheckedChange={(v) => onToggle("google_tag_manager", v)}
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {gtmConfig && (
+                <>
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-sm">
+                    <p className="font-medium mb-2">🏷️ Google Tag Manager is already integrated!</p>
+                    <p className="text-muted-foreground">
+                      Manages all your marketing tags. Override values below or use .env defaults.
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="gtm-container-id">Container ID</Label>
+                    <Input
+                      id="gtm-container-id"
+                      value={gtmConfig.containerId || ""}
+                      onChange={(e) => setGtmConfig({ ...gtmConfig, containerId: e.target.value })}
+                      placeholder={import.meta.env.VITE_GTM_CONTAINER_ID || "GTM-XXXXXXX"}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Default from .env: <code>{import.meta.env.VITE_GTM_CONTAINER_ID || "Not set"}</code>
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={() => onSave("google_tag_manager")} disabled={saving}>
+                      {saving ? "Saving..." : "Save Configuration"}
+                    </Button>
+                    <Button variant="outline" onClick={() => resetToDefault("google_tag_manager")}>
+                      Reset to Default
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Facebook Pixel Configuration */}
+        {selected === 'facebook_pixel' && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Facebook Pixel</CardTitle>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm">Enabled</Label>
+                <Switch
+                  checked={enabled.facebook_pixel}
+                  onCheckedChange={(v) => onToggle("facebook_pixel", v)}
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {fbConfig && (
+                <>
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-sm">
+                    <p className="font-medium mb-2">📘 Facebook Pixel is already integrated!</p>
+                    <p className="text-muted-foreground">
+                      Track conversions and create custom audiences. Includes CAPI support.
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="fb-pixel-id">Pixel ID</Label>
+                    <Input
+                      id="fb-pixel-id"
+                      value={fbConfig.pixelId || ""}
+                      onChange={(e) => setFbConfig({ ...fbConfig, pixelId: e.target.value })}
+                      placeholder={import.meta.env.VITE_FB_PIXEL_ID || "123456789012345"}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Default from .env: <code>{import.meta.env.VITE_FB_PIXEL_ID || "Not set"}</code>
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="fb-access-token">Access Token (for CAPI)</Label>
+                    <Input
+                      id="fb-access-token"
+                      type="password"
+                      value={fbConfig.accessToken || ""}
+                      onChange={(e) => setFbConfig({ ...fbConfig, accessToken: e.target.value })}
+                      placeholder="Optional - for Conversions API"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={() => onSave("facebook_pixel")} disabled={saving}>
+                      {saving ? "Saving..." : "Save Configuration"}
+                    </Button>
+                    <Button variant="outline" onClick={() => resetToDefault("facebook_pixel")}>
+                      Reset to Default
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Microsoft Clarity Configuration */}
+        {selected === 'microsoft_clarity' && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Microsoft Clarity</CardTitle>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm">Enabled</Label>
+                <Switch
+                  checked={enabled.microsoft_clarity}
+                  onCheckedChange={(v) => onToggle("microsoft_clarity", v)}
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {clarityConfig && (
+                <>
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-sm">
+                    <p className="font-medium mb-2">🎥 Microsoft Clarity is already integrated!</p>
+                    <p className="text-muted-foreground">
+                      Session recordings and heatmaps to understand user behavior.
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="clarity-project-id">Project ID</Label>
+                    <Input
+                      id="clarity-project-id"
+                      value={clarityConfig.projectId || ""}
+                      onChange={(e) => setClarityConfig({ ...clarityConfig, projectId: e.target.value })}
+                      placeholder={import.meta.env.VITE_CLARITY_PROJECT_ID || "project-id"}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Default from .env: <code>{import.meta.env.VITE_CLARITY_PROJECT_ID || "Not set"}</code>
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={() => onSave("microsoft_clarity")} disabled={saving}>
+                      {saving ? "Saving..." : "Save Configuration"}
+                    </Button>
+                    <Button variant="outline" onClick={() => resetToDefault("microsoft_clarity")}>
+                      Reset to Default
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Custom Scripts Configuration */}
+        {selected === 'custom_scripts' && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Custom Scripts</CardTitle>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm">Enabled</Label>
+                <Switch
+                  checked={enabled.custom_scripts}
+                  onCheckedChange={(v) => onToggle("custom_scripts", v)}
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {customScriptsConfig && (
+                <>
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-sm">
+                    <p className="font-medium mb-2">📝 Add Custom Scripts to Your Site</p>
+                    <p className="text-muted-foreground">
+                      Add third-party tracking codes, widgets, or any custom JavaScript/HTML. 
+                      Scripts can be injected in &lt;head&gt;, body start, or body end.
+                    </p>
+                  </div>
+
+                  {customScriptsConfig.scripts && customScriptsConfig.scripts.length > 0 && (
+                    <div className="space-y-4">
+                      {customScriptsConfig.scripts.map((script, index) => (
+                        <Card key={script.id} className="border">
+                          <CardContent className="p-4 space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <Switch
+                                  checked={script.enabled}
+                                  onCheckedChange={(v) => {
+                                    const updated = [...customScriptsConfig.scripts];
+                                    updated[index] = { ...script, enabled: v };
+                                    setCustomScriptsConfig({ ...customScriptsConfig, scripts: updated });
+                                  }}
+                                />
+                                <div>
+                                  <p className="font-medium">{script.name || `Script ${index + 1}`}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Location: {script.location === 'head' ? '<head>' : script.location === 'body_start' ? '<body> start' : '<body> end'}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  const updated = customScriptsConfig.scripts.filter((_, i) => i !== index);
+                                  setCustomScriptsConfig({ ...customScriptsConfig, scripts: updated });
+                                }}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+
+                            <div className="grid gap-2">
+                              <Label htmlFor={`script-name-${index}`}>Script Name</Label>
+                              <Input
+                                id={`script-name-${index}`}
+                                value={script.name}
+                                onChange={(e) => {
+                                  const updated = [...customScriptsConfig.scripts];
+                                  updated[index] = { ...script, name: e.target.value };
+                                  setCustomScriptsConfig({ ...customScriptsConfig, scripts: updated });
+                                }}
+                                placeholder="e.g., Google Ads, Hotjar, etc."
+                              />
+                            </div>
+
+                            <div className="grid gap-2">
+                              <Label htmlFor={`script-location-${index}`}>Inject Location</Label>
+                              <select
+                                id={`script-location-${index}`}
+                                value={script.location}
+                                onChange={(e) => {
+                                  const updated = [...customScriptsConfig.scripts];
+                                  updated[index] = { ...script, location: e.target.value as 'head' | 'body_start' | 'body_end' };
+                                  setCustomScriptsConfig({ ...customScriptsConfig, scripts: updated });
+                                }}
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                              >
+                                <option value="head">&lt;head&gt; - Top of page</option>
+                                <option value="body_start">&lt;body&gt; start - After opening body tag</option>
+                                <option value="body_end">&lt;body&gt; end - Before closing body tag</option>
+                              </select>
+                            </div>
+
+                            <div className="grid gap-2">
+                              <Label htmlFor={`script-content-${index}`}>Script Content</Label>
+                              <Textarea
+                                id={`script-content-${index}`}
+                                value={script.script}
+                                onChange={(e) => {
+                                  const updated = [...customScriptsConfig.scripts];
+                                  updated[index] = { ...script, script: e.target.value };
+                                  setCustomScriptsConfig({ ...customScriptsConfig, scripts: updated });
+                                }}
+                                placeholder="<script>console.log('Hello');</script> or just JavaScript code"
+                                rows={6}
+                                className="font-mono text-xs"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Paste the script tag or raw JavaScript code here
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const newScript: CustomScript = {
+                        id: `script-${Date.now()}`,
+                        name: '',
+                        script: '',
+                        location: 'body_end',
+                        enabled: true,
+                      };
+                      setCustomScriptsConfig({
+                        ...customScriptsConfig,
+                        scripts: [...(customScriptsConfig.scripts || []), newScript],
+                      });
+                    }}
+                  >
+                    + Add New Script
+                  </Button>
+
+                  <div className="flex gap-2">
+                    <Button onClick={() => onSave("custom_scripts")} disabled={saving}>
+                      {saving ? "Saving..." : "Save Configuration"}
+                    </Button>
+                    <Button variant="outline" onClick={() => resetToDefault("custom_scripts")}>
+                      Reset to Default
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         </section>
       </div>
 

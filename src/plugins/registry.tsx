@@ -1,6 +1,19 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { PluginDefinition, WhatsAppPluginConfig, VideoPluginConfig, PopupBannerConfig, ProductVideoMapping, PathVideoConfig } from "./types";
+import type {
+  PluginKey,
+  PluginDefinition,
+  WhatsAppPluginConfig,
+  VideoPluginConfig,
+  PopupBannerConfig,
+  GoogleAnalyticsConfig,
+  GoogleTagManagerConfig,
+  FacebookPixelConfig,
+  MicrosoftClarityConfig,
+  ProductVideoMapping,
+  PathVideoConfig,
+  CustomScriptsConfig,
+} from "./types";
 
 function cx(...classes: (string | false | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -596,6 +609,121 @@ export const pluginRegistry = {
     } as PopupBannerConfig,
     Component: PopupBanner,
   } as PluginDefinition<PopupBannerConfig>,
+  google_analytics: {
+    key: "google_analytics",
+    name: "Google Analytics (GA4)",
+    description: "Track user behavior and e-commerce events with Google Analytics 4.",
+    defaultConfig: {
+      enabled: false,
+      measurementId: import.meta.env.VITE_GA_MEASUREMENT_ID || "",
+      trackPageViews: true,
+      trackEcommerce: true,
+      trackUserProperties: true,
+    } as GoogleAnalyticsConfig,
+    Component: () => null, // Configuration only, no UI component
+  } as PluginDefinition<GoogleAnalyticsConfig>,
+  google_tag_manager: {
+    key: "google_tag_manager",
+    name: "Google Tag Manager",
+    description: "Manage multiple marketing tags without editing code.",
+    defaultConfig: {
+      enabled: false,
+      containerId: import.meta.env.VITE_GTM_CONTAINER_ID || "",
+      dataLayerName: "dataLayer",
+      trackPageViews: true,
+    } as GoogleTagManagerConfig,
+    Component: () => null,
+  } as PluginDefinition<GoogleTagManagerConfig>,
+  facebook_pixel: {
+    key: "facebook_pixel",
+    name: "Facebook Pixel",
+    description: "Track conversions and create custom audiences for Facebook Ads.",
+    defaultConfig: {
+      enabled: false,
+      pixelId: import.meta.env.VITE_FB_PIXEL_ID || "",
+      accessToken: import.meta.env.VITE_FACEBOOK_ACCESS_TOKEN || "",
+      trackPageViews: true,
+      trackEcommerce: true,
+      enableCAPI: false,
+    } as FacebookPixelConfig,
+    Component: () => null,
+  } as PluginDefinition<FacebookPixelConfig>,
+  microsoft_clarity: {
+    key: "microsoft_clarity",
+    name: "Microsoft Clarity",
+    description: "Session recordings and heatmaps to understand user behavior.",
+    defaultConfig: {
+      enabled: false,
+      projectId: import.meta.env.VITE_CLARITY_PROJECT_ID || "",
+      enableRecordings: true,
+      enableHeatmaps: true,
+    } as MicrosoftClarityConfig,
+    Component: () => null,
+  } as PluginDefinition<MicrosoftClarityConfig>,
+  custom_scripts: {
+    key: "custom_scripts",
+    name: "Custom Scripts",
+    description: "Add custom JavaScript/HTML scripts to your site (tracking codes, widgets, etc.)",
+    defaultConfig: {
+      enabled: false,
+      scripts: [],
+    } as CustomScriptsConfig,
+    Component: ({ config }) => {
+      useEffect(() => {
+        if (!config.enabled || !config.scripts || config.scripts.length === 0) return;
+
+        const enabledScripts = config.scripts.filter(s => s.enabled);
+        const scriptElements: HTMLScriptElement[] = [];
+
+        enabledScripts.forEach((customScript) => {
+          const script = document.createElement('script');
+          script.setAttribute('data-custom-script-id', customScript.id);
+          script.setAttribute('data-custom-script-name', customScript.name);
+          
+          // Check if script content looks like HTML or just JS
+          if (customScript.script.trim().startsWith('<')) {
+            // It's HTML, create a div wrapper
+            const div = document.createElement('div');
+            div.setAttribute('data-custom-script-id', customScript.id);
+            div.innerHTML = customScript.script;
+            
+            if (customScript.location === 'head') {
+              document.head.appendChild(div);
+            } else if (customScript.location === 'body_start') {
+              document.body.insertBefore(div, document.body.firstChild);
+            } else {
+              document.body.appendChild(div);
+            }
+          } else {
+            // It's JavaScript
+            script.textContent = customScript.script;
+            
+            if (customScript.location === 'head') {
+              document.head.appendChild(script);
+            } else if (customScript.location === 'body_start') {
+              document.body.insertBefore(script, document.body.firstChild);
+            } else {
+              document.body.appendChild(script);
+            }
+            
+            scriptElements.push(script);
+          }
+        });
+
+        // Cleanup function
+        return () => {
+          scriptElements.forEach(script => script.remove());
+          // Also remove any div wrappers
+          enabledScripts.forEach((customScript) => {
+            const elements = document.querySelectorAll(`[data-custom-script-id="${customScript.id}"]`);
+            elements.forEach(el => el.remove());
+          });
+        };
+      }, [config]);
+
+      return null;
+    },
+  } as PluginDefinition<CustomScriptsConfig>,
 };
 
 export type PluginRegistry = typeof pluginRegistry;

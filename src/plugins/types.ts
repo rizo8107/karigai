@@ -1,4 +1,12 @@
-export type PluginKey = "whatsapp_floating" | "video_floating" | "popup_banner";
+export type PluginKey = 
+  | "whatsapp_floating" 
+  | "video_floating" 
+  | "popup_banner"
+  | "google_analytics"
+  | "google_tag_manager"
+  | "facebook_pixel"
+  | "microsoft_clarity"
+  | "custom_scripts";
 
 export interface BasePluginConfig {
   enabled: boolean;
@@ -119,10 +127,55 @@ export interface PopupBannerConfig extends BasePluginConfig {
   position?: "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right" | "top-center" | "bottom-center";
 }
 
+// Analytics Plugin Configurations
+export interface GoogleAnalyticsConfig extends BasePluginConfig {
+  measurementId: string; // G-XXXXXXXXXX
+  trackPageViews?: boolean;
+  trackEcommerce?: boolean;
+  trackUserProperties?: boolean;
+}
+
+export interface GoogleTagManagerConfig extends BasePluginConfig {
+  containerId: string; // GTM-XXXXXXX
+  dataLayerName?: string;
+  trackPageViews?: boolean;
+}
+
+export interface FacebookPixelConfig extends BasePluginConfig {
+  pixelId: string; // Numeric ID
+  accessToken?: string; // For CAPI
+  trackPageViews?: boolean;
+  trackEcommerce?: boolean;
+  enableCAPI?: boolean;
+}
+
+export interface MicrosoftClarityConfig extends BasePluginConfig {
+  projectId: string; // UUID-like
+  enableRecordings?: boolean;
+  enableHeatmaps?: boolean;
+}
+
+export interface CustomScript {
+  id: string;
+  name: string;
+  script: string; // The actual script content
+  location: "head" | "body_start" | "body_end"; // Where to inject
+  enabled: boolean;
+}
+
+export interface CustomScriptsConfig extends BasePluginConfig {
+  scripts: CustomScript[];
+}
+
 export type AnyPluginConfig =
   | { key: "whatsapp_floating"; config: WhatsAppPluginConfig }
   | { key: "video_floating"; config: VideoPluginConfig }
-  | { key: "popup_banner"; config: PopupBannerConfig };
+  | { key: "popup_banner"; config: PopupBannerConfig }
+  | { key: "google_analytics"; config: GoogleAnalyticsConfig }
+  | { key: "google_tag_manager"; config: GoogleTagManagerConfig }
+  | { key: "facebook_pixel"; config: FacebookPixelConfig }
+  | { key: "microsoft_clarity"; config: MicrosoftClarityConfig }
+  | { key: "custom_scripts"; config: CustomScriptsConfig };
 
 export interface PluginDefinition<T extends BasePluginConfig> {
   key: PluginKey;
