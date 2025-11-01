@@ -27,6 +27,38 @@ interface Page {
   content_json?: any;
 }
 
+function extractThumbnailFromPageData(raw: any): string | undefined {
+  try {
+    let data = raw;
+    if (typeof data === "string") data = JSON.parse(data);
+    // 1) Explicit thumbnail on root
+    const rootThumb = data?.root?.thumbnail;
+    if (rootThumb) return rootThumb;
+    // 2) First Image block
+    if (Array.isArray(data?.content)) {
+      const imgBlock = data.content.find((c: any) => c?.type === "Image" && c?.props?.src);
+      if (imgBlock?.props?.src) return imgBlock.props.src;
+    }
+    // 3) Look for common background image props (e.g., Hero)
+    if (Array.isArray(data?.content)) {
+      for (const c of data.content) {
+        const p = c?.props || {};
+        const bg = p.backgroundImageDesktop || p.backgroundImageTablet || p.backgroundImageMobile || p.backgroundImage;
+        if (bg) return bg;
+        if (Array.isArray(p.slides)) {
+          for (const s of p.slides) {
+            const sbg = s.backgroundImageDesktop || s.backgroundImageTablet || s.backgroundImageMobile || s.backgroundImage;
+            if (sbg) return sbg;
+          }
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return undefined;
+}
+
 export default function PagesManager() {
   const navigate = useNavigate();
   const [pages, setPages] = useState<Page[]>([]);
@@ -213,13 +245,8 @@ export default function PagesManager() {
                 <div className="aspect-video w-full bg-muted overflow-hidden rounded-t-lg">
                   {(() => {
                     try {
-                      let data: any = page.content_json;
-                      if (typeof data === 'string') data = JSON.parse(data);
-                      const thumb: string | undefined = data?.root?.thumbnail ||
-                        (Array.isArray(data?.content)
-                          ? (data.content.find((c: any) => c?.type === 'Image')?.props?.src)
-                          : undefined);
-                      const src = thumb || 'https://via.placeholder.com/800x450?text=No+Thumbnail';
+                      const src = extractThumbnailFromPageData(page.content_json) ||
+                        'https://via.placeholder.com/800x450?text=No+Thumbnail';
                       return (
                         <img src={src} alt={page.title} className="w-full h-full object-cover" />
                       );

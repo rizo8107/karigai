@@ -15,6 +15,163 @@ interface PageData {
   root: any;
 }
 
+// Helpers to improve snapshot quality/timing
+function delay(ms: number) { return new Promise<void>(res => setTimeout(res, ms)); }
+
+async function waitForFonts(doc?: Document, timeoutMs = 6000) {
+  try {
+    const d: any = doc || document;
+    if (d.fonts && typeof d.fonts.ready?.then === 'function') {
+      await Promise.race([d.fonts.ready, delay(timeoutMs)]);
+    }
+  } catch { /* ignore */ }
+}
+
+async function waitForImages(scope: Document | HTMLElement, timeoutMs = 6000) {
+  const root: ParentNode = (scope as any).querySelectorAll ? (scope as any) : document;
+  const imgs: HTMLImageElement[] = Array.from((root as any).querySelectorAll?.('img') || []);
+  const pending: Promise<void>[] = [];
+  for (const img of imgs) {
+    if (img.complete && img.naturalWidth > 0) continue;
+    pending.push(new Promise<void>((resolve) => {
+      const done = () => { img.removeEventListener('load', done); img.removeEventListener('error', done); resolve(); };
+      img.addEventListener('load', done);
+      img.addEventListener('error', done);
+    }));
+  }
+  if (pending.length) {
+    await Promise.race([Promise.allSettled(pending).then(() => undefined), delay(timeoutMs)]);
+  }
+}
+
+declare global { interface Window { html2canvas?: any } }
+
+async function waitForIdle(target: HTMLElement, timeoutMs = 6000) {
+  const start = Date.now();
+  const hasLoaders = () => !!target.querySelector(
+    '.animate-spin, [aria-busy="true"], .skeleton, .loading, [data-loading="true"], .spinner, .loader'
+  );
+  // Give a quick initial frame
+  await delay(100);
+  while (Date.now() - start < timeoutMs) {
+    if (!hasLoaders()) return;
+    await delay(150);
+  }
+}
+
+async function captureEditorSnapshot(): Promise<string | null> {
+  try {
+    const html2canvas = await loadHtml2Canvas();
+    // Try to locate the preview canvas inside the editor
+    const candidates = [
+      '[data-puck-preview]',
+      '.puck-preview',
+      '.puck-canvas',
+      '.puck-editor-root main',
+      '.puck-editor-root'
+    ];
+    const found: HTMLElement[] = [];
+    for (const sel of candidates) {
+      const el = document.querySelector(sel) as HTMLElement | null;
+      if (el) found.push(el);
+    }
+    const target = found
+      .map((el) => ({ el, rect: el.getBoundingClientRect() }))
+      .filter(({ rect }) => rect.width > 100 && rect.height > 100)
+      .sort((a, b) => b.rect.width * b.rect.height - a.rect.width * a.rect.height)[0]?.el;
+    if (!target) return null;
+
+    // Give the preview a moment to settle & load assets
+    await waitForIdle(target);
+    await waitForFonts();
+    await waitForImages(target);
+    await delay(800);
+
+    const srcCanvas: HTMLCanvasElement = await html2canvas(target, {
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      scale: 1,
+    });
+
+    // Resize/crop to 800x450 with cover behavior
+    const W = 800, H = 450;
+    const out = document.createElement('canvas');
+    out.width = W; out.height = H;
+    const ctx = out.getContext('2d');
+    if (!ctx) return srcCanvas.toDataURL('image/webp', 0.85);
+    const sw = srcCanvas.width, sh = srcCanvas.height;
+    const scale = Math.max(W / sw, H / sh);
+    const dw = sw * scale, dh = sh * scale;
+    const dx = (W - dw) / 2, dy = (H - dh) / 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(srcCanvas, dx, dy, dw, dh);
+    return out.toDataURL('image/webp', 0.85);
+  } catch (e) {
+    console.warn('Editor snapshot failed', e);
+    return null;
+  }
+}
+
+async function loadHtml2Canvas(): Promise<any> {
+  if (window.html2canvas) return window.html2canvas;
+  await new Promise<void>((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Failed to load html2canvas'));
+    document.head.appendChild(s);
+  });
+  return window.html2canvas;
+}
+
+async function capturePageSnapshot(url: string): Promise<string | null> {
+  try {
+    const html2canvas = await loadHtml2Canvas();
+    const iframe = document.createElement('iframe');
+    Object.assign(iframe.style, {
+      position: 'fixed',
+      left: '-99999px',
+      top: '0',
+      width: '1200px',
+      height: '675px',
+      visibility: 'hidden',
+    } as CSSStyleDeclaration);
+    iframe.src = url;
+    document.body.appendChild(iframe);
+    await new Promise<void>((resolve, reject) => {
+      iframe.onload = () => resolve();
+      iframe.onerror = () => reject(new Error('iframe load error'));
+      // safety timeout
+      setTimeout(resolve, 8000);
+    });
+    const doc = iframe.contentDocument as Document | null;
+    if (!doc) { document.body.removeChild(iframe); return null; }
+    // wait for fonts and images inside iframe
+    await waitForFonts(doc);
+    await waitForImages(doc);
+    await delay(400);
+    const body = doc.body;
+    (body as any).style.background = '#fff';
+    const canvas = await html2canvas(body, {
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      windowWidth: 1200,
+      windowHeight: 675,
+      width: 800,
+      height: 450,
+      scale: 1,
+    });
+    const dataUrl = canvas.toDataURL('image/webp', 0.85);
+    document.body.removeChild(iframe);
+    return dataUrl as string;
+  } catch (e) {
+    console.warn('Snapshot failed', e);
+    return null;
+  }
+}
+
 export default function PuckEditor() {
   const { pageId } = useParams();
   const navigate = useNavigate();
@@ -213,15 +370,29 @@ export default function PuckEditor() {
         status: "published",
       };
 
-      if (pageId && pageId !== "new") {
-        // Update existing page
-        await pocketbase.collection("pages").update(pageId, pageData);
-        console.log("Page updated successfully:", pageId);
+      let currentId = pageId && pageId !== "new" ? pageId : null;
+      if (currentId) {
+        await pocketbase.collection("pages").update(currentId, pageData);
+        console.log("Page updated successfully:", currentId);
       } else {
-        // Create new page
         const newPage = await pocketbase.collection("pages").create(pageData);
+        currentId = newPage.id;
         console.log("Page created successfully:", newPage);
-        navigate(`/admin/pages/${newPage.id}/edit`, { replace: true });
+        navigate(`/admin/pages/${currentId}/edit`, { replace: true });
+      }
+
+      // Capture from the editor preview only (no extra HTML load)
+      if (currentId) {
+        const dataUrl = await captureEditorSnapshot();
+        if (dataUrl) {
+          const updated = {
+            ...newData,
+            root: { ...(newData.root || {}), thumbnail: dataUrl },
+          };
+          await pocketbase.collection("pages").update(currentId, {
+            content_json: JSON.stringify(updated),
+          });
+        }
       }
 
       // Show success message
