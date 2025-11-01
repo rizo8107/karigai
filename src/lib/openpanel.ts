@@ -1,23 +1,19 @@
-// OpenPanel Analytics Configuration
+// OpenPanel Analytics Configuration - DISABLED
 import { OpenPanel } from '@openpanel/web';
 
-// Initialize OpenPanel with self-hosted support
+// Initialize OpenPanel with DISABLED state
+// OpenPanel tracking has been removed from the application
 export const op = new OpenPanel({
-  clientId: import.meta.env.VITE_OPENPANEL_CLIENT_ID || '',
-  clientSecret: import.meta.env.VITE_OPENPANEL_CLIENT_SECRET,
-  // For self-hosted: Set your OpenPanel instance URL (e.g., https://openpanel.yourdomain.com)
-  apiUrl: import.meta.env.VITE_OPENPANEL_API_URL || 'https://api.openpanel.dev',
-  trackScreenViews: true,
-  trackOutgoingLinks: true,
-  trackAttributes: true,
-  disabled: !import.meta.env.VITE_OPENPANEL_CLIENT_ID, // Disable if no client ID
+  clientId: '',
+  clientSecret: '',
+  apiUrl: 'https://api.openpanel.dev',
+  trackScreenViews: false,
+  trackOutgoingLinks: false,
+  trackAttributes: false,
+  disabled: true, // Always disabled
 });
 
-console.log('[OpenPanel] Initialized with:', {
-  apiUrl: import.meta.env.VITE_OPENPANEL_API_URL || 'https://api.openpanel.dev',
-  clientId: import.meta.env.VITE_OPENPANEL_CLIENT_ID ? '✓ Set' : '✗ Not Set',
-  disabled: !import.meta.env.VITE_OPENPANEL_CLIENT_ID
-});
+console.log('[OpenPanel] Disabled - OpenPanel tracking has been removed from the application');
 
 // Track page views
 export const opTrackPageView = (pageTitle: string, pagePath: string) => {

@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { pluginRegistry } from "./registry";
 import { parseConfigForKey, getAllPlugins } from "./service";
-import type { PluginKey, WhatsAppPluginConfig, VideoPluginConfig, PopupBannerConfig } from "./types";
+import type { PluginKey, WhatsAppPluginConfig, VideoPluginConfig, PopupBannerConfig, CustomScriptsConfig } from "./types";
 import Portal from "./Portal";
 import { useLocation } from "react-router-dom";
 
 type PluginState = {
   enabled: Record<PluginKey, boolean>;
-  configs: Record<PluginKey, WhatsAppPluginConfig | VideoPluginConfig | PopupBannerConfig>;
+  configs: Record<PluginKey, WhatsAppPluginConfig | VideoPluginConfig | PopupBannerConfig | CustomScriptsConfig>;
   loading: boolean;
   reload: () => Promise<void>;
 };
@@ -26,11 +26,21 @@ export const PluginProvider: React.FC<{ children: React.ReactNode }>= ({ childre
     whatsapp_floating: false,
     video_floating: false,
     popup_banner: false,
+    google_analytics: false,
+    google_tag_manager: false,
+    facebook_pixel: false,
+    microsoft_clarity: false,
+    custom_scripts: false,
   });
-  const [configs, setConfigs] = useState<Record<PluginKey, WhatsAppPluginConfig | VideoPluginConfig | PopupBannerConfig>>({
+  const [configs, setConfigs] = useState<Record<PluginKey, WhatsAppPluginConfig | VideoPluginConfig | PopupBannerConfig | CustomScriptsConfig>>({
     whatsapp_floating: pluginRegistry.whatsapp_floating.defaultConfig,
     video_floating: pluginRegistry.video_floating.defaultConfig,
     popup_banner: pluginRegistry.popup_banner.defaultConfig,
+    google_analytics: pluginRegistry.google_analytics.defaultConfig as any,
+    google_tag_manager: pluginRegistry.google_tag_manager.defaultConfig as any,
+    facebook_pixel: pluginRegistry.facebook_pixel.defaultConfig as any,
+    microsoft_clarity: pluginRegistry.microsoft_clarity.defaultConfig as any,
+    custom_scripts: pluginRegistry.custom_scripts.defaultConfig as CustomScriptsConfig,
   });
   const { pathname } = useLocation();
 
@@ -38,18 +48,34 @@ export const PluginProvider: React.FC<{ children: React.ReactNode }>= ({ childre
     try {
       setLoading(true);
       const items = await getAllPlugins();
-      const nextEnabled: Record<PluginKey, boolean> = { whatsapp_floating: false, video_floating: false, popup_banner: false };
-      const nextConfigs: Record<PluginKey, WhatsAppPluginConfig | VideoPluginConfig | PopupBannerConfig> = {
+      const nextEnabled: Record<PluginKey, boolean> = {
+        whatsapp_floating: false,
+        video_floating: false,
+        popup_banner: false,
+        google_analytics: false,
+        google_tag_manager: false,
+        facebook_pixel: false,
+        microsoft_clarity: false,
+        custom_scripts: false,
+      };
+      const nextConfigs: Record<PluginKey, WhatsAppPluginConfig | VideoPluginConfig | PopupBannerConfig | CustomScriptsConfig> = {
         whatsapp_floating: pluginRegistry.whatsapp_floating.defaultConfig,
         video_floating: pluginRegistry.video_floating.defaultConfig,
         popup_banner: pluginRegistry.popup_banner.defaultConfig,
+        google_analytics: pluginRegistry.google_analytics.defaultConfig as any,
+        google_tag_manager: pluginRegistry.google_tag_manager.defaultConfig as any,
+        facebook_pixel: pluginRegistry.facebook_pixel.defaultConfig as any,
+        microsoft_clarity: pluginRegistry.microsoft_clarity.defaultConfig as any,
+        custom_scripts: pluginRegistry.custom_scripts.defaultConfig as CustomScriptsConfig,
       };
 
       (Object.keys(pluginRegistry) as PluginKey[]).forEach((key) => {
-        const found = items.find((i) => i.key === key);
+        // Pick the latest record for this key (items are sorted by +created)
+        const matches = items.filter((i) => i.key === key);
+        const found = matches.length ? matches[matches.length - 1] : undefined;
         nextEnabled[key] = Boolean(found?.enabled);
-        const parsed = parseConfigForKey(key, found?.config) || pluginRegistry[key].defaultConfig;
-        nextConfigs[key] = parsed as WhatsAppPluginConfig | VideoPluginConfig;
+        const parsed = (parseConfigForKey(key, found?.config) as any) || pluginRegistry[key].defaultConfig;
+        nextConfigs[key] = parsed as WhatsAppPluginConfig | VideoPluginConfig | PopupBannerConfig | CustomScriptsConfig;
       });
 
       setEnabled(nextEnabled);
@@ -68,7 +94,7 @@ export const PluginProvider: React.FC<{ children: React.ReactNode }>= ({ childre
         if (raw) {
           const parsed = JSON.parse(raw) as {
             enabled: Record<PluginKey, boolean>;
-            configs: Record<PluginKey, WhatsAppPluginConfig | VideoPluginConfig>;
+            configs: Record<PluginKey, WhatsAppPluginConfig | VideoPluginConfig | PopupBannerConfig | CustomScriptsConfig>;
           };
           setEnabled(parsed.enabled);
           setConfigs(parsed.configs);
@@ -126,6 +152,13 @@ export const PluginProvider: React.FC<{ children: React.ReactNode }>= ({ childre
             const merged: PopupBannerConfig = { ...cfg, enabled: enabled.popup_banner };
             return enabled.popup_banner && isVisibleOnPath(merged.visibility, pathname) ? (
               <pluginRegistry.popup_banner.Component config={merged} />
+            ) : null;
+          })()}
+          {(() => {
+            const cfg = configs.custom_scripts as CustomScriptsConfig;
+            const merged: CustomScriptsConfig = { ...cfg, enabled: enabled.custom_scripts };
+            return enabled.custom_scripts ? (
+              <pluginRegistry.custom_scripts.Component config={merged} />
             ) : null;
           })()}
         </Portal>

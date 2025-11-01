@@ -61,7 +61,10 @@ export default function PluginsManager() {
       setGtmConfig(configs.google_tag_manager as GoogleTagManagerConfig);
       setFbConfig(configs.facebook_pixel as FacebookPixelConfig);
       setClarityConfig(configs.microsoft_clarity as MicrosoftClarityConfig);
-      setCustomScriptsConfig(configs.custom_scripts as CustomScriptsConfig);
+      
+      const customScripts = configs.custom_scripts as CustomScriptsConfig;
+      console.log('[PluginsManager] Loading custom scripts config:', customScripts);
+      setCustomScriptsConfig(customScripts);
     }
   }, [configs, loading]);
 

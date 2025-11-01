@@ -670,22 +670,57 @@ export const pluginRegistry = {
     } as CustomScriptsConfig,
     Component: ({ config }) => {
       useEffect(() => {
-        if (!config.enabled || !config.scripts || config.scripts.length === 0) return;
+        // Don't check config.enabled - rely on plugin-level enabled and individual script.enabled
+        if (!config.scripts || config.scripts.length === 0) return;
 
         const enabledScripts = config.scripts.filter(s => s.enabled);
-        const scriptElements: HTMLScriptElement[] = [];
+        if (enabledScripts.length === 0) return;
+        
+        const addedElements: (HTMLScriptElement | HTMLElement)[] = [];
 
         enabledScripts.forEach((customScript) => {
-          const script = document.createElement('script');
-          script.setAttribute('data-custom-script-id', customScript.id);
-          script.setAttribute('data-custom-script-name', customScript.name);
+          const scriptContent = customScript.script.trim();
           
-          // Check if script content looks like HTML or just JS
-          if (customScript.script.trim().startsWith('<')) {
-            // It's HTML, create a div wrapper
+          // Check if it's a script tag with src attribute
+          if (scriptContent.startsWith('<script')) {
+            // Parse the script tag to extract attributes
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(scriptContent, 'text/html');
+            const parsedScript = doc.querySelector('script');
+            
+            if (parsedScript) {
+              // Create a new script element
+              const script = document.createElement('script');
+              script.setAttribute('data-custom-script-id', customScript.id);
+              script.setAttribute('data-custom-script-name', customScript.name);
+              
+              // Copy all attributes from parsed script
+              Array.from(parsedScript.attributes).forEach(attr => {
+                script.setAttribute(attr.name, attr.value);
+              });
+              
+              // Copy text content if any
+              if (parsedScript.textContent) {
+                script.textContent = parsedScript.textContent;
+              }
+              
+              // Append to appropriate location
+              if (customScript.location === 'head') {
+                document.head.appendChild(script);
+              } else if (customScript.location === 'body_start') {
+                document.body.insertBefore(script, document.body.firstChild);
+              } else {
+                document.body.appendChild(script);
+              }
+              
+              addedElements.push(script);
+              console.log(`[Custom Scripts] Injected: ${customScript.name}`, script);
+            }
+          } else if (scriptContent.startsWith('<')) {
+            // It's other HTML content (not a script tag)
             const div = document.createElement('div');
             div.setAttribute('data-custom-script-id', customScript.id);
-            div.innerHTML = customScript.script;
+            div.innerHTML = scriptContent;
             
             if (customScript.location === 'head') {
               document.head.appendChild(div);
@@ -694,9 +729,14 @@ export const pluginRegistry = {
             } else {
               document.body.appendChild(div);
             }
+            
+            addedElements.push(div);
           } else {
-            // It's JavaScript
-            script.textContent = customScript.script;
+            // It's raw JavaScript code
+            const script = document.createElement('script');
+            script.setAttribute('data-custom-script-id', customScript.id);
+            script.setAttribute('data-custom-script-name', customScript.name);
+            script.textContent = scriptContent;
             
             if (customScript.location === 'head') {
               document.head.appendChild(script);
@@ -706,18 +746,18 @@ export const pluginRegistry = {
               document.body.appendChild(script);
             }
             
-            scriptElements.push(script);
+            addedElements.push(script);
           }
         });
 
         // Cleanup function
         return () => {
-          scriptElements.forEach(script => script.remove());
-          // Also remove any div wrappers
-          enabledScripts.forEach((customScript) => {
-            const elements = document.querySelectorAll(`[data-custom-script-id="${customScript.id}"]`);
-            elements.forEach(el => el.remove());
+          addedElements.forEach(element => {
+            if (element && element.parentNode) {
+              element.parentNode.removeChild(element);
+            }
           });
+          console.log('[Custom Scripts] Cleaned up scripts');
         };
       }, [config]);
 

@@ -259,5 +259,26 @@ export function parseConfigForKey(key: PluginKey, raw: unknown): WhatsAppPluginC
       },
     } as PopupBannerConfig;
   }
+  if (key === "custom_scripts") {
+    // Parse Custom Scripts config
+    const scripts = Array.isArray(obj.scripts)
+      ? obj.scripts.map((s: any) => ({
+          id: String(s.id || `script-${Date.now()}`),
+          name: String(s.name || ""),
+          script: String(s.script || ""),
+          location: ["head", "body_start", "body_end"].includes(s.location)
+            ? (s.location as "head" | "body_start" | "body_end")
+            : "head",
+          enabled: s.enabled !== false,
+        }))
+      : [];
+
+    return {
+      enabled: Boolean(obj.enabled),
+      zIndex: typeof obj.zIndex === "number" ? obj.zIndex : undefined,
+      visibility: obj.visibility,
+      scripts,
+    } as unknown as PopupBannerConfig; // return type union; consumer will cast
+  }
   return null;
 }
